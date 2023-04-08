@@ -104,7 +104,7 @@ echo -e "HAS ACABADO. Inicia tus contenedores y ya te puedes tomar una cerveza. 
 echo -e "                                                                                     " >> "$Msp"
 echo -e "                     __________________________________________                      " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-echo -e "  LISTA DE COMPLEMENTOS INSTALADOS Y NÚMERO DE VERSIÓN                               " >> "$Msp"
+echo -e "  LISTA DE ComplementoMPLEMENTOS INSTALADOS Y NÚMERO DE VERSIÓN                               " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 cat "$Destino"/Lista_complementos >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"

@@ -2,20 +2,39 @@
 
 # Script para regenerar un sistema OMV
 # Este script instalará complementos y usuarios existentes y restaurará la configuración.
-# Debe existir un backup previo generado por regen-omv-backup.
-# Se debe realizar previamente una instalación y actualización de paquetes de OMV.
+# Se debe realizar previamente una instalación y actualización de Openmediavault.
+# Debe existir un backup previo generado por regen-omv-backup en una carpeta accesible.
 # Formato de uso    regen-omv-regenera PATH_TO_BACKUP
 # Por ejemplo       regen-omv-regenera /home/backup230401
 
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
 declare -A ArchivosBackup
 ArchivosBackup=([BackupConfig]='config.xml' [BackupComplementos]='Lista_complementos' [BackupUsuarios]='Lista_usuarios' [BRed]='Red')
-declare ComplemInstalar
+declare -a ComplemInstalar
+Extras=0
+Kernel=0
+ZFS=0
+Shareroot=0
+URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
+confCmd="omv-salt deploy run"
+
+if [[ $(id -u) -ne 0 ]]; then
+  echo "This script must be executed as root or using sudo."
+  exit
+fi
+
+if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
+  echo "Unsupported version.  Only OMV 6.x. are supported.  Exiting..."
+  exit
+fi
 
 [ $Id ] && echo -e "\n       <<< Regenerando el sistema >>>" || echo -e "\n       <<< TRADUCCION >>>"
 
 # Actualizar sistema
-#omv-upgrade
+if ! omv-upgrade; then
+  echo "failed updating system"
+  exit
+fi
 
 # Comprobar si están todos los archivos del backup
 if [ "$1" ] && [ ! "$2" ]; then
@@ -30,7 +49,7 @@ else
     exit
 fi
 
-# Comprobar versiones
+# Comprobar versiones. Comprobar si existía omv-extras, kernel y zfs
 for i in $(awk '{print NR}' $1/${ArchivosBackup[BackupComplementos]})
 do
   ComplemInstalar[i]=$(awk -v i="$i" 'NR==i{print $1}' $1/${ArchivosBackup[BackupComplementos]})
@@ -38,11 +57,15 @@ do
   VersionDisponible=$(apt-cache policy "$ComplemInstalar[i]" | awk -F ": " 'NR==2{print $2}')
   if [ ComplemInstalar[i] = "openmediavault-omvextrasorg" ]; then
     Extras=1
+  fi
   if [ ComplemInstalar[i] = "openmediavault-kernel" ]; then
     Kernel=1
   fi
   if [ ComplemInstalar[i] = "openmediavault-ZFS" ]; then
     ZFS=1
+  fi
+  if [ ComplemInstalar[i] = "openmediavault-sharerootfs" ]; then
+    Shareroot=1
   fi
   if [ "$VersionOriginal" != "$VersionDisponible" ]; then
     echo "La versión del backup $ComplemInstalar[i] $VersionOriginal no coincide con la versión que se va a instalar $ComplemInstalar[i] $VersionDisponible"
@@ -57,14 +80,63 @@ do
   fi
 done
 
-# Instalar complementos
-if [ $Extras = "1" ]; then
-  wget -O - https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master/install | bash
+# Instalar omv-extras si existía y no está instalado
+omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
+if [[ "${omvextrasInstall}" == "ii" ]]; then
+  Extras=0
 fi
+if [ $Extras = "1" ]; then
+  echo "Downloading omv-extras.org plugin for openmediavault 6.x ..."
+  File="openmediavault-omvextrasorg_latest_all6.deb"
+  if [ -f "${File}" ]; then
+    rm ${File}
+  fi
+  wget ${URL}/${File}
+  if [ -f "${File}" ]; then
+    if ! dpkg --install ${File}; then
+      echo "Installing other dependencies ..."
+      apt-get --yes --fix-broken install
+      omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
+      if [[ ! "${omvextrasInstall}" == "ii" ]]; then
+        echo "omv-extras failed to install correctly.  Trying to fix with ${confCmd} ..."
+        if ${confCmd} omvextras; then
+          echo "Trying to fix apt ..."
+          apt-get --yes --fix-broken install
+        else
+          echo "${confCmd} failed and openmediavault-omvextrasorg is in a bad state."
+          exit
+        fi
+      fi
+      omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
+      if [[ ! "${omvextrasInstall}" == "ii" ]]; then
+        echo "openmediavault-omvextrasorg package failed to install or is in a bad state."
+        exit
+      fi
+    fi
+    echo "Updating repos ..."
+    # apt-get update
+    omv-salt deploy run omvextras
+  else
+    echo "There was a problem downloading the package."
+    exit
+  fi
+fi
+
+# Instalar complementos
 for i in ComplemInstalar[@]
 do
-  if [ ! $ComplemInstalar[i] = "openmediavault-omvextrasorg" ] 
-  apt-get install "$ComplemInstalar[i]"
+  if [ ! $ComplemInstalar[i] = "openmediavault" ] && [ ! $ComplemInstalar[i] = "openmediavault-omvextrasorg" ]; then
+    echo "Installing $ComplemInstalar[i]"
+    if ! apt-get install "$ComplemInstalar[i]"; then
+      echo "failed installing $ComplemInstalar[i] package."
+      exit
+    else
+      CompII=$(dpkg -l | awk '$2 == "$ComplemInstalar[i]" { print $1 }')
+      if [[ ! "${CompII}" == "ii" ]]; then
+        echo "$ComplemInstalar[i] package failed to install or is in a bad state."
+        exit
+      fi
+    fi
   fi
 done
 
@@ -77,6 +149,8 @@ fi
 if [ $ZFS = "1" ]; then
   # Importar pools
 fi
+
+# Reinstalar openmediavault-sharerootfs
 
 # Generar usuarios
 

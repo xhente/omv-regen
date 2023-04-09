@@ -15,6 +15,8 @@ Extras=0
 Kernel=0
 ZFS=0
 Shareroot=0
+VersionKernel=0
+VersionKernel=$(uname -r | awk -F "." '/pve$/ {print $1"."$2 }')
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
@@ -73,7 +75,6 @@ do
     Extras=1
   fi
   if [ ComplemInstalar[i] = "openmediavault-kernel" ]; then
-    # Comprobar si hay kernel proxmox instalado
     Kernel=1
   fi
   if [ ComplemInstalar[i] = "openmediavault-ZFS" ]; then

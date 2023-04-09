@@ -26,9 +26,9 @@ Fecha=$(date +%y%m%d_%H%M)
 [ $Id ] && echo -e "\n       <<< Backup para regenerar sistema de fecha $Fecha >>>" || echo -e "\n       <<< Backup to regenerate system dated $Fecha >>>"
 
 if [ "$1" ] && [ ! "$2" ]; then
-  Destino="$1/regen_omv/R_O_$Fecha"
+  Destino="$1/regen_omv/ROB_$Fecha"
   mkdir -p "$Destino"
-  [ $Id ] && echo -e "\n       Se eliminarán los backups de más de $Dias días.\n       Para conservarlo cambia el prefijo a R_O_$Fecha\n" || echo -e "\n       Backups older than $Dias days will be deleted.\n       To keep it change the prefix to R_O_$Fecha\n"
+  [ $Id ] && echo -e "\n       Se eliminarán los backups de más de $Dias días.\n       Para conservarlo cambia el prefijo a ROB_$Fecha\n" || echo -e "\n       Backups older than $Dias days will be deleted.\n       To keep it change the prefix to ROB_$Fecha\n"
   else
     [ $Id ] && echo -e "\n                  ¡¡ NO SE HA HECHO EL BACKUP !!\n\n       Escribe la ruta después del comando  -> regen-omv.sh /path_to/backup\n       Si hay espacios usa comillas -> regen-omv.sh \"/path to/backup\"\n" || echo -e "\n                  THE BACKUP HAS NOT BEEN DONE !!\n\n       Write the backup path after the command -> regen-omv.sh /path_to/backup\n       If there are spaces use quotes -> regen-omv.sh \"/path to/backup\"\n"
     exit
@@ -38,18 +38,21 @@ fi
 rsync -av /etc/openmediavault/config.xml "$Destino"/
 
 [ $Id ] && echo ">>>    Creando lista de complementos..." || echo ">>>    Creating plugin list..."
-dpkg -l | awk '/openmediavault/ {print $2"\t"$3}' > "$Destino"/Lista_complementos
-sed -i '/keyring/d' "$Destino"/Lista_complementos
-cat "$Destino"/Lista_complementos
+dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "$Destino"/VersionPlugins
+sed -i '/keyring/d' "$Destino"/VersionPlugins
+Cat "$Destino"/VersionPlugins
 
 [ $Id ] && echo ">>>    Creando lista de usuarios y UIDs..." || echo ">>>    Creating list of users and UIDs..."
 awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "$Destino"/Lista_usuarios
 
 [ $Id ] && echo ">>>    Extrayendo red..." || echo ">>>    Extracting network..."
-cat /etc/openmediavault/config.xml | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | tee "$Destino"/Red
+cat /etc/openmediavault/config.xml | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | awk 'NR==2{print $0}' | tee "$Destino"/Red
 
-[ $Id ] && echo ">>>    Extrayendo kernel..." || echo ">>>    Extracting kernel..."
-uname -r | tee "$Destino"/Kernel
+[ $Id ] && echo ">>>    Extrayendo versión del kernel..." || echo ">>>    Extracting kernel version..."
+uname -r | tee "$Destino"/VersionKernel
+
+[ $Id ] && echo ">>>    Extrayendo versión de OMV..." || echo ">>>    Extracting OMV version..."
+dpkg -l | awk '$2 == "openmediavault" { print $2" "$3 }'| tee "$Destino"/VersionOMV
 
 if [ "${Origen[0]}" ]; then
   [ $Id ] && echo ">>>    Copiando carpetas personalizadas..." || echo ">>>    Copying custom folders..."
@@ -69,7 +72,7 @@ fi
 [ $Id ] && echo ">>>    Eliminando backups de más de $Dias días..." || echo ">>>    Deleting backups larger than $Dias days..."
 # PUEDE SER PELIGROSO modificar la siguiente línea. Asegúrate de lo que cambias.
 # It MAY BE DANGEROUS to modify the following line. Make sure what you change.
-find "$1/regen_omv"/ -maxdepth 1 -type d -name "R_O_*" -mtime "+$Dias" -exec rm -rv {} +
+find "$1/regen_omv"/ -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
 # -mmin = minutos  ///  -mtime = dias
 
 [ $Id ] && echo -e "\n       ¡Hecho!\n" || echo -e "\n       Done!\n"

@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# Guarda este archivo de texto en   /home/regen-omv.sh
-# Convierte el archivo en ejecutable con   chmod +x /home/regen-omv.sh
-# Programa una tarea diaria en la GUI que ejecute   /home/regen.sh /PATH_TO_BACKUP
-# Reemplaza /PATH_TO_BACKUP por la ruta a tu carpeta de backups.
+# Crea la carpeta /home/regen y copia en ella los scripts
+# Otorgar permisos de ejecución->
+#         chmod +x /home/regen/regen-omv-backup.sh
+#         chmod +x /home/regen/regen-omv-regenera.sh
+# Programa una tarea diaria en la GUI que ejecute->   /home/regen/regen-omv-backup.sh /[PATH_TO_BACKUP]
+# Reemplaza /[PATH_TO_BACKUP] por la ruta a tu carpeta de backups.
 # Consejo;) Programa una tarea semanal con notificaciones y una diaria sin notificaciones.
 
 # Copy this text file to    /home/regen-omv.sh
@@ -19,66 +21,90 @@ Dias=7
 # Personaliza las carpetas "/foo" que quieres respaldar
 # Customize the "/foo" folders you want to back up
 declare -a Origen=( "/home" "/etc/libvirt/qemu" "/etc/wireguard" )
-
+VersPlugins=VersionPlugins
+VersKernel=VersionKernel
+VersOMV=VersionOMV
+Usuarios=Usuarios
+Red=Red
+BaseDatos=config.xml
 Fecha=$(date +%y%m%d_%H%M)
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
 
-[ $Id ] && echo -e "\n       <<< Backup para regenerar sistema de fecha $Fecha >>>" || echo -e "\n       <<< Backup to regenerate system dated $Fecha >>>"
 
-if [ "$1" ] && [ ! "$2" ]; then
-  Destino="$1/regen_omv/ROB_$Fecha"
-  mkdir -p "$Destino"
-  [ $Id ] && echo -e "\n       Se eliminarán los backups de más de $Dias días.\n       Para conservarlo cambia el prefijo a ROB_$Fecha\n" || echo -e "\n       Backups older than $Dias days will be deleted.\n       To keep it change the prefix to ROB_$Fecha\n"
-  else
-    [ $Id ] && echo -e "\n                  ¡¡ NO SE HA HECHO EL BACKUP !!\n\n       Escribe la ruta después del comando  -> regen-omv.sh /path_to/backup\n       Si hay espacios usa comillas -> regen-omv.sh \"/path to/backup\"\n" || echo -e "\n                  THE BACKUP HAS NOT BEEN DONE !!\n\n       Write the backup path after the command -> regen-omv.sh /path_to/backup\n       If there are spaces use quotes -> regen-omv.sh \"/path to/backup\"\n"
-    exit
+
+if [[ $(id -u) -ne 0 ]]; then
+  [ ! $Id ] && echo "This script must be executed as root or using sudo.  Exiting..." || echo "Este script se debe ejecutar como root o usando sudo.  Saliendo..."
+  exit
 fi
 
-[ $Id ] && echo ">>>    Extrayendo base de datos a $Destino..." || echo ">>>    Extracting database to $Destino..."
-rsync -av /etc/openmediavault/config.xml "$Destino"/
+if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
+  [ ! $Id ] && echo "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." || echo "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
+  exit
+fi
 
-[ $Id ] && echo ">>>    Creando lista de complementos..." || echo ">>>    Creating plugin list..."
-dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "$Destino"/VersionPlugins
-sed -i '/keyring/d' "$Destino"/VersionPlugins
-Cat "$Destino"/VersionPlugins
+for i in $@
+do 
+  if [ ! -d "$i" ]; then
+  [ ! $Id ] && echo "Path $i not found.  The first parameter is the path of the backup, the following are optional folders to copy from the source.  Use quotes if there are spaces.  Exiting..." || echo "No se ha encontrado la ruta $i.  El primer parámetro es la ruta del backup, los siguientes son carpetas opcionales para copiar desde el origen.  Utiliza comillas si hay espacios.  Saliendo..."
+  exit
+  fi
+done
 
-[ $Id ] && echo ">>>    Creando lista de usuarios y UIDs..." || echo ">>>    Creating list of users and UIDs..."
-awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "$Destino"/Lista_usuarios
+if [[ -n $1 ]]; then
+  Destino="$1/regen/ROB_${Fecha}"
+  mkdir -p "${Destino}"
+else  
+  [ ! $Id ] && echo "The first parameter is the path of the backup.  Use quotes if there are spaces.  Exiting..." || echo "No se ha encontrado la ruta para el backup.  Utiliza comillas si hay espacios.  Saliendo..."
+  exit
+fi
 
-[ $Id ] && echo ">>>    Extrayendo red..." || echo ">>>    Extracting network..."
-cat /etc/openmediavault/config.xml | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | awk 'NR==2{print $0}' | tee "$Destino"/Red
+[ ! $Id ] && echo -e "\n       <<< Backup to regenerate system dated ${Fecha} >>>" || echo -e "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>"
+[ ! $Id ] && echo -e "\n       Backups older than ${Dias} days will be deleted.\n       To keep it change the prefix to ROB_${Fecha}\n" || echo -e "\n       Se eliminarán los backups de más de ${Dias} días.\n       Para conservarlo cambia el prefijo a ROB_${Fecha}\n"
 
-[ $Id ] && echo ">>>    Extrayendo versión del kernel..." || echo ">>>    Extracting kernel version..."
-uname -r | tee "$Destino"/VersionKernel
+[ ! $Id ] && echo ">>>    Extracting database to ${Destino}..." || echo ">>>    Extrayendo base de datos a ${Destino}..."
+rsync -av /etc/openmediavault/config.xml "${Destino}"/
 
-[ $Id ] && echo ">>>    Extrayendo versión de OMV..." || echo ">>>    Extracting OMV version..."
-dpkg -l | awk '$2 == "openmediavault" { print $2" "$3 }'| tee "$Destino"/VersionOMV
+[ ! $Id ] && echo ">>>    Creating plugin list..." || echo ">>>    Creando lista de complementos..."
+dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "${Destino}"/"${VersPlugins}"
+sed -i '/keyring/d' "${Destino}"/"${VersPlugins}"
+cat "${Destino}"/"${VersPlugins}"
 
-if [ "${Origen[0]}" ]; then
-  [ $Id ] && echo ">>>    Copiando carpetas personalizadas..." || echo ">>>    Copying custom folders..."
-  for i in "${Origen[@]}"; do
-    [ $Id ] && echo ">>>    Copiando datos de $i..." || echo ">>>    Copying data from $i..."
-    if [ ! -d "$i" ]; then
-      [ $Id ] && echo ">>>    La carpeta $i no existe en el origen. ¡No se copia!" || echo ">>>    The folder $i does not exist in the source. It is not copied!"
-    else
-      mkdir -p "$Destino$i"
-      rsync -av --delete "$i"/ "$Destino$i"
-    fi
+[ ! $Id ] && echo ">>>    Creating list of users and UIDs..." || echo ">>>    Creando lista de usuarios y UIDs..."
+awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "${Destino}"/"${Usuarios}"
+
+[ ! $Id ] && echo ">>>    Extracting network..." || echo ">>>    Extrayendo red..."
+cat "${Destino}"/"${BaseDatos}" | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | awk 'NR==2{print $0}' | tee "${Destino}"/"${Red}"
+
+[ ! $Id ] && echo ">>>    Extracting kernel version..." || echo ">>>    Extrayendo versión del kernel..."
+uname -r | tee "${Destino}"/"${VersKernel}"
+
+[ ! $Id ] && echo ">>>    Extracting OMV version..." || echo ">>>    Extrayendo versión de OMV..."
+dpkg -l | awk '$2 == "openmediavault" { print $2" "$3 }'| tee "${Destino}"/"${VersOMV}"
+
+[ ! $Id ] && echo ">>>    Copying regeneration script..." || echo ">>>    Copiando script de regeneración..."
+cp -av /home/regen-omv-regenera.sh "${Destino}"/regen-omv-regenera.sh
+
+if [ "$2" ]; then
+  [ ! $Id ] && echo ">>>    Copying aditional folders..." || echo ">>>    Copiando carpetas adicionales..."
+  for i in {2..$@}; do
+    [ ! $Id ] && echo ">>>    Copying data from $i..." || echo ">>>    Copiando datos de $i..."
+    mkdir -p "${Destino}$i"
+    rsync -av "$i"/ "${Destino}$i"
   done
 else
-  [ $Id ] && echo ">>>    No se han definido carpetas personalizadas en el origen." || echo ">>>    No custom folders are defined in the source."
+  [ ! $Id ] && echo ">>>    No aditional folders are defined." || echo ">>>    No se han definido carpetas adicionales."
 fi
 
-[ $Id ] && echo ">>>    Eliminando backups de más de $Dias días..." || echo ">>>    Deleting backups larger than $Dias days..."
+[ ! $Id ] && echo ">>>    Deleting backups larger than ${Dias} days..." || echo ">>>    Eliminando backups de más de ${Dias} días..."
 # PUEDE SER PELIGROSO modificar la siguiente línea. Asegúrate de lo que cambias.
 # It MAY BE DANGEROUS to modify the following line. Make sure what you change.
-find "$1/regen_omv"/ -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
+find "$1/regen"/ -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
 # -mmin = minutos  ///  -mtime = dias
 
-[ $Id ] && echo -e "\n       ¡Hecho!\n" || echo -e "\n       Done!\n"
+[ ! $Id ] && echo -e "\n       Done!\n" || echo -e "\n       ¡Hecho!\n"
 
-Msp="$Destino"/Leeme; touch $Msp
-Men="$Destino"/Readme; touch $Men
+Msp="${Destino}"/Leeme; touch $Msp
+Men="${Destino}"/Readme; touch $Men
 
 echo -e "                     __________________________________________                      " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
@@ -88,17 +114,13 @@ echo -e "                                                                       
 echo -e "ACTUALIZA EL SISTEMA ORIGINAL Y HAZ UN BACKUP con este script.                       " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "INSTALA OMV en tu servidor y actualiza (puedes usar un disco diferente).             " >> "$Msp"
-echo -e "  - Conecta los discos de datos.                                                     " >> "$Msp"
-echo -e "  - Instala los complementos de la lista a continuación.                             " >> "$Msp"
-echo -e "      - Si tenías docker instálalo ahora.                                            " >> "$Msp"
-echo -e "      - Si usas ZFS cambia el kernel a proxmox.                                      " >> "$Msp"
-echo -e "  - No configures nada.                                                              " >> "$Msp"
+echo -e "  - Conecta los discos de datos. No configures nada.                                 " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-echo -e "CREA LOS USUARIOS de la lista siguiendo el orden de sus UID. Primero el 1000...      " >> "$Msp"
-echo -e "  - Puedes cambiar las contraseñas si las has perdido. No son necesarias.            " >> "$Msp"
-echo -e "  - Cambia la contraseña del usuario admin, ahora es la predeterminada.              " >> "$Msp"
+echo -e "COPIA LA CARPETA DE TU BACKUP a /home                                                " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-echo -e "REEMPLAZA LA BASE DE DATOS de Openmediavault.                                        " >> "$Msp"
+echo -e "EJECUTA EL ARCHIVO regen-omv-regenera.sh que está dentro de la carpeta.              " >> "$Msp"
+echo -e "  - Usa la ruta del backup como parámetro -> regen-omv-regenera.sh /regen/backup     " >> "$Msp"
+echo -e "                                     " >> "$Msp"
 echo -e "  - Copia el archivo config.xml de tu backup a /etc/openmediavault/config.xml        " >> "$Msp"
 echo -e "  - Implementa la nueva configuración, ejecuta estos comandos:                       " >> "$Msp"
 echo -e "          omv-salt stage run prepare                                                 " >> "$Msp"
@@ -112,19 +134,19 @@ echo -e "                     __________________________________________        
 echo -e "                                                                                     " >> "$Msp"
 echo -e "  LISTA DE ComplementoMPLEMENTOS INSTALADOS Y NÚMERO DE VERSIÓN                               " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-cat "$Destino"/Lista_complementos >> "$Msp"
+cat "${Destino}"/"${VersPlugins}" >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "                     __________________________________________                      " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "  LISTA DE USUARIOS Y UIDs                                                           " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-cat "$Destino"/Lista_usuarios >> "$Msp"
+cat "${Destino}"/"${Usuarios}" >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "                     __________________________________________                      " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "  RED                                                                                " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-sed -n '2p' "$Destino"/Red >> "$Msp"
+cat "${Destino}"/"${Red}" >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e " Más información aquí. https://forum.openmediavault.org/index.php?thread/47111-how-to-regenerate-a-complete-omv-system/" >> "$Msp"
@@ -162,19 +184,19 @@ echo -e "                     __________________________________________        
 echo -e "                                                                                     " >> "$Men"
 echo -e "  LIST OF INSTALLED PLUG-INS AND VERSION NUMBER                                      " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-cat "$Destino"/Lista_complementos >> "$Men"
+cat "${Destino}"/"${VersPlugins}" >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "                     __________________________________________                      " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "  LIST OF USERS AND UIDs                                                             " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-cat "$Destino"/Lista_usuarios >> "$Men"
+cat "${Destino}"/"${Usuarios}" >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "                     __________________________________________                      " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "  NETWORK                                                                            " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-sed -n '2p' "$Destino"/Red >> "$Men"
+cat "${Destino}"/"${Red}" >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e " More information here. https://forum.openmediavault.org/index.php?thread/47111-how-to-regenerate-a-complete-omv-system/" >> "$Men"

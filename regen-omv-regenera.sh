@@ -9,7 +9,7 @@
 
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
 declare -A ArchivosBackup
-ArchivosBackup=([BackupConfig]='config.xml' [BackupComplementos]='Lista_complementos' [BackupUsuarios]='Lista_usuarios' [BRed]='Red' [BackupKernel]='Kernel')
+ArchivosBackup=([BackupConfig]='config.xml' [BackupComplementos]='Lista_complementos' [BackupUsuarios]='"${Usuarios}"' [BRed]='Red' [BackupKernel]='Kernel')
 declare -a ComplemInstalar
 Extras=0
 Kernel=0
@@ -22,12 +22,12 @@ confCmd="omv-salt deploy run"
 
 
 if [[ $(id -u) -ne 0 ]]; then
-  echo "This script must be executed as root or using sudo."
+  [ ! $Id ] && echo "This script must be executed as root or using sudo." || echo "Este script se debe ejecutar como root o usando sudo."
   exit
 fi
 
 if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
-  echo "Unsupported version.  Only OMV 6.x. are supported.  Exiting..."
+  [ ! $Id ] && echo "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." || echo "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
   exit
 fi
 

@@ -48,6 +48,9 @@ awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "$Destino"/Lista
 [ $Id ] && echo ">>>    Extrayendo red..." || echo ">>>    Extracting network..."
 cat /etc/openmediavault/config.xml | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | tee "$Destino"/Red
 
+[ $Id ] && echo ">>>    Extrayendo kernel..." || echo ">>>    Extracting kernel..."
+uname -r | tee "$Destino"/Kernel
+
 if [ "${Origen[0]}" ]; then
   [ $Id ] && echo ">>>    Copiando carpetas personalizadas..." || echo ">>>    Copying custom folders..."
   for i in "${Origen[@]}"; do

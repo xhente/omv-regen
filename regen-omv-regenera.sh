@@ -9,7 +9,7 @@
 
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
 declare -A ArchivosBackup
-ArchivosBackup=([BackupConfig]='config.xml' [BackupComplementos]='Lista_complementos' [BackupUsuarios]='Lista_usuarios' [BRed]='Red')
+ArchivosBackup=([BackupConfig]='config.xml' [BackupComplementos]='Lista_complementos' [BackupUsuarios]='Lista_usuarios' [BRed]='Red' [BackupKernel]='Kernel')
 declare -a ComplemInstalar
 Extras=0
 Kernel=0
@@ -17,6 +17,7 @@ ZFS=0
 Shareroot=0
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
+
 
 if [[ $(id -u) -ne 0 ]]; then
   echo "This script must be executed as root or using sudo."
@@ -28,6 +29,19 @@ if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
   exit
 fi
 
+# Comprobar si la arquitectura es la misma y si los discos están conectados.
+# ¡¡REVISAR ESTO!! Copiado de openmediavault-kernel
+case "$(/usr/bin/arch)" in
+  *amd64*|*x86_64*)
+    echo "Supported kernel found"
+    ;;
+  *)
+    echo "Unsupported kernel and/or processor"
+    exit 1
+    ;;
+esac
+
+# Inicia regeneración
 [ $Id ] && echo -e "\n       <<< Regenerando el sistema >>>" || echo -e "\n       <<< TRADUCCION >>>"
 
 # Actualizar sistema
@@ -59,6 +73,7 @@ do
     Extras=1
   fi
   if [ ComplemInstalar[i] = "openmediavault-kernel" ]; then
+    # Comprobar si hay kernel proxmox instalado
     Kernel=1
   fi
   if [ ComplemInstalar[i] = "openmediavault-ZFS" ]; then
@@ -144,6 +159,10 @@ done
 
 # Instalar Kernel proxmox si estaba en el sistema original
 if [ $Kernel = "1" ]; then
+  # Definir el parámetro $1 como kernel a instalar
+  source /usr/sbin/omv-installproxmox
+fi
+
   # Averiguar version de kernel original e instalar
 fi
 
@@ -160,7 +179,7 @@ omv-salt stage run deploy
 
 # Reinstalar openmediavault-sharerootfs
 if [ $Shareroot = "1" ]; then
-  . /usr/share/openmediavault/scripts/helper-functions
+  source /usr/share/openmediavault/scripts/helper-functions
   uuid="79684322-3eac-11ea-a974-63a080abab18"
   if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
     omv-confdbadm delete --uuid "${uuid}" "conf.system.filesystem.mountpoint"

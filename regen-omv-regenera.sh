@@ -126,14 +126,16 @@ fi
 for i in ComplemInstalar[@]
 do
   if [ ! $ComplemInstalar[i] = "openmediavault" ] && [ ! $ComplemInstalar[i] = "openmediavault-omvextrasorg" ]; then
-    echo "Installing $ComplemInstalar[i]"
-    if ! apt-get install "$ComplemInstalar[i]"; then
-      echo "failed installing $ComplemInstalar[i] package."
+    echo "Install $ComplemInstalar[i]"
+    if ! apt-get --yes install "$ComplemInstalar[i]"; then
+      echo "failed to install $ComplemInstalar[i] plugin."
+      ${confCmd} "$ComplemInstalar[i]"
+      apt-get --yes --fix-broken install
       exit
     else
       CompII=$(dpkg -l | awk '$2 == "$ComplemInstalar[i]" { print $1 }')
       if [[ ! "${CompII}" == "ii" ]]; then
-        echo "$ComplemInstalar[i] package failed to install or is in a bad state."
+        echo "$ComplemInstalar[i] plugin failed to install or is in a bad state."
         exit
       fi
     fi
@@ -150,13 +152,21 @@ if [ $ZFS = "1" ]; then
   # Importar pools
 fi
 
-# Reinstalar openmediavault-sharerootfs
-
 # Generar usuarios
 
 # Sustituir base de datos e implementar
 omv-salt stage run prepare
 omv-salt stage run deploy
+
+# Reinstalar openmediavault-sharerootfs
+if [ $Shareroot = "1" ]; then
+  . /usr/share/openmediavault/scripts/helper-functions
+  uuid="79684322-3eac-11ea-a974-63a080abab18"
+  if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
+    omv-confdbadm delete --uuid "${uuid}" "conf.system.filesystem.mountpoint"
+  fi
+  apt-get install --reinstall openmediavault-sharerootfs
+fi
 
 # Reiniciar
 reboot

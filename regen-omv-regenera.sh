@@ -7,7 +7,7 @@
 # Formato de uso    regen-omv-regenera PATH_TO_BACKUP
 # Por ejemplo       regen-omv-regenera /home/backup230401
 
-[ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
+Sp=1; [ $(cut -b 7,8 /etc/default/locale) = es ] && Sp=""
 declare -A Backup
 Backup[VersPlugins]='/VersionPlugins'
 Backup[VersKernel]='/VersionKernel'
@@ -17,7 +17,7 @@ Backup[Red]='/Red'
 Backup[BaseDatos]='/etc/openmediavault/config.xml'
 Backup[ArchPasswd]='/etc/passwd'
 Backup[ArchShadow]='/etc/shadow'
-Ruta=$1
+Ruta=$1; shift
 declare -a ComplemInstalar
 Extras=0
 Kernel=0
@@ -30,56 +30,53 @@ confCmd="omv-salt deploy run"
 
 
 if [[ $(id -u) -ne 0 ]]; then
-  [ ! $Id ] && echo "This script must be executed as root or using sudo." || echo "Este script se debe ejecutar como root o usando sudo."
+  [ $Sp ] && echo "This script must be executed as root or using sudo." || echo "Este script se debe ejecutar como root o mediante sudo."
   exit
 fi
 
 if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
-  [ ! $Id ] && echo "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." || echo "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
+  [ $Sp ] && echo "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." || echo "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
   exit
+fi
+
+if [ -z "$Ruta" ]; then
+  [ $Sp ] && echo "TRADUCCION" || echo "Escribe la ruta del backup después del comando->  regen-omv-regenera.sh /PATH_TO/BACKUP"
+  exit
+else
+  if [ "$1" ]; then
+    [ $Sp ] && echo "TRADUCCION" || echo "Si hay espacios en la ruta del backup usa comillas->  regen-omv-regenera.sh \"/PATH TO/BACKUP\""
+    exit
+  fi
 fi
 
 # Comprobar si la arquitectura es la misma y si los discos están conectados.
 #                              ¡¡REVISAR ESTO!!       Copiado de openmediavault-kernel
-case "$(/usr/bin/arch)" in
-  *amd64*|*x86_64*)
-    echo "Supported kernel found"
-    ;;
-  *)
-    echo "Unsupported kernel and/or processor"
-    exit 1
-    ;;
-esac
-
-# Inicia regeneración
-[ $Id ] && echo -e "\n       <<< Regenerando el sistema >>>" || echo -e "\n       <<< TRADUCCION >>>"
-
-# Actualizar sistema
-if ! omv-upgrade; then
-  echo "failed updating system"
-  exit
-fi
+#case "$(/usr/bin/arch)" in
+#  *amd64*|*x86_64*)
+#    echo "Supported kernel found"
+#    ;;
+#  *)
+#    echo "Unsupported kernel and/or processor"
+#    exit 1
+#    ;;
+#esac
 
 # Comprobar si están todos los archivos del backup
-if [ "$1" ] && [ ! "$2" ]; then
-  for i in ${Backup[@]}; do
-    if [ ! -f "${Ruta}$i" ]; then
-      [ $Id ] && echo ">>>    El archivo $1$i no existe.\n>>>    Asegúrate de introducir la ruta correcta." || echo ">>>    TRADUCCION"
-      exit
-    fi
-  done
-else
-  [ $Id ] && echo -e "\n      Escribe la ruta después del comando  -> regen-omv-regenera.sh /path_to/backup\n      Si hay espacios usa comillas -> regen-omv-regenera.sh \"/path to/backup\"\n" || echo -e "\nTRADUCCION"
+
+for i in ${Backup[@]}; do
+  if [ ! -f "${Ruta}$i" ]; then
+    [ $Sp ] && echo "TRADUCCION" || echo "El archivo $i no existe en ${Ruta}.  Saliendo..."
     exit
-fi
+  fi
+done
 
 # Comprobar versiones. Comprobar si existía omv-extras, kernel y zfs
 for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
 do
   ComplemInstalar[i]=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
   VersionOriginal=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
-  VersionDisponible=$(apt-cache policy "$ComplemInstalar[i]" | awk -F ": " 'NR==2{print $2}')
-  if [ ComplemInstalar[i] = "openmediavault-omvextrasorg" ]; then
+  VersionDisponible=$(apt-cache policy "$i" | awk -F ": " 'NR==2{print $2}')
+  if [ "${ComplemInstalar[i]}" = "openmediavault-omvextrasorg" ]; then
     Extras=1
   fi
   if [ ComplemInstalar[i] = "openmediavault-kernel" ]; then
@@ -92,17 +89,30 @@ do
     Shareroot=1
   fi
   if [ "$VersionOriginal" != "$VersionDisponible" ]; then
-    echo "La versión del backup $ComplemInstalar[i] $VersionOriginal no coincide con la versión que se va a instalar $ComplemInstalar[i] $VersionDisponible"
+    [ $Sp ] && echo "TRADUCCION" || echo "La versión del complemento delsistema original $ComplemInstalar[i] $VersionOriginal no coincide con la versión disponible en internet $ComplemInstalar[i] $VersionDisponible"
     while true; do
-      read -p "Forzar la regeneración puede provocar errores de configuración ¿quieres forzar? (yes/no): " yn
+      [ $Sp ] && read -p "TRADUCCION" yn || read -p "Forzar la regeneración puede provocar errores de configuración ¿quieres forzar? (yes/no): " yn
       case $yn in
-        [yY]* ) break;;
+        [yYsS]* ) break;;
         [nN]* ) exit;;
-        * ) echo "Responde yes o no: ";;
+        * ) [ $Sp ] && echo "TRADUCCION";; || echo "Responde si o no: ";;
       esac
     done
   fi
 done
+
+echo "fin"
+exit
+
+
+# Inicia regeneración
+[ $Sp ] && echo -e "\n       <<< TRADUCCION >>>" || echo -e "\n       <<< Regenerando el sistema >>>"
+
+# Actualizar sistema
+if ! omv-upgrade; then
+  echo "failed updating system"
+  exit
+fi
 
 # Instalar omv-extras si existía y no está instalado
 omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
@@ -149,17 +159,17 @@ fi
 # Instalar complementos
 for i in ComplemInstalar[@]
 do
-  if [ ! $ComplemInstalar[i] = "openmediavault" ] && [ ! $ComplemInstalar[i] = "openmediavault-omvextrasorg" ]; then
-    echo "Install $ComplemInstalar[i]"
-    if ! apt-get --yes install "$ComplemInstalar[i]"; then
-      echo "failed to install $ComplemInstalar[i] plugin."
-      ${confCmd} "$ComplemInstalar[i]"
+  if [ ! "$i" = "openmediavault" ] && [ ! "$i" = "openmediavault-omvextrasorg" ]; then
+    echo "Install $i"
+    if ! apt-get --yes install "$i"; then
+      echo "failed to install $i plugin."
+      ${confCmd} "$i"
       apt-get --yes --fix-broken install
       exit
     else
-      CompII=$(dpkg -l | awk '$2 == "$ComplemInstalar[i]" { print $1 }')
+      CompII=$(dpkg -l | awk '$2 == "$i" { print $1 }')
       if [[ ! "${CompII}" == "ii" ]]; then
-        echo "$ComplemInstalar[i] plugin failed to install or is in a bad state."
+        echo "$i plugin failed to install or is in a bad state."
         exit
       fi
     fi

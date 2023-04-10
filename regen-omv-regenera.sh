@@ -18,7 +18,6 @@ Backup[BaseDatos]='/etc/openmediavault/config.xml'
 Backup[ArchPasswd]='/etc/passwd'
 Backup[ArchShadow]='/etc/shadow'
 Ruta=$1; shift
-declare -a ComplemInstalar
 Extras=0
 Kernel=0
 ZFS=0
@@ -73,37 +72,33 @@ done
 # Comprobar versiones. Comprobar si existía omv-extras, kernel y zfs
 for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
 do
-  ComplemInstalar[i]=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
-  VersionOriginal=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
-  VersionDisponible=$(apt-cache policy "$i" | awk -F ": " 'NR==2{print $2}')
-  if [ "${ComplemInstalar[i]}" = "openmediavault-omvextrasorg" ]; then
+  Plugin=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
+  VersionOrig=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
+  VersionDisp=$(apt-cache policy "$Plugin" | awk -F ": " 'NR==2{print $2}')
+  if [ "${Plugin}" = "openmediavault-omvextrasorg" ]; then
     Extras=1
   fi
-  if [ ComplemInstalar[i] = "openmediavault-kernel" ]; then
+  if [ "${Plugin}" = "openmediavault-kernel" ]; then
     Kernel=1
   fi
-  if [ ComplemInstalar[i] = "openmediavault-ZFS" ]; then
+  if [ "${Plugin}" = "openmediavault-zfs" ]; then
     ZFS=1
   fi
-  if [ ComplemInstalar[i] = "openmediavault-sharerootfs" ]; then
+  if [ "${Plugin}" = "openmediavault-sharerootfs" ]; then
     Shareroot=1
   fi
-  if [ "$VersionOriginal" != "$VersionDisponible" ]; then
-    [ $Sp ] && echo "TRADUCCION" || echo "La versión del complemento delsistema original $ComplemInstalar[i] $VersionOriginal no coincide con la versión disponible en internet $ComplemInstalar[i] $VersionDisponible"
+  if [ "$VersionOrig" != "$VersionDisp" ]; then
+    [ $Sp ] && echo "TRADUCCION" || echo "La versión disponible para instalar el complemento $Plugin es $VersionDisp  No coincide con la versión del sistema original $VersionOrig   Forzar la regeneración en estas condiciones puede provocar errores de configuración."
     while true; do
-      [ $Sp ] && read -p "TRADUCCION" yn || read -p "Forzar la regeneración puede provocar errores de configuración ¿quieres forzar? (yes/no): " yn
+      [ $Sp ] && read -p "TRADUCCION" yn || read -p "Se recomienda abortar la regeneración ¿quieres abortar? (yes/no): " yn
       case $yn in
-        [yYsS]* ) break;;
-        [nN]* ) exit;;
-        * ) [ $Sp ] && echo "TRADUCCION";; || echo "Responde si o no: ";;
+        [yYsS]* ) [ $Sp ] && echo "TRADUCCION" || echo "Saliendo..."; exit;;
+        [nN]* ) break;;
+        * ) [ $Sp ] && echo "TRADUCCION" || echo "Responde si o no: ";;
       esac
     done
   fi
 done
-
-echo "fin"
-exit
-
 
 # Inicia regeneración
 [ $Sp ] && echo -e "\n       <<< TRADUCCION >>>" || echo -e "\n       <<< Regenerando el sistema >>>"

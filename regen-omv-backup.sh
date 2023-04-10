@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Crea la carpeta /home/regen y copia en ella los scripts
+# Copia los scripts en /home
 # Otorgar permisos de ejecución->
-#         chmod +x /home/regen/regen-omv-backup.sh
-#         chmod +x /home/regen/regen-omv-regenera.sh
-# Programa una tarea diaria en la GUI que ejecute->   /home/regen/regen-omv-backup.sh /[PATH_TO_BACKUP]
+#         chmod +x /home/omv-regen-backup.sh
+#         chmod +x /home/omv-regen-regenera.sh
+# Programa una tarea diaria en la GUI que ejecute->   /home/omv-regen-backup.sh /[PATH_TO_BACKUP]
 # Reemplaza /[PATH_TO_BACKUP] por la ruta a tu carpeta de backups.
 # Consejo;) Programa una tarea semanal con notificaciones y una diaria sin notificaciones.
 
@@ -18,13 +18,19 @@
 # Backups are kept for 7 days. Modify Dias to vary it.
 Dias=7
 
+# Carpetas quesecopian por defecto
 declare -a Origen=( "/home" "/etc/libvirt/qemu" "/etc/wireguard" )
-VersPlugins=VersionPlugins
-VersKernel=VersionKernel
-VersOMV=VersionOMV
-Usuarios=Usuarios
-Red=Red
-BaseDatos=config.xml
+
+# Archivos generados para el backup
+VersPlugins=/VersionPlugins
+VersKernel=/VersionKernel
+VersOMV=/VersionOMV
+Usuarios=/Usuarios
+Red=/Red
+BaseDatos=/etc/openmediavault/config.xml
+ArchPasswd=/etc/passwd
+ArchShadow=/etc/shadow
+
 Fecha=$(date +%y%m%d_%H%M)
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
 
@@ -46,10 +52,9 @@ for i in $@; do
 done
 
 if [[ -n $1 ]]; then
-  Ruta=$1
+  Ruta="$1"
   shift
-  Destino="$Ruta/regen/ROB_${Fecha}"
-  mkdir -p "${Destino}"
+  Destino="${Ruta}/regen/ROB_${Fecha}"
 else  
   [ ! $Id ] && echo "The first parameter is the path of the backup.  Use quotes if there are spaces.  Exiting..." || echo "El primer parámetro es la ruta del backup, los siguientes son carpetas adicionales para copiar al backup.  Utiliza comillas si hay espacios.  Saliendo..."
   exit
@@ -58,39 +63,30 @@ fi
 [ ! $Id ] && echo -e "\n       <<< Backup to regenerate system dated ${Fecha} >>>" || echo -e "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>"
 [ ! $Id ] && echo -e "\n       Backups older than ${Dias} days will be deleted.\n       To keep it change the prefix to ROB_${Fecha}\n" || echo -e "\n       Se eliminarán los backups de más de ${Dias} días.\n       Para conservarlo cambia el prefijo a ROB_${Fecha}\n"
 
-[ ! $Id ] && echo ">>>    Extracting database to ${Destino}..." || echo ">>>    Extrayendo base de datos a ${Destino}..."
-rsync -av /etc/openmediavault/config.xml "${Destino}"/
-
-[ ! $Id ] && echo ">>>    Creating plugin list..." || echo ">>>    Creando lista de complementos..."
-dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "${Destino}"/"${VersPlugins}"
-sed -i '/keyring/d' "${Destino}"/"${VersPlugins}"
-cat "${Destino}"/"${VersPlugins}"
-
-[ ! $Id ] && echo ">>>    Creating list of users and UIDs..." || echo ">>>    Creando lista de usuarios y UIDs..."
-awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "${Destino}"/"${Usuarios}"
-[ ! -d "${Destino}"/etc ] && mkdir "${Destino}"/etc
-cp -av /etc/passwd "${Destino}"/etc/passwd
-cp -av /etc/shadow "${Destino}"/etc/shadow
-
-[ ! $Id ] && echo ">>>    Extracting network..." || echo ">>>    Extrayendo red..."
-cat "${Destino}"/"${BaseDatos}" | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | awk 'NR==2{print $0}' | tee "${Destino}"/"${Red}"
-
-[ ! $Id ] && echo ">>>    Extracting kernel version..." || echo ">>>    Extrayendo versión del kernel..."
-uname -r | tee "${Destino}"/"${VersKernel}"
-
-[ ! $Id ] && echo ">>>    Extracting OMV version..." || echo ">>>    Extrayendo versión de OMV..."
-dpkg -l | awk '$2 == "openmediavault" { print $2" "$3 }'| tee "${Destino}"/"${VersOMV}"
-
-[ ! $Id ] && echo ">>>    Copying regen scripts..." || echo ">>>    Copiando scripts regen..."
+[ ! $Id ] && echo ">>>    Copying data to ${Destino}..." || echo ">>>    Copiando datos a ${Destino}..."
+mkdir -p "${Destino}/etc/openmediavault"
+cp -av "${BaseDatos}" "${Destino}${BaseDatos}"
+cp -av "${ArchPasswd}" "${Destino}${ArchPasswd}"
+cp -av "${ArchShadow}" "${Destino}${ArchShadow}"
 cp -av /home/regen-omv-backup.sh "${Destino}"/regen-omv-backup.sh
 cp -av /home/regen-omv-regenera.sh "${Destino}"/regen-omv-regenera.sh
 
-while [ "$*" ]; do
-  [ ! $Id ] && echo ">>>    Copying data from $1..." || echo ">>>    Copiando datos de $1..."
-  mkdir -p "${Destino}$1"
-  rsync -av "$1"/ "${Destino}$1"
-  shift
-done
+[ ! $Id ] && echo ">>>    Creating plugin list..." || echo ">>>    Creando lista de complementos..."
+dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "${Destino}${VersPlugins}"
+sed -i '/keyring/d' "${Destino}${VersPlugins}"
+cat "${Destino}${VersPlugins}"
+
+[ ! $Id ] && echo ">>>    Creating list of users and UIDs..." || echo ">>>    Creando lista de usuarios y UIDs..."
+awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "${Destino}${Usuarios}"
+
+[ ! $Id ] && echo ">>>    Extracting network..." || echo ">>>    Extrayendo red..."
+cat "${Destino}${BaseDatos}" | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | awk 'NR==2{print $0}' | tee "${Destino}${Red}"
+
+[ ! $Id ] && echo ">>>    Extracting kernel version..." || echo ">>>    Extrayendo versión del kernel..."
+uname -r | tee "${Destino}${VersKernel}"
+
+[ ! $Id ] && echo ">>>    Extracting OMV version..." || echo ">>>    Extrayendo versión de OMV..."
+dpkg -l | awk '$2 == "openmediavault" { print $2" "$3 }'| tee "${Destino}${VersOMV}"
 
 for i in ${Origen[@]}; do
   [ ! $Id ] && echo ">>>    Copying data from $i..." || echo ">>>    Copiando datos de $i..."
@@ -98,10 +94,17 @@ for i in ${Origen[@]}; do
   rsync -av "$i"/ "${Destino}$i"
 done
 
+while [ "$*" ]; do
+  [ ! $Id ] && echo ">>>    Copying data from $1..." || echo ">>>    Copiando datos de $1..."
+  mkdir -p "${Destino}/personal$1"
+  rsync -av "$1"/ "${Destino}/personal$1"
+  shift
+done
+
 [ ! $Id ] && echo ">>>    Deleting backups larger than ${Dias} days..." || echo ">>>    Eliminando backups de más de ${Dias} días..."
 # PUEDE SER PELIGROSO modificar la siguiente línea. Asegúrate de lo que cambias.
 # It MAY BE DANGEROUS to modify the following line. Make sure what you change.
-find "$Ruta/regen"/ -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
+find "${Ruta}/omv-regen"/ -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
 # -mmin = minutos  ///  -mtime = dias
 
 [ ! $Id ] && echo -e "\n       Done!\n" || echo -e "\n       ¡Hecho!\n"
@@ -119,8 +122,8 @@ echo -e "                                                                       
 echo -e "INSTALA OMV en tu servidor y actualiza (puedes usar un disco diferente).             " >> "$Msp"
 echo -e "  - Conecta los discos de datos. No configures nada.                                 " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-echo -e "EJECUTA EL ARCHIVO regen-omv-regenera.sh que está dentro del backup.                 " >> "$Msp"
-echo -e "  - Usa la ruta del backup como parámetro -> regen-omv-regenera.sh [PATH_TO_BACKUP]  " >> "$Msp"
+echo -e "EJECUTA EL ARCHIVO omv-regen-regenera.sh que está dentro del backup.                 " >> "$Msp"
+echo -e "  - Usa la ruta del backup como parámetro -> omv-regen-regenera.sh [PATH_TO_BACKUP]  " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "En este momento es imperativo tomarse una cerveza y esperar pacientemente.           " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
@@ -128,19 +131,19 @@ echo -e "                     __________________________________________        
 echo -e "                                                                                     " >> "$Msp"
 echo -e "  LISTA DE COMPLEMENTOS INSTALADOS Y NÚMERO DE VERSIÓN                               " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-cat "${Destino}"/"${VersPlugins}" >> "$Msp"
+cat "${Destino}${VersPlugins}" >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "                     __________________________________________                      " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "  LISTA DE USUARIOS Y UIDs                                                           " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-cat "${Destino}"/"${Usuarios}" >> "$Msp"
+cat "${Destino}${Usuarios}" >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "                     __________________________________________                      " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "  RED                                                                                " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
-cat "${Destino}"/"${Red}" >> "$Msp"
+cat "${Destino}${Red}" >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"
 
@@ -165,18 +168,18 @@ echo -e "                     __________________________________________        
 echo -e "                                                                                     " >> "$Men"
 echo -e "  LIST OF INSTALLED PLUG-INS AND VERSION NUMBER                                      " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-cat "${Destino}"/"${VersPlugins}" >> "$Men"
+cat "${Destino}${VersPlugins}" >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "                     __________________________________________                      " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "  LIST OF USERS AND UIDs                                                             " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-cat "${Destino}"/"${Usuarios}" >> "$Men"
+cat "${Destino}${Usuarios}" >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "                     __________________________________________                      " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "  NETWORK                                                                            " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-cat "${Destino}"/"${Red}" >> "$Men"
+cat "${Destino}${Red}" >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "                                                                                     " >> "$Men"

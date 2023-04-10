@@ -8,8 +8,16 @@
 # Por ejemplo       regen-omv-regenera /home/backup230401
 
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
-declare -A ArchivosBackup
-ArchivosBackup=([BackupConfig]='config.xml' [BackupComplementos]='Lista_complementos' [BackupUsuarios]='"${Usuarios}"' [BRed]='Red' [BackupKernel]='Kernel')
+declare -A Backup
+Backup[VersPlugins]='VersionPlugins'
+Backup[VersKernel]='VersionKernel'
+Backup[VersOMV]='VersionOMV'
+Backup[Usuarios]='Usuarios'
+Backup[Red]='Red'
+Backup[BaseDatos]='config.xml'
+Backup[ArchPasswd]='etc/passwd'
+Backup[ArchShadow]='etc/shadow'
+Ruta=$1
 declare -a ComplemInstalar
 Extras=0
 Kernel=0
@@ -32,7 +40,7 @@ if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
 fi
 
 # Comprobar si la arquitectura es la misma y si los discos están conectados.
-# ¡¡REVISAR ESTO!! Copiado de openmediavault-kernel
+#                              ¡¡REVISAR ESTO!!       Copiado de openmediavault-kernel
 case "$(/usr/bin/arch)" in
   *amd64*|*x86_64*)
     echo "Supported kernel found"
@@ -54,22 +62,22 @@ fi
 
 # Comprobar si están todos los archivos del backup
 if [ "$1" ] && [ ! "$2" ]; then
-  for i in ${ArchivosBackup[@]}; do
-    if [ ! -f "$1/$i" ]; then
+  for i in ${Backup[@]}; do
+    if [ ! -f "${Ruta}/$i" ]; then
       [ $Id ] && echo ">>>    El archivo $1/$i no existe.\n>>>    Asegúrate de introducir la ruta correcta." || echo ">>>    TRADUCCION"
       exit
     fi
   done
 else
-  [ $Id ] && echo -e "\n      No se han encontrado los archivos del backup\n\n       Escribe la ruta después del comando  -> regen-omv-regenera.sh /path_to/backup\n      Si hay espacios usa comillas -> regen-omv-regenera.sh \"/path to/backup\"\n" || echo -e "\nTRADUCCION"
+  [ $Id ] && echo -e "\n      Escribe la ruta después del comando  -> regen-omv-regenera.sh /path_to/backup\n      Si hay espacios usa comillas -> regen-omv-regenera.sh \"/path to/backup\"\n" || echo -e "\nTRADUCCION"
     exit
 fi
 
 # Comprobar versiones. Comprobar si existía omv-extras, kernel y zfs
-for i in $(awk '{print NR}' $1/${ArchivosBackup[BackupComplementos]})
+for i in $(awk '{print NR}' $1/${Backup[BackupComplementos]})
 do
-  ComplemInstalar[i]=$(awk -v i="$i" 'NR==i{print $1}' $1/${ArchivosBackup[BackupComplementos]})
-  VersionOriginal=$(awk -v i="$i" 'NR==i{print $2}' $1/${ArchivosBackup[BackupComplementos]})
+  ComplemInstalar[i]=$(awk -v i="$i" 'NR==i{print $1}' $1/${Backup[BackupComplementos]})
+  VersionOriginal=$(awk -v i="$i" 'NR==i{print $2}' $1/${Backup[BackupComplementos]})
   VersionDisponible=$(apt-cache policy "$ComplemInstalar[i]" | awk -F ": " 'NR==2{print $2}')
   if [ ComplemInstalar[i] = "openmediavault-omvextrasorg" ]; then
     Extras=1

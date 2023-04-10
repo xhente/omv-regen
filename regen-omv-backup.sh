@@ -67,9 +67,10 @@ sed -i '/keyring/d' "${Destino}"/"${VersPlugins}"
 cat "${Destino}"/"${VersPlugins}"
 
 [ ! $Id ] && echo ">>>    Creating list of users and UIDs..." || echo ">>>    Creando lista de usuarios y UIDs..."
-#awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "${Destino}"/"${Usuarios}"
+awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "${Destino}"/"${Usuarios}"
 [ ! -d "${Destino}"/etc ] && mkdir "${Destino}"/etc
 cp -av /etc/passwd "${Destino}"/etc/passwd
+cp -av /etc/shadow "${Destino}"/etc/shadow
 
 [ ! $Id ] && echo ">>>    Extracting network..." || echo ">>>    Extrayendo red..."
 cat "${Destino}"/"${BaseDatos}" | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | awk 'NR==2{print $0}' | tee "${Destino}"/"${Red}"

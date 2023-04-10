@@ -104,13 +104,13 @@ done
 [ ! $Id ] && echo ">>>    Deleting backups larger than ${Dias} days..." || echo ">>>    Eliminando backups de más de ${Dias} días..."
 # PUEDE SER PELIGROSO modificar la siguiente línea. Asegúrate de lo que cambias.
 # It MAY BE DANGEROUS to modify the following line. Make sure what you change.
-find "${Ruta}/omv-regen"/ -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
+find "${Ruta}/omv-regen/" -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
 # -mmin = minutos  ///  -mtime = dias
 
 [ ! $Id ] && echo -e "\n       Done!\n" || echo -e "\n       ¡Hecho!\n"
 
-Msp="${Destino}"/Leeme; touch $Msp
-Men="${Destino}"/Readme; touch $Men
+Msp="${Destino}/Leeme"; touch $Msp
+Men="${Destino}/Readme"; touch $Men
 
 echo -e "                     __________________________________________                      " >> "$Msp"
 echo -e "                                                                                     " >> "$Msp"

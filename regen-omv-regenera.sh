@@ -9,14 +9,14 @@
 
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Id=esp
 declare -A Backup
-Backup[VersPlugins]='VersionPlugins'
-Backup[VersKernel]='VersionKernel'
-Backup[VersOMV]='VersionOMV'
-Backup[Usuarios]='Usuarios'
-Backup[Red]='Red'
-Backup[BaseDatos]='config.xml'
-Backup[ArchPasswd]='etc/passwd'
-Backup[ArchShadow]='etc/shadow'
+Backup[VersPlugins]='/VersionPlugins'
+Backup[VersKernel]='/VersionKernel'
+Backup[VersOMV]='/VersionOMV'
+Backup[Usuarios]='/Usuarios'
+Backup[Red]='/Red'
+Backup[BaseDatos]='/etc/openmediavault/config.xml'
+Backup[ArchPasswd]='/etc/passwd'
+Backup[ArchShadow]='/etc/shadow'
 Ruta=$1
 declare -a ComplemInstalar
 Extras=0
@@ -63,8 +63,8 @@ fi
 # Comprobar si están todos los archivos del backup
 if [ "$1" ] && [ ! "$2" ]; then
   for i in ${Backup[@]}; do
-    if [ ! -f "${Ruta}/$i" ]; then
-      [ $Id ] && echo ">>>    El archivo $1/$i no existe.\n>>>    Asegúrate de introducir la ruta correcta." || echo ">>>    TRADUCCION"
+    if [ ! -f "${Ruta}$i" ]; then
+      [ $Id ] && echo ">>>    El archivo $1$i no existe.\n>>>    Asegúrate de introducir la ruta correcta." || echo ">>>    TRADUCCION"
       exit
     fi
   done
@@ -74,10 +74,10 @@ else
 fi
 
 # Comprobar versiones. Comprobar si existía omv-extras, kernel y zfs
-for i in $(awk '{print NR}' $1/${Backup[BackupComplementos]})
+for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
 do
-  ComplemInstalar[i]=$(awk -v i="$i" 'NR==i{print $1}' $1/${Backup[BackupComplementos]})
-  VersionOriginal=$(awk -v i="$i" 'NR==i{print $2}' $1/${Backup[BackupComplementos]})
+  ComplemInstalar[i]=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
+  VersionOriginal=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
   VersionDisponible=$(apt-cache policy "$ComplemInstalar[i]" | awk -F ": " 'NR==2{print $2}')
   if [ ComplemInstalar[i] = "openmediavault-omvextrasorg" ]; then
     Extras=1

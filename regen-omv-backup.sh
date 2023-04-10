@@ -40,7 +40,7 @@ fi
 
 for i in $@; do 
   if [ ! -d "$i" ]; then
-    [ ! $Id ] && echo "Path $i not found.  The first parameter is the path of the backup, the following are optional folders to copy from the source.  Use quotes if there are spaces.  Exiting..." || echo "No se ha encontrado la ruta $i.  El primer parámetro es la ruta del backup, los siguientes son carpetas opcionales para copiar desde el origen.  Utiliza comillas si hay espacios.  Saliendo..."
+    [ ! $Id ] && echo "Path $i not found.  The first parameter is the path of the backup, the following are additional folders to copy to backup.  Use quotes if there are spaces.  Exiting..." || echo "La ruta $i no existe.  El primer parámetro es la ruta del backup, los siguientes son carpetas adicionales para copiar al backup.  Utiliza comillas si hay espacios.  Saliendo..."
     exit
   fi
 done
@@ -51,7 +51,7 @@ if [[ -n $1 ]]; then
   Destino="$Ruta/regen/ROB_${Fecha}"
   mkdir -p "${Destino}"
 else  
-  [ ! $Id ] && echo "The first parameter is the path of the backup.  Use quotes if there are spaces.  Exiting..." || echo "No se ha encontrado la ruta para el backup.  Utiliza comillas si hay espacios.  Saliendo..."
+  [ ! $Id ] && echo "The first parameter is the path of the backup.  Use quotes if there are spaces.  Exiting..." || echo "El primer parámetro es la ruta del backup, los siguientes son carpetas adicionales para copiar al backup.  Utiliza comillas si hay espacios.  Saliendo..."
   exit
 fi
 
@@ -148,24 +148,13 @@ echo -e "                      _________________________________________        
 echo -e "                                                                                     " >> "$Men"
 echo -e "UPDATE THE ORIGINAL SYSTEM AND MAKE A BACKUP with this script.                       " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-echo -e "INSTALL OMV on your server and update (you can use a different disk).                " >> "$Men"
-echo -e "  - Connect the data disks.                                                          " >> "$Men"
-echo -e "  - Install the plugins from the list below.                                         " >> "$Men"
-echo -e "      - If you had docker, install it now.                                           " >> "$Men"
-echo -e "      - If you are using ZFS, change the kernel to proxmox.                          " >> "$Men"
-echo -e "  - Do not configure anything.                                                       " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-echo -e "CREATE THE USERS in the list following the order of their UIDs. First the 1000...    " >> "$Men"
-echo -e "  - You can change the passwords if you have lost them. They are not necessary.      " >> "$Men"
-echo -e "  - Change the password of the admin user, it is now the default.                    " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-echo -e "REPLACES THE OPENMEDIAVAULT DATABASE.                                                " >> "$Men"
-echo -e "  - Copy the config.xml file from your backup to /etc/openmediavault/config.xml      " >> "$Men"
-echo -e "  - Deploy the new configuration, run these commands:                                " >> "$Men"
-echo -e "          omv-salt stage run prepare                                                 " >> "$Men"
-echo -e "          omv-salt stage run deploy                                                  " >> "$Men"
-echo -e "  - Wait a few minutes and reboot.                                                   " >> "$Men"
-echo -e "  - If you have ZFS file systems import the pool from the GUI.                       " >> "$Men"
+echo -e "                                                                                     " >> "$Men"
+echo -e "                                                                                     " >> "$Men"
+echo -e "                                                                                     " >> "$Men"
+echo -e "                                                                                     " >> "$Men"
+echo -e "                                                                                     " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "You've finished. Start your containers and you can already have a beer. Cheers.      " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
@@ -188,4 +177,3 @@ echo -e "                                                                       
 cat "${Destino}"/"${Red}" >> "$Men"
 echo -e "                                                                                     " >> "$Men"
 echo -e "                                                                                     " >> "$Men"
-echo -e " More information here. https://forum.openmediavault.org/index.php?thread/47111-how-to-regenerate-a-complete-omv-system/" >> "$Men"

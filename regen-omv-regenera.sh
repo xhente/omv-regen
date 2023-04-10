@@ -61,7 +61,6 @@ fi
 #esac
 
 # Comprobar si están todos los archivos del backup
-
 for i in ${Backup[@]}; do
   if [ ! -f "${Ruta}$i" ]; then
     [ $Sp ] && echo "TRADUCCION" || echo "El archivo $i no existe en ${Ruta}.  Saliendo..."
@@ -69,32 +68,35 @@ for i in ${Backup[@]}; do
   fi
 done
 
-# Comprobar versiones. Comprobar si existía omv-extras, kernel y zfs
+# Comprobar versión de OMV
+VersionOrig=$(awk '{print $2}' ${Ruta}${Backup[VersOMV]})
+VersionDisp=$(apt-cache policy "openmediavault" | awk -F ": " 'NR==2{print $2}')
+if [ ! "${VersionOrig}" = "${VersionDisp}" ]; then
+  [ $Sp ] && echo "TRADUCCION" || echo "La versión disponible de OMV es ${VersionDisp}  No coincide con la versión del sistema original ${VersionOrig}   No se puede continuar.  Saliendo..."
+  exit
+fi
+
+# Comprobar versiones de complementos. Comprobar si existía omv-extras, kernel y zfs
+# NOTA: ¿Posibilidad de continuar sin instalar uno de los complementos? 
 for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
 do
   Plugin=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
   VersionOrig=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
   VersionDisp=$(apt-cache policy "$Plugin" | awk -F ": " 'NR==2{print $2}')
-  if [ "${Plugin}" = "openmediavault-omvextrasorg" ]; then
-    Extras=1
-  fi
-  if [ "${Plugin}" = "openmediavault-kernel" ]; then
-    Kernel=1
-  fi
-  if [ "${Plugin}" = "openmediavault-zfs" ]; then
-    ZFS=1
-  fi
-  if [ "${Plugin}" = "openmediavault-sharerootfs" ]; then
-    Shareroot=1
-  fi
+  case "${Plugin}" in
+    *"omvextrasorg" ) Extras=1 ;;
+    *"kernel" ) Kernel=1 ;;
+    *"zfs" ) ZFS=1 ;;
+    *"sharerootfs" ) Shareroot=1 ;;
+  esac
   if [ "$VersionOrig" != "$VersionDisp" ]; then
     [ $Sp ] && echo "TRADUCCION" || echo "La versión disponible para instalar el complemento $Plugin es $VersionDisp  No coincide con la versión del sistema original $VersionOrig   Forzar la regeneración en estas condiciones puede provocar errores de configuración."
     while true; do
-      [ $Sp ] && read -p "TRADUCCION" yn || read -p "Se recomienda abortar la regeneración ¿quieres abortar? (yes/no): " yn
+      [ $Sp ] && read -p "TRADUCCION" yn || read -p "Se recomienda abortar la regeneración ¿quieres abortar? (si/no): " yn
       case $yn in
-        [yYsS]* ) [ $Sp ] && echo "TRADUCCION" || echo "Saliendo..."; exit;;
+        [yYsS]* ) [ $Sp ] && echo "Exiting..." || echo "Saliendo..."; exit ;;
         [nN]* ) break;;
-        * ) [ $Sp ] && echo "TRADUCCION" || echo "Responde si o no: ";;
+        * ) [ $Sp ] && echo "TRADUCCION" || echo "Responde si o no: " ;;
       esac
     done
   fi

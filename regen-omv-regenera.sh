@@ -28,6 +28,25 @@ URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
 
+
+#  REVISAR ESTO
+
+InstallPlugin () {
+  echoe "Install $1" "Instalando $1"
+  if ! apt-get --yes install "$1"; then
+    echoe "Failed to install $1 plugin." "No se pudo instalar el complemento $1."
+    ${confCmd} "$1"
+    apt-get --yes --fix-broken install
+    exit
+  else
+    CompII=$(dpkg -l | awk -v i="$1" '$2 == "i" { print $1 }')
+    if [[ ! "${CompII}" == "ii" ]]; then
+      echoe "$1 plugin failed to install or is in a bad state." "El complemento $1 no se pudo instalar o está en mal estado."
+      exit
+    fi
+  fi
+}
+
 if [[ $(id -u) -ne 0 ]]; then
   echoe "This script must be executed as root or using sudo." "Este script se debe ejecutar como root o mediante sudo."
   exit
@@ -156,6 +175,20 @@ fi
 if [ "${Kernel}" = 1 ]; then
   echoe "Installing openmediavault-kernel" "Instalando openmediavault-kernel"
   
+  # FUNCION
+  
+  if ! apt-get --yes install openmediavault-kernel; then
+    echoe "Failed to install $i plugin." "No se pudo instalar el complemento $i."
+      ${confCmd} "$i"
+      apt-get --yes --fix-broken install
+      exit
+    else
+      CompII=$(dpkg -l | awk '$2 == "$i" { print $1 }')
+      if [[ ! "${CompII}" == "ii" ]]; then
+        echoe "$i plugin failed to install or is in a bad state." "El complemento $i no se pudo instalar o está en mal estado."
+        exit
+      fi
+    fi
   Kernel=0
 fi
 

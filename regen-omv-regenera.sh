@@ -9,6 +9,7 @@
 
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Sp=1
 echoe () { [ ! $Sp ] && echo -e $1 || echo -e $2; }
+
 declare -A Backup
 Backup[VersPlugins]='/VersionPlugins'
 Backup[VersKernel]='/VersionKernel'
@@ -27,36 +28,36 @@ VersionKernel=""
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
-
-
-#  REVISAR ESTO
-
+# Función instalar complemento
 InstallPlugin () {
-  echoe "Install $1" "Instalando $1"
+  echoe "Install $1 plugin" "Instalando el complemento $1"
   if ! apt-get --yes install "$1"; then
     echoe "Failed to install $1 plugin." "No se pudo instalar el complemento $1."
     ${confCmd} "$1"
     apt-get --yes --fix-broken install
-    exit
   else
-    CompII=$(dpkg -l | awk -v i="$1" '$2 == "i" { print $1 }')
-    if [[ ! "${CompII}" == "ii" ]]; then
-      echoe "$1 plugin failed to install or is in a bad state." "El complemento $1 no se pudo instalar o está en mal estado."
-      exit
+    PlugII=$(dpkg -l | awk -v i="$1" '$2 == "i" { print $1 }')
+    if [[ ! "${PlugII}" == "ii" ]]; then
+      echoe "Failed to install $1 plugin or is in a bad state." "El complemento $1 no se pudo instalar o está en mal estado."
+      ${confCmd} "$1"
+      apt-get --yes --fix-broken install
     fi
   fi
 }
 
+# Root
 if [[ $(id -u) -ne 0 ]]; then
   echoe "This script must be executed as root or using sudo." "Este script se debe ejecutar como root o mediante sudo."
   exit
 fi
 
+# Versión OMV
 if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
   echoe "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
   exit
 fi
 
+# Ruta backup
 if [ -z "$Ruta" ]; then
   echoe "TRADUCCION" "Escribe la ruta del backup después del comando->  regen-omv-regenera.sh /PATH_TO/BACKUP"
   exit
@@ -79,7 +80,7 @@ fi
 #    ;;
 #esac
 
-# Comprobar si están todos los archivos del backup
+# Archivos del backup
 for i in ${Backup[@]}; do
   if [ ! -f "${Ruta}$i" ]; then
     echoe "TRADUCCION" "El archivo $i no existe en ${Ruta}.  Saliendo..."
@@ -87,39 +88,13 @@ for i in ${Backup[@]}; do
   fi
 done
 
-# Comprobar versión de OMV
+# Versión de OMV original
 VersionOrig=$(awk '{print $2}' ${Ruta}${Backup[VersOMV]})
 VersionDisp=$(apt-cache policy "openmediavault" | awk -F ": " 'NR==2{print $2}')
 if [ ! "${VersionOrig}" = "${VersionDisp}" ]; then
-  echoe "TRADUCCION" "La versión disponible de OMV es ${VersionDisp}  No coincide con la versión del sistema original ${VersionOrig}   No se puede continuar.  Saliendo..."
+  echoe "TRADUCCION" "La versión de OMV es ${VersionDisp}  No coincide con la versión del sistema original ${VersionOrig}   No se puede continuar.  Saliendo..."
   exit
 fi
-
-# Comprobar versiones de complementos. Comprobar si existía omv-extras, kernel y zfs
-# NOTA: ¿Posibilidad de continuar sin instalar uno de los complementos? 
-for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
-do
-  Plugin=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
-  VersionOrig=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
-  VersionDisp=$(apt-cache policy "$Plugin" | awk -F ": " 'NR==2{print $2}')
-  case "${Plugin}" in
-    *"omvextrasorg" ) Extras=1 ;;
-    *"kernel" ) Kernel=1 ;;
-    *"zfs" ) ZFS=1 ;;
-    *"sharerootfs" ) Shareroot=1 ;;
-  esac
-  if [ "$VersionOrig" != "$VersionDisp" ]; then
-    echoe "TRADUCCION" "La versión disponible para instalar el complemento $Plugin es $VersionDisp  No coincide con la versión del sistema original $VersionOrig   Forzar la regeneración en estas condiciones puede provocar errores de configuración."
-    while true; do
-      [ ! $Sp ] && read -p "TRADUCCION" yn || read -p "Se recomienda abortar la regeneración ¿quieres abortar? (si/no): " yn
-      case $yn in
-        [yYsS]* ) echoe "Exiting..." "Saliendo..."; exit ;;
-        [nN]* ) break;;
-        * ) echoe "TRADUCCION" "Responde si o no: " ;;
-      esac
-    done
-  fi
-done
 
 # Inicia regeneración
 echoe "\n       <<< TRADUCCION >>>" "\n       <<< Regenerando el sistema >>>"
@@ -131,11 +106,9 @@ if ! omv-upgrade; then
 fi
 
 # Instalar omv-extras si existía y no está instalado
-omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
-if [[ "${omvextrasInstall}" == "ii" ]]; then
-  Extras=0
-fi
-if [ $Extras = "1" ]; then
+OmvextrasOr=$(grep -i "openmediavault-omvextras" ${Ruta}${Backup[VersPlugins]})
+OmvextrasIn=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
+if [ "${OmvextrasOr}" ] && [ ! "${OmvextrasIn}" == "ii" ]; then
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
   if [ -f "${File}" ]; then
@@ -170,6 +143,39 @@ if [ $Extras = "1" ]; then
     exit
   fi
 fi
+
+# Comprobar versiones de complementos. Comprobar si existía omv-extras, kernel y zfs
+# Nota: Depende de omv-extras si hay complementos de omv-extras
+# NOTA: ¿Posibilidad de continuar sin instalar uno de los complementos? 
+cont=0
+for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
+do
+  Plugin=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
+  VersionOrig=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
+  VersionDisp=$(apt-cache policy "$Plugin" | awk -F ": " 'NR==2{print $2}')
+  case "${Plugin}" in
+    *"omvextrasorg" ) Extras=1 ;;
+    *"kernel" ) Kernel=1 ;;
+    *"zfs" ) ZFS=1 ;;
+    *"sharerootfs" ) Shareroot=1 ;;
+    * )
+      cont=$cont+1
+      PluginInstalar[$cont]="${Plugin}"
+      echo "$cont ${PluginInstalar}"
+      ;;
+  esac
+  if [ "$VersionOrig" != "$VersionDisp" ]; then
+    echoe "TRADUCCION" "La versión disponible para instalar el complemento $Plugin es $VersionDisp  No coincide con la versión del sistema original $VersionOrig   Forzar la regeneración en estas condiciones puede provocar errores de configuración."
+    while true; do
+      [ ! $Sp ] && read -p "TRADUCCION" yn || read -p "Se recomienda abortar la regeneración ¿quieres abortar? (si/no): " yn
+      case $yn in
+        [yYsS]* ) echoe "Exiting..." "Saliendo..."; exit ;;
+        [nN]* ) break;;
+        * ) echoe "TRADUCCION" "Responde si o no: " ;;
+      esac
+    done
+  fi
+done
 
 # Instalar openmediavault-kernel si estaba instalado
 if [ "${Kernel}" = 1 ]; then

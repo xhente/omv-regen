@@ -106,9 +106,9 @@ if ! omv-upgrade; then
 fi
 
 # Instalar omv-extras si existía y no está instalado
-OmvextrasOr=$(grep -i "openmediavault-omvextras" ${Ruta}${Backup[VersPlugins]})
-OmvextrasIn=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
-if [ "${OmvextrasOr}" ] && [ ! "${OmvextrasIn}" == "ii" ]; then
+ExtrasOri=$(grep -i "openmediavault-omvextras" ${Ruta}${Backup[VersPlugins]})
+ExtrasIns=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
+if [ "${ExtrasOri}" ] && [ ! "${ExtrasIns}" == "ii" ]; then
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
   if [ -f "${File}" ]; then
@@ -127,45 +127,45 @@ if [ "${OmvextrasOr}" ] && [ ! "${OmvextrasIn}" == "ii" ]; then
           apt-get --yes --fix-broken install
         else
           echoe "${confCmd} failed and openmediavault-omvextrasorg is in a bad state." "${confCmd} falló y openmediavault-omvextrasorg está en mal estado."
-          exit
+          exit 3
         fi
       fi
       omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
       if [[ ! "${omvextrasInstall}" == "ii" ]]; then
         echoe "openmediavault-omvextrasorg package failed to install or is in a bad state." "El paquete openmediavault-omvextrasorg no se pudo instalar o está en mal estado."
-        exit
+        exit 3
       fi
     fi
     echoe "Updating repos ..." "Actualizando repositorios..."
     omv-salt deploy run omvextras
+    Extras=1
   else
     echoe "There was a problem downloading the package." "Hubo un problema al descargar el paquete."
     exit
   fi
 fi
 
-# Comprobar versiones de complementos. Comprobar si existía omv-extras, kernel y zfs
-# Nota: Depende de omv-extras si hay complementos de omv-extras
+# Analizar versiones y complementos especiales
 # NOTA: ¿Posibilidad de continuar sin instalar uno de los complementos? 
 cont=0
 for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
 do
   Plugin=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
-  VersionOrig=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
-  VersionDisp=$(apt-cache policy "$Plugin" | awk -F ": " 'NR==2{print $2}')
+  VersionOri=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
+  VersionDis=$(apt-cache policy "$Plugin" | awk -F ": " 'NR==2{print $2}')
   case "${Plugin}" in
-    *"omvextrasorg" ) Extras=1 ;;
+    *"omvextrasorg" ) ;;
     *"kernel" ) Kernel=1 ;;
     *"zfs" ) ZFS=1 ;;
     *"sharerootfs" ) Shareroot=1 ;;
+    *"apttool" ) Apttool=1 ;;
     * )
-      cont=$cont+1
-      PluginInstalar[$cont]="${Plugin}"
-      echo "$cont ${PluginInstalar}"
+      (( cont++ ))
+      PluginIns[$cont]="${Plugin}"
       ;;
   esac
-  if [ "$VersionOrig" != "$VersionDisp" ]; then
-    echoe "TRADUCCION" "La versión disponible para instalar el complemento $Plugin es $VersionDisp  No coincide con la versión del sistema original $VersionOrig   Forzar la regeneración en estas condiciones puede provocar errores de configuración."
+  if [ "$VersionOri" != "$VersionDis" ]; then
+    echoe "TRADUCCION" "La versión disponible para instalar el complemento $Plugin es $VersionDis  No coincide con la versión del sistema original $VersionOri   Forzar la regeneración en estas condiciones puede provocar errores de configuración."
     while true; do
       [ ! $Sp ] && read -p "TRADUCCION" yn || read -p "Se recomienda abortar la regeneración ¿quieres abortar? (si/no): " yn
       case $yn in
@@ -177,12 +177,17 @@ do
   fi
 done
 
+exit
+
 # Instalar openmediavault-kernel si estaba instalado
 if [ "${Kernel}" = 1 ]; then
   echoe "Installing openmediavault-kernel" "Instalando openmediavault-kernel"
   
   # FUNCION
-  
+  # ACTUALIZAR DESPUES DE INSTALAR UN KERNEL
+
+
+
   if ! apt-get --yes install openmediavault-kernel; then
     echoe "Failed to install $i plugin." "No se pudo instalar el complemento $i."
       ${confCmd} "$i"

@@ -70,8 +70,8 @@ mkdir -p "${Destino}/etc/openmediavault"
 cp -av "${BaseDatos}" "${Destino}${BaseDatos}"
 cp -av "${ArchPasswd}" "${Destino}${ArchPasswd}"
 cp -av "${ArchShadow}" "${Destino}${ArchShadow}"
-cp -av /home/regen-omv-backup.sh "${Destino}"/regen-omv-backup.sh
-cp -av /home/regen-omv-regenera.sh "${Destino}"/regen-omv-regenera.sh
+cp -av /home/omv-regen-backup.sh "${Destino}"/omv-regen-backup.sh
+cp -av /home/omv-regen-regenera.sh "${Destino}"/omv-regen-regenera.sh
 
 echoe ">>>    Creating plugin list..." ">>>    Creando lista de complementos..."
 dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "${Destino}${VersPlugins}"

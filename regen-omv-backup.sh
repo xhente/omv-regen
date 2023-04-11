@@ -33,21 +33,22 @@ ArchShadow=/etc/shadow
 
 # Variables de entorno
 Fecha=$(date +%y%m%d_%H%M)
-Sp=1; [ $(cut -b 7,8 /etc/default/locale) = es ] && Sp=""
+[ $(cut -b 7,8 /etc/default/locale) = es ] && Sp=1
+echoe () { [ ! $Sp ] && echo -e $1 || echo -e $2; }
 
 if [[ $(id -u) -ne 0 ]]; then
-  [ $Sp ] && echo "This script must be executed as root or using sudo.  Exiting..." || echo "Este script se debe ejecutar como root o usando sudo.  Saliendo..."
+  echoe "This script must be executed as root or using sudo.  Exiting..." "Este script se debe ejecutar como root o usando sudo.  Saliendo..."
   exit
 fi
 
 if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
-  [ $Sp ] && echo "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." || echo "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
+  echoe "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
   exit
 fi
 
 for i in $@; do 
   if [ ! -d "$i" ]; then
-    [ $Sp ] && echo "Path $i not found.  The first parameter is the path of the backup, the following are additional folders to copy to backup.  Use quotes if there are spaces.  Exiting..." || echo "La ruta $i no existe.  El primer parámetro es la ruta del backup, los siguientes son carpetas adicionales para copiar al backup.  Utiliza comillas si hay espacios.  Saliendo..."
+    echoe "Path $i not found.  The first parameter is the path of the backup, the following are additional folders to copy to backup.  Use quotes if there are spaces.  Exiting..." "La ruta $i no existe.  El primer parámetro debe ser la ruta del backup, los siguientes son carpetas adicionales para copiar al backup.  Utiliza comillas si hay espacios.  Saliendo..."
     exit
   fi
 done
@@ -55,16 +56,16 @@ done
 if [[ -n $1 ]]; then
   Ruta="$1"
   shift
-  Destino="${Ruta}/regen/ROB_${Fecha}"
-else  
-  [ $Sp ] && echo "The first parameter is the path of the backup.  Use quotes if there are spaces.  Exiting..." || echo "El primer parámetro es la ruta del backup, los siguientes son carpetas adicionales para copiar al backup.  Utiliza comillas si hay espacios.  Saliendo..."
+  Destino="${Ruta}/omv-regen/ORB_${Fecha}"
+else
+  echoe "The first parameter is the path of the backup.  Use quotes if there are spaces.  Exiting..." "El primer parámetro debe ser la ruta del backup.  Utiliza comillas si hay espacios.  Saliendo..."
   exit
 fi
 
-[ $Sp ] && echo -e "\n       <<< Backup to regenerate system dated ${Fecha} >>>" || echo -e "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>"
-[ $Sp ] && echo -e "\n       Backups older than ${Dias} days will be deleted.\n       To keep it change the prefix to ROB_${Fecha}\n" || echo -e "\n       Se eliminarán los backups de más de ${Dias} días.\n       Para conservarlo cambia el prefijo a ROB_${Fecha}\n"
+echoe "\n       <<< Backup to regenerate system dated ${Fecha} >>>" "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>"
+echoe "\n       Backups older than ${Dias} days will be deleted.\n       To keep it change the prefix to ROB_${Fecha}\n" "\n       Se eliminarán los backups de más de ${Dias} días.\n       Para conservarlo cambia el prefijo a ROB_${Fecha}\n"
 
-[ $Sp ] && echo ">>>    Copying data to ${Destino}..." || echo ">>>    Copiando datos a ${Destino}..."
+echoe ">>>    Copying data to ${Destino}..." ">>>    Copiando datos a ${Destino}..."
 mkdir -p "${Destino}/etc/openmediavault"
 cp -av "${BaseDatos}" "${Destino}${BaseDatos}"
 cp -av "${ArchPasswd}" "${Destino}${ArchPasswd}"
@@ -72,49 +73,47 @@ cp -av "${ArchShadow}" "${Destino}${ArchShadow}"
 cp -av /home/regen-omv-backup.sh "${Destino}"/regen-omv-backup.sh
 cp -av /home/regen-omv-regenera.sh "${Destino}"/regen-omv-regenera.sh
 
-[ $Sp ] && echo ">>>    Creating plugin list..." || echo ">>>    Creando lista de complementos..."
+echoe ">>>    Creating plugin list..." ">>>    Creando lista de complementos..."
 dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "${Destino}${VersPlugins}"
 sed -i '/keyring/d' "${Destino}${VersPlugins}"
 cat "${Destino}${VersPlugins}"
 
-[ $Sp ] && echo ">>>    Creating list of users and UIDs..." || echo ">>>    Creando lista de usuarios y UIDs..."
+echoe ">>>    Creating list of users and UIDs..." ">>>    Creando lista de usuarios y UIDs..."
 awk -F ":" 'length($3) == 4 {print $3"\t"$1}' /etc/passwd | tee "${Destino}${Usuarios}"
 
-[ $Sp ] && echo ">>>    Extracting network..." || echo ">>>    Extrayendo red..."
+echoe ">>>    Extracting network..." ">>>    Extrayendo red..."
 cat "${Destino}${BaseDatos}" | sed -n 's:.*<address>\(.*\)</address>.*:\1:p' | awk 'NR==2{print $0}' | tee "${Destino}${Red}"
 
-[ $Sp ] && echo ">>>    Extracting kernel version..." || echo ">>>    Extrayendo versión del kernel..."
+echoe ">>>    Extracting kernel version..." ">>>    Extrayendo versión del kernel..."
 uname -r | tee "${Destino}${VersKernel}"
 
-[ $Sp ] && echo ">>>    Extracting OMV version..." || echo ">>>    Extrayendo versión de OMV..."
+echoe ">>>    Extracting OMV version..." ">>>    Extrayendo versión de OMV..."
 dpkg -l | awk '$2 == "openmediavault" { print $2" "$3 }'| tee "${Destino}${VersOMV}"
 
 for i in ${Origen[@]}; do
   if [ -d "$i" ]; then
-    [ $Sp ] && echo ">>>    Copying data from $i..." || echo ">>>    Copiando datos de $i..."
+    echoe ">>>    Copying data from $i..." ">>>    Copiando datos de $i..."
     mkdir -p "${Destino}$i"
     rsync -av "$i"/ "${Destino}$i"
   fi
 done
 
 while [ "$*" ]; do
-  [ $Sp ] && echo ">>>    Copying data from $1..." || echo ">>>    Copiando datos de $1..."
+  echoe ">>>    Copying data from $1..." ">>>    Copiando datos de $1..."
   mkdir -p "${Destino}/PersonalFolders$1"
   rsync -av "$1"/ "${Destino}/PersonalFolders$1"
   shift
 done
 
-[ $Sp ] && echo ">>>    Deleting backups larger than ${Dias} days..." || echo ">>>    Eliminando backups de más de ${Dias} días..."
+echoe ">>>    Deleting backups larger than ${Dias} days..." ">>>    Eliminando backups de más de ${Dias} días..."
 # PUEDE SER PELIGROSO modificar la siguiente línea. Asegúrate de lo que cambias.
 # It MAY BE DANGEROUS to modify the following line. Make sure what you change.
-find "${Ruta}/omv-regen/" -maxdepth 1 -type d -name "ROB_*" -mtime "+$Dias" -exec rm -rv {} +
+find "${Ruta}/omv-regen/" -maxdepth 1 -type d -name "ORB_*" -mtime "+$Dias" -exec rm -rv {} +
 # -mmin = minutos  ///  -mtime = dias
 
-[ $Sp ] && echo -e "\n       Done!\n" || echo -e "\n       ¡Hecho!\n"
+echoe "\n       Done!\n" "\n       ¡Hecho!\n"
 
-Men="${Destino}/Readme"; touch $Men
-
-if [ $Sp ]; then
+if [ ! $Sp ]; then
   Men="${Destino}/Readme"; touch $Men
   echo -e "                      _________________________________________                      " >> "$Men"
   echo -e "                                                                                     " >> "$Men"

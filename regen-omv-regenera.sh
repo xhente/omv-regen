@@ -22,8 +22,7 @@ Extras=0
 Kernel=0
 ZFS=0
 Shareroot=0
-VersionKernel=0
-VersionKernel=$(uname -r | awk -F "." '/pve$/ {print $1"."$2 }')
+VersionKernel=""
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
@@ -153,6 +152,25 @@ if [ $Extras = "1" ]; then
   fi
 fi
 
+# Instalar openmediavault-kernel si estaba instalado
+if [ "${Kernel}" = 1 ]; then
+  echo "Instalando openmediavault-kernel"
+  
+  Kernel=0
+fi
+
+# Instalar Kernel proxmox si estaba en el sistema original
+VersionKernel=$(awk -F "." '/pve$/ {print $1"."$2 }' "${Ruta}${Backup[VersKernel]}")
+if [ "${VersionKernel}" ]; then
+  echo "Instalando kernel proxmox"
+
+  # Definir el parámetro $1 como kernel a instalar para entrar al script
+  source /usr/sbin/omv-installproxmox
+fi
+
+# SI SE HA CAMBIADO EL KERNEL ES NECESARIO REINICIAR
+
+
 # Instalar complementos
 for i in ComplemInstalar[@]
 do
@@ -173,14 +191,9 @@ do
   fi
 done
 
-# Instalar Kernel proxmox si estaba en el sistema original
-if [ $Kernel = "1" ]; then
-  # Definir el parámetro $1 como kernel a instalar
-  source /usr/sbin/omv-installproxmox
-fi
 
-  # Averiguar version de kernel original e instalar
-fi
+
+
 
 # Instalar openmediavault-ZFS si estaba en el sistema original e importar pools
 if [ $ZFS = "1" ]; then

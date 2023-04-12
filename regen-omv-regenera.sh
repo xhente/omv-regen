@@ -28,6 +28,9 @@ VersionKernel=""
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
+# ELIMINAR PROGRAMACION DE EJECUCION TRAS REINICIO
+
+
 # Función instalar complemento
 InstallPlugin () {
   echoe "Install $1 plugin" "Instalando el complemento $1"
@@ -96,9 +99,6 @@ if [ ! "${VersionOrig}" = "${VersionDisp}" ]; then
   exit
 fi
 
-# Inicia regeneración
-echoe "\n       <<< TRADUCCION >>>" "\n       <<< Regenerando el sistema >>>"
-
 # Actualizar sistema
 if ! omv-upgrade; then
   echoe "Failed updating system" "Error actualizando el sistema"
@@ -152,7 +152,7 @@ for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
 do
   Plugin=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
   VersionOri=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
-  VersionDis=$(apt-cache policy "$Plugin" | awk -F ": " 'NR==2{print $2}')
+  VersionDis=$(apt-cache madison "$Plugin" | awk '{print $3}')
   case "${Plugin}" in
     *"omvextrasorg" ) ;;
     *"kernel" ) Kernel=1 ;;
@@ -177,31 +177,15 @@ do
   fi
 done
 
+# Instalar openmediavault-kernel si estaba instalado y si no se ha instalado ya
+KernelIns=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
+if [ "${Kernel}" = 1 ] && [ ! "${KernelIns}" == "ii" ]; then
+  InstallPlugin openmediavault-kernel
+fi
+
+echo bien
 exit
 
-# Instalar openmediavault-kernel si estaba instalado
-if [ "${Kernel}" = 1 ]; then
-  echoe "Installing openmediavault-kernel" "Instalando openmediavault-kernel"
-  
-  # FUNCION
-  # ACTUALIZAR DESPUES DE INSTALAR UN KERNEL
-
-
-
-  if ! apt-get --yes install openmediavault-kernel; then
-    echoe "Failed to install $i plugin." "No se pudo instalar el complemento $i."
-      ${confCmd} "$i"
-      apt-get --yes --fix-broken install
-      exit
-    else
-      CompII=$(dpkg -l | awk '$2 == "$i" { print $1 }')
-      if [[ ! "${CompII}" == "ii" ]]; then
-        echoe "$i plugin failed to install or is in a bad state." "El complemento $i no se pudo instalar o está en mal estado."
-        exit
-      fi
-    fi
-  Kernel=0
-fi
 
 # Instalar Kernel proxmox si estaba en el sistema original
 VersionKernel=$(awk -F "." '/pve$/ {print $1"."$2 }' "${Ruta}${Backup[VersKernel]}")
@@ -210,6 +194,8 @@ if [ "${VersionKernel}" ]; then
 
   # Definir el parámetro $1 como kernel a instalar para entrar al script
   source /usr/sbin/omv-installproxmox
+  # programar ejecucion script tras reinicio
+  # reiniciar
 fi
 
 # SI SE HA CAMBIADO EL KERNEL ES NECESARIO REINICIAR

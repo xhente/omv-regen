@@ -28,8 +28,8 @@ VersionKernel=""
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
-# ELIMINAR PROGRAMACION DE EJECUCION TRAS REINICIO
-
+# Eliminar programación de ejecución tras reinicio
+[ /etc/cron.d/regen-reboot ] && rm /etc/cron.d/regen-reboot
 
 # Función instalar complemento
 InstallPlugin () {
@@ -70,18 +70,6 @@ else
     exit
   fi
 fi
-
-# Comprobar si la arquitectura es la misma y si los discos están conectados.
-#                              ¡¡REVISAR ESTO!!       Copiado de openmediavault-kernel
-#case "$(/usr/bin/arch)" in
-#  *amd64*|*x86_64*)
-#    echo "Supported kernel found"
-#    ;;
-#  *)
-#    echo "Unsupported kernel and/or processor"
-#    exit 1
-#    ;;
-#esac
 
 # Archivos del backup
 for i in ${Backup[@]}; do
@@ -183,23 +171,22 @@ if [ "${Kernel}" = 1 ] && [ ! "${KernelIns}" == "ii" ]; then
   InstallPlugin openmediavault-kernel
 fi
 
-echo bien
-exit
+# Instalar Kernel proxmox si estaba en el sistema original y si no está instalado
+VersKernelOri=$(awk -F "." '/pve$/ {print $1"."$2 }' "${Ruta}${Backup[VersKernel]}")
+VersionKernelIns=$(uname -r | awk -F "." '/pve$/ {print $1"."$2 }')
 
+source /usr/sbin/omv-installproxmox "${VersKernelOri}"
 
-# Instalar Kernel proxmox si estaba en el sistema original
-VersionKernel=$(awk -F "." '/pve$/ {print $1"."$2 }' "${Ruta}${Backup[VersKernel]}")
-if [ "${VersionKernel}" ]; then
+if [ "${VersKernelOri}" ] && [ ! "${VersKernelOri}" = "${VersionKernelIns}" ]; then
   echoe "Installing proxmox kernel" "Instalando kernel proxmox"
-
-  # Definir el parámetro $1 como kernel a instalar para entrar al script
-  source /usr/sbin/omv-installproxmox
-  # programar ejecucion script tras reinicio
-  # reiniciar
+  source /usr/sbin/omv-installproxmox "${VersKernelOri}"
+  [ /etc/cron.d/regen-reboot ] && touch /etc/cron.d/regen-reboot
+  echo "@ reboot root /home/omv-regen-regenera.sh $Ruta" >> /etc/cron.d/regen-reboot
+  reboot
 fi
 
-# SI SE HA CAMBIADO EL KERNEL ES NECESARIO REINICIAR
-
+echo hasta aquí
+exit
 
 # Instalar complementos
 for i in ComplemInstalar[@]

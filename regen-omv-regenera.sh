@@ -185,6 +185,7 @@ if [ "${VersKernelOri}" ] && [ ! "${VersKernelOri}" = "${VersionKernelIns}" ]; t
   reboot
 fi
 
+
 echo hasta aquí
 exit
 

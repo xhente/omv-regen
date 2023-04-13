@@ -10,6 +10,7 @@
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Sp=1
 echoe () { [ ! $Sp ] && echo -e $1 || echo -e $2; }
 
+Ruta=$1; shift
 declare -A Backup
 Backup[VersPlugins]='/VersionPlugins'
 Backup[VersKernel]='/VersionKernel'
@@ -19,32 +20,44 @@ Backup[Red]='/Red'
 Backup[BaseDatos]='/etc/openmediavault/config.xml'
 Backup[ArchPasswd]='/etc/passwd'
 Backup[ArchShadow]='/etc/shadow'
-Ruta=$1; shift
-Extras=0
+VersionOR=""
+VersionDI=""
+InstaladoII=""
+Instalado=""
+Versiones=""
+cont=0
+sucio=0
 Kernel=0
 ZFS=0
+Compose=0
 Shareroot=0
+Apttool=0
+declare -a ListaInstalar
+declare -a ListaDesinst
 VersionKernel=""
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
 # Eliminar programación de ejecución tras reinicio
-[ /etc/cron.d/regen-reboot ] && rm /etc/cron.d/regen-reboot
+[ -f /etc/cron.d/regen-reboot ] && rm /etc/cron.d/regen-reboot
 
-# Función instalar complemento
+# Analizar estado de plugin. Versiones y instalación
+Analizar () {
+  VersionOR=""; VersionDI=""; InstaladoII=""
+  VersionOR=$(awk -v i="$1" '$1 == i {print $2}' "${Ruta}${Backup[VersPlugins]}")
+  VersionDI=$(apt-cache madison "$1" | awk '{print $3}')
+  InstaladoII=$(dpkg -l | awk -v i="$1" '$2 == i { print $1 }')
+  if [ "${InstaladoII}" == "ii" ]; then Instalado=SI; else Instalado=NO; fi
+  if [ "${VersionOR}" = "${VersionDI}" ]; then Versiones=SI; else Versiones=NO; fi
+}
+
+# Instalar complemento
 InstallPlugin () {
   echoe "Install $1 plugin" "Instalando el complemento $1"
   if ! apt-get --yes install "$1"; then
     echoe "Failed to install $1 plugin." "No se pudo instalar el complemento $1."
-    ${confCmd} "$1"
+    "${confCmd}" "$1"
     apt-get --yes --fix-broken install
-  else
-    PlugII=$(dpkg -l | awk -v i="$1" '$2 == "i" { print $1 }')
-    if [[ ! "${PlugII}" == "ii" ]]; then
-      echoe "Failed to install $1 plugin or is in a bad state." "El complemento $1 no se pudo instalar o está en mal estado."
-      ${confCmd} "$1"
-      apt-get --yes --fix-broken install
-    fi
   fi
 }
 
@@ -61,7 +74,7 @@ if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
 fi
 
 # Ruta backup
-if [ -z "$Ruta" ]; then
+if [ -z "${Ruta}" ]; then
   echoe "TRADUCCION" "Escribe la ruta del backup después del comando->  regen-omv-regenera.sh /PATH_TO/BACKUP"
   exit
 else
@@ -72,7 +85,7 @@ else
 fi
 
 # Archivos del backup
-for i in ${Backup[@]}; do
+for i in "${Backup[@]}"; do
   if [ ! -f "${Ruta}$i" ]; then
     echoe "TRADUCCION" "El archivo $i no existe en ${Ruta}.  Saliendo..."
     exit
@@ -80,10 +93,9 @@ for i in ${Backup[@]}; do
 done
 
 # Versión de OMV original
-VersionOrig=$(awk '{print $2}' ${Ruta}${Backup[VersOMV]})
-VersionDisp=$(apt-cache policy "openmediavault" | awk -F ": " 'NR==2{print $2}')
-if [ ! "${VersionOrig}" = "${VersionDisp}" ]; then
-  echoe "TRADUCCION" "La versión de OMV es ${VersionDisp}  No coincide con la versión del sistema original ${VersionOrig}   No se puede continuar.  Saliendo..."
+Analizar "openmediavault"
+if [ "${Versiones}" = "NO" ]; then
+  echoe "TRADUCCION" "La versiones de OMV no coinciden.  Saliendo..."
   exit
 fi
 
@@ -94,9 +106,8 @@ if ! omv-upgrade; then
 fi
 
 # Instalar omv-extras si existía y no está instalado
-ExtrasOri=$(grep -i "openmediavault-omvextras" ${Ruta}${Backup[VersPlugins]})
-ExtrasIns=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
-if [ "${ExtrasOri}" ] && [ ! "${ExtrasIns}" == "ii" ]; then
+Analizar "openmediavault-omvextrasorg"
+if [ "${Versiones}" = "SI" ] && [ "${Instalado}" = "NO" ]; then
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
   if [ -f "${File}" ]; then
@@ -107,8 +118,8 @@ if [ "${ExtrasOri}" ] && [ ! "${ExtrasIns}" == "ii" ]; then
     if ! dpkg --install ${File}; then
       echoe "Installing other dependencies ..." "Instalando otras dependencias ..."
       apt-get --yes --fix-broken install
-      omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
-      if [[ ! "${omvextrasInstall}" == "ii" ]]; then
+      Analizar "openmediavault-omvextrasorg"
+      if [[ "${Instalado}" = "NO" ]]; then
         echoe "omv-extras failed to install correctly.  Trying to fix with ${confCmd} ..." "omv-extras no se pudo instalar correctamente. Intentando corregir con ${confCmd} ..."
         if ${confCmd} omvextras; then
           echoe "Trying to fix apt ..." "Tratando de corregir apt..."
@@ -118,15 +129,14 @@ if [ "${ExtrasOri}" ] && [ ! "${ExtrasIns}" == "ii" ]; then
           exit 3
         fi
       fi
-      omvextrasInstall=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
-      if [[ ! "${omvextrasInstall}" == "ii" ]]; then
+      Analizar "openmediavault-omvextrasorg"
+      if [[ "${Instalado}" = "NO" ]]; then
         echoe "openmediavault-omvextrasorg package failed to install or is in a bad state." "El paquete openmediavault-omvextrasorg no se pudo instalar o está en mal estado."
         exit 3
       fi
     fi
     echoe "Updating repos ..." "Actualizando repositorios..."
-    omv-salt deploy run omvextras
-    Extras=1
+    "${confCmd}" omvextras
   else
     echoe "There was a problem downloading the package." "Hubo un problema al descargar el paquete."
     exit
@@ -134,89 +144,93 @@ if [ "${ExtrasOri}" ] && [ ! "${ExtrasIns}" == "ii" ]; then
 fi
 
 # Analizar versiones y complementos especiales
-# NOTA: ¿Posibilidad de continuar sin instalar uno de los complementos? 
-cont=0
-for i in $(awk '{print NR}' ${Ruta}${Backup[VersPlugins]})
+cont=0; sucio=0
+for i in $(awk '{print NR}' "${Ruta}${Backup[VersPlugins]}")
 do
-  Plugin=$(awk -v i="$i" 'NR==i{print $1}' ${Ruta}${Backup[VersPlugins]})
-  VersionOri=$(awk -v i="$i" 'NR==i{print $2}' ${Ruta}${Backup[VersPlugins]})
-  VersionDis=$(apt-cache madison "$Plugin" | awk '{print $3}')
-  case "${Plugin}" in
-    *"omvextrasorg" ) ;;
-    *"kernel" ) Kernel=1 ;;
-    *"zfs" ) ZFS=1 ;;
-    *"sharerootfs" ) Shareroot=1 ;;
-    *"apttool" ) Apttool=1 ;;
-    * )
-      (( cont++ ))
-      PluginIns[$cont]="${Plugin}"
-      ;;
-  esac
-  if [ "$VersionOri" != "$VersionDis" ]; then
-    echoe "TRADUCCION" "La versión disponible para instalar el complemento $Plugin es $VersionDis  No coincide con la versión del sistema original $VersionOri   Forzar la regeneración en estas condiciones puede provocar errores de configuración."
-    while true; do
-      [ ! $Sp ] && read -p "TRADUCCION" yn || read -p "Se recomienda abortar la regeneración ¿quieres abortar? (si/no): " yn
-      case $yn in
-        [yYsS]* ) echoe "Exiting..." "Saliendo..."; exit ;;
-        [nN]* ) break;;
-        * ) echoe "TRADUCCION" "Responde si o no: " ;;
+  Plugin=$(awk -v i="$i" 'NR==i{print $1}' "${Ruta}${Backup[VersPlugins]}")
+  Analizar "${Plugin}"
+  if [ "${Instalado}" = "NO" ]; then
+    echoe "TRADUCCION" "Versiones $Versiones \tInstalado $Instalado \t${Plugin} \c"
+    case "${Plugin}" in
+      *"kernel" ) Kernel=1 ;;
+      *"zfs" ) ZFS=1 ;;
+      *"compose" ) Compose=1 ;;
+      *"sharerootfs" ) Shareroot=1 ;;
+      *"apttool" ) Apttool=1 ;;
+      * )
+        (( cont++ ))
+        ListaInstalar[$cont]="${Plugin}"
+        ;;
+    esac
+    # Marcar complementos sucios. Desinstalar al final
+    if [ "${Versiones}" = "NO" ]; then
+      echoe "TRADUCCION" "\t**********\n********** ERROR:  Las versiones no coinciden  -->  Este complemento no se instalará."
+      case "${Plugin}" in
+        *"kernel" ) Kernel=11 ;;
+        *"zfs" ) ZFS=11 ;;
+        *"compose" ) Compose=11 ;;
+        *"sharerootfs" ) Shareroot=11 ;;
+        *"apttool" ) Apttool=11 ;;
+        * )
+          (( sucio++ ))
+          ListaDesinst[$sucio]="${Plugin}"
+          ;;
       esac
-    done
-  fi
-done
-
-# Instalar openmediavault-kernel si estaba instalado y si no se ha instalado ya
-KernelIns=$(dpkg -l | awk '$2 == "openmediavault-omvextrasorg" { print $1 }')
-if [ "${Kernel}" = 1 ] && [ ! "${KernelIns}" == "ii" ]; then
-  InstallPlugin openmediavault-kernel
-fi
-
-# Instalar Kernel proxmox si estaba en el sistema original y si no está instalado
-VersKernelOri=$(awk -F "." '/pve$/ {print $1"."$2 }' "${Ruta}${Backup[VersKernel]}")
-VersionKernelIns=$(uname -r | awk -F "." '/pve$/ {print $1"."$2 }')
-
-source /usr/sbin/omv-installproxmox "${VersKernelOri}"
-
-if [ "${VersKernelOri}" ] && [ ! "${VersKernelOri}" = "${VersionKernelIns}" ]; then
-  echoe "Installing proxmox kernel" "Instalando kernel proxmox"
-  source /usr/sbin/omv-installproxmox "${VersKernelOri}"
-  [ /etc/cron.d/regen-reboot ] && touch /etc/cron.d/regen-reboot
-  echo "@ reboot root /home/omv-regen-regenera.sh $Ruta" >> /etc/cron.d/regen-reboot
-  reboot
-fi
-
-
-echo hasta aquí
-exit
-
-# Instalar complementos
-for i in ComplemInstalar[@]
-do
-  if [ ! "$i" = "openmediavault" ] && [ ! "$i" = "openmediavault-omvextrasorg" ]; then
-    echoe "Install $i" "Instalando $i"
-    if ! apt-get --yes install "$i"; then
-      echoe "Failed to install $i plugin." "No se pudo instalar el complemento $i."
-      ${confCmd} "$i"
-      apt-get --yes --fix-broken install
-      exit
     else
-      CompII=$(dpkg -l | awk '$2 == "$i" { print $1 }')
-      if [[ ! "${CompII}" == "ii" ]]; then
-        echoe "$i plugin failed to install or is in a bad state." "El complemento $i no se pudo instalar o está en mal estado."
-        exit
-      fi
+      echoe "TRADUCCION" "  -->  Se va a instalar"
     fi
   fi
 done
 
-
-
-
-
-# Instalar openmediavault-ZFS si estaba en el sistema original e importar pools
-if [ $ZFS = "1" ]; then
-  # Importar pools
+# Instalar openmediavault-kernel
+Analiza openmediavault-kernel
+if [ "${Versiones}" = SI ] && [ "${Instalado}" = "NO" ]; then
+  InstallPlugin openmediavault-kernel
 fi
+
+# Instalar Kernel proxmox si omv-kernel no está sucio
+if  [ ! "${Kernel}" = "11" ]; then
+  VersKernelOri=$(awk -F "." '/pve$/ {print $1"."$2 }' "${Ruta}${Backup[VersKernel]}")
+  VersionKernelIns=$(uname -r | awk -F "." '/pve$/ {print $1"."$2 }')
+  if [ "${VersKernelOri}" ] && [ ! "${VersKernelOri}" = "${VersionKernelIns}" ]; then
+    echoe "Installing proxmox kernel" "Instalando kernel proxmox"
+    source /usr/sbin/omv-installproxmox "${VersKernelOri}"
+    [ ! -f /etc/cron.d/regen-reboot ] && touch /etc/cron.d/regen-reboot
+    echo "@ reboot root /home/omv-regen-regenera.sh $Ruta" >> /etc/cron.d/regen-reboot
+    reboot
+  fi
+fi
+
+# Instalar openmediavault-zfs. Importar pools.
+Analiza openmediavault-zfs
+if [ "${Versiones}" = SI ] && [ "${Instalado}" = "NO" ]; then
+  InstallPlugin openmediavault-zfs
+  if ! zpool import -a; then
+    zpool import -f
+  fi
+fi
+
+##############################################################################
+echo hasta aquí
+exit
+##############################################################################
+
+# Instalar shareroot y apttool
+
+
+# DOCKER
+# Averiguar donde estaba docker
+# Montar sistema de archivos de docker
+# Instalar docker
+# Instalar compose
+
+
+# Instalar resto de complementos
+for i in ListaInstalar[@]
+do
+  InstallPlugin $i
+done
+
 
 # Generar usuarios
 
@@ -233,6 +247,8 @@ if [ $Shareroot = "1" ]; then
   fi
   apt-get install --reinstall openmediavault-sharerootfs
 fi
+
+# Desinstalar complementos sucios.
 
 # Reiniciar
 reboot

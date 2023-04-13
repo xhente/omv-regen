@@ -31,6 +31,10 @@ BaseDatos=/etc/openmediavault/config.xml
 ArchPasswd=/etc/passwd
 ArchShadow=/etc/shadow
 
+
+# OPCION EXPORTAR POOL ZFS
+
+
 # Variables de entorno
 Fecha=$(date +%y%m%d_%H%M)
 [ $(cut -b 7,8 /etc/default/locale) = es ] && Sp=1
@@ -74,7 +78,7 @@ cp -av /home/omv-regen-backup.sh "${Destino}"/omv-regen-backup.sh
 cp -av /home/omv-regen-regenera.sh "${Destino}"/omv-regen-regenera.sh
 
 echoe ">>>    Creating plugin list..." ">>>    Creando lista de complementos..."
-dpkg -l | awk '/openmediavault-/ {print $2"\t"$3}' > "${Destino}${VersPlugins}"
+dpkg -l | awk '/openmediavault/ {print $2"\t"$3}' > "${Destino}${VersPlugins}"
 sed -i '/keyring/d' "${Destino}${VersPlugins}"
 cat "${Destino}${VersPlugins}"
 

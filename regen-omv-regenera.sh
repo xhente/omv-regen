@@ -69,17 +69,17 @@ fi
 
 # Versión OMV
 if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
-  echoe "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
+  echoe "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." "Versión no soportada.   Solo está soportado OMV 6.x.  Saliendo..."
   exit
 fi
 
 # Ruta backup
 if [ -z "${Ruta}" ]; then
-  echoe "TRADUCCION" "Escribe la ruta del backup después del comando->  regen-omv-regenera.sh /PATH_TO/BACKUP"
+  echoe "TRADUCCION" "Escribe la ruta del backup después del comando->  regen-omv-regenera.sh /PATH_TO/BACKUP\nSaliendo..."
   exit
 else
   if [ "$1" ]; then
-    echoe "TRADUCCION" "Si hay espacios en la ruta del backup usa comillas->  regen-omv-regenera.sh \"/PATH TO/BACKUP\""
+    echoe "TRADUCCION" "Si hay espacios en la ruta del backup usa comillas->  regen-omv-regenera.sh \"/PATH TO/BACKUP\"\nSaliendo..."
     exit
   fi
 fi
@@ -87,7 +87,7 @@ fi
 # Archivos del backup
 for i in "${Backup[@]}"; do
   if [ ! -f "${Ruta}$i" ]; then
-    echoe "TRADUCCION" "El archivo $i no existe en ${Ruta}.  Saliendo..."
+    echoe "TRADUCCION" "Falta el archivo $i en ${Ruta}.  Saliendo..."
     exit
   fi
 done
@@ -95,13 +95,13 @@ done
 # Versión de OMV original
 Analizar "openmediavault"
 if [ "${Versiones}" = "NO" ]; then
-  echoe "TRADUCCION" "La versiones de OMV no coinciden.  Saliendo..."
+  echoe "TRADUCCION" "La versión de OMV del servidor original no coincide.  Saliendo..."
   exit
 fi
 
 # Actualizar sistema
 if ! omv-upgrade; then
-  echoe "Failed updating system" "Error actualizando el sistema"
+  echoe "Failed updating system" "Error actualizando el sistema.  Saliendo..."
   exit
 fi
 
@@ -182,8 +182,15 @@ do
   fi
 done
 
+# Opción forzar
+if "${Fo}" = 0; then
+  "No se puede realizar la regeneración. Hay versiones de paquetes no coincidentes con el servidor de origen."
+  exit
+fi
+
+
 # Instalar openmediavault-kernel
-Analiza openmediavault-kernel
+Analizar openmediavault-kernel
 if [ "${Versiones}" = SI ] && [ "${Instalado}" = "NO" ]; then
   InstallPlugin openmediavault-kernel
 fi
@@ -202,7 +209,7 @@ if  [ ! "${Kernel}" = "11" ]; then
 fi
 
 # Instalar openmediavault-zfs. Importar pools.
-Analiza openmediavault-zfs
+Analizar openmediavault-zfs
 if [ "${Versiones}" = SI ] && [ "${Instalado}" = "NO" ]; then
   InstallPlugin openmediavault-zfs
   if ! zpool import -a; then

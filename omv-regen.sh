@@ -6,6 +6,7 @@ Rege=""
 Ruta=""
 OpDias=7
 OpExpz=""
+OpUpda=""
 OpKern=1
 declare -A Bp
 Bp[VersPlug]='/VersionPlugins'
@@ -22,7 +23,8 @@ VersIdem=""
 confCmd="omv-salt deploy run"
 cont=0
 declare -a ListaInstalar
-VersionKernel=""
+KernelOR=""
+KernelIN=""
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
@@ -52,6 +54,8 @@ help () {
   echo -e "                        edit a folder's prefix (ROB_) to prevent it from being deleted."
   echo -e "              -e        Export ZFS pools. Do this only if you are going to regenerate  "
   echo -e "                        immediately.                                                   "
+  echo -e "              -u        Update system before backup. Use if it is going to regenerate  "
+  echo -e "                        immediately.                                                   "
   echo -e "          [folders]     Optional folders to add to the backup. Separate with spaces.   "
   echo -e "                        Use quotes for paths with spaces.                              "
   echo -e "_______________________________________________________________________________________"
@@ -70,8 +74,8 @@ Analiza () {
   VersionDI=""
   InstII=""
   VersionOR=$(awk -v i="$1" '$1 == i {print $2}' "${Ruta}${Bp[VersPlug]}")
-  VersionDI=$(apt-cache madison "$1" | awk '{print $3}')
-  InstII=$(dpkg -l | awk -v i="$1" '$2 == i { print $1 }')
+  VersionDI=$(apt-cache madison "$1" | awk 'NR==1{print $3}')
+  InstII=$(dpkg -l | awk -v i="$1" '$2 == i {print $1}')
   if [ "${InstII}" == "ii" ]; then
     InstII=OK
   else
@@ -86,7 +90,7 @@ Analiza () {
 
 # Instalar complemento
 InstalaPlugin () {
-  echoe "Install $1 plugin" "Instalando el complemento $1"
+  echoe "\nInstall $1 plugin\n" "\nInstalando el complemento $1\n"
   if ! apt-get --yes install "$1"; then
     echoe "Failed to install $1 plugin." "No se pudo instalar el complemento $1."
     "${confCmd}" "$1"
@@ -148,6 +152,9 @@ if [ $Back ]; then
       h)
         help
         ;;
+      u)
+        OpUpda=1
+        ;;
       *)
         echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
         help
@@ -190,6 +197,14 @@ else
 fi
 
 # EJECUTA BACKUP
+
+if [ "$OpUpda" ]; then
+  if ! omv-upgrade; then
+    echoe "Failed updating system. Exiting..." "Error actualizando el sistema.  Saliendo..."
+    exit
+  fi
+fi
+
 if [ $Back ]; then
   Destino="${Ruta}/omv-regen/ORB_${Fecha}"
   echoe ">>>    Copying data to ${Destino}..." ">>>    Copiando datos a ${Destino}..."
@@ -314,7 +329,6 @@ do
     case "${Plugin}" in
       *"kernel" ) ;;
       *"zfs" ) ;;
-      *"compose" ) ;;
       * )
         (( cont++ ))
         ListaInstalar[cont]="${Plugin}"
@@ -337,8 +351,8 @@ fi
 
 # Instalar Kernel proxmox
 if [ $OpKern ]; then
-  KernelOR=$(awk -F "." '/pve$/ {print $1"."$2 }' "${Ruta}${Bp[VersKern]}")
-  KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2 }')
+  KernelOR=$(awk -F "." '/pve$/ {print $1"."$2}' "${Ruta}${Bp[VersKern]}")
+  KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2}')
   if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
     echoe "Installing proxmox kernel" "Instalando kernel proxmox"
     source /usr/sbin/omv-installproxmox "${KernelOR}"
@@ -358,48 +372,37 @@ fi
 Analiza openmediavault-zfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
-  if ! zpool import -a; then
-    zpool import -f
-  fi
+  zpool import -f
 fi
 
-##############################################################################
-echo hasta aquí
-exit
-##############################################################################
-
-# DOCKER
-# Averiguar donde estaba docker
-# Montar sistema de archivos de docker
-# Instalar docker
-# Instalar compose
-
-
 # Instalar resto de complementos
-for i in ListaInstalar[@]
-do
-  InstalaPlugin $i
+for i in "${ListaInstalar[@]}"; do
+  Analiza "$i"
+  if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+    InstalaPlugin "$i"
+  fi
 done
 
+# Restaurar archivos del backup
+rsync -av "${Ruta}" "/" --exclude Version*
 
-# Generar usuarios
-
-# Sustituir base de datos e implementar
+# Implementar la configuracion
 omv-salt stage run prepare
 omv-salt stage run deploy
 
 # Reinstalar openmediavault-sharerootfs
-Analiza sharerootfs
-if [ "$InstII" = "OK" ]; then
-  source /usr/share/openmediavault/scripts/helper-functions
-  uuid="79684322-3eac-11ea-a974-63a080abab18"
-  if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
-    omv-confdbadm delete --uuid "${uuid}" "conf.system.filesystem.mountpoint"
-  fi
-  apt-get install --reinstall openmediavault-sharerootfs
+source /usr/share/openmediavault/scripts/helper-functions
+uuid="79684322-3eac-11ea-a974-63a080abab18"
+if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
+  omv-confdbadm delete --uuid "${uuid}" "conf.system.filesystem.mountpoint"
 fi
+apt-get install --reinstall openmediavault-sharerootfs
 
-# Desinstalar complementos sucios.
+# Mover docker a su sitio
+#
+#
+#
+#
+#
 
-# Reiniciar
 reboot

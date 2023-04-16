@@ -7,10 +7,10 @@ Ruta=""
 OpDias=7
 OpUpda=""
 OpKern=1
-declare -A ROB
-ROB[Dpkg]='/ROB_Dpkg'
-ROB[Unamea]='/ROB_Unamea'
-ROB[Zpoollist]='/ROB_Zpoollist'
+declare -A ORB
+ORB[Dpkg]='/ORB_Dpkg'
+ORB[Unamea]='/ORB_Unamea'
+ORB[Zpoollist]='/ORB_Zpoollist'
 Config="/etc/openmediavault/config.xml"
 Passwd="/etc/passwd"
 Shadow="/etc/shadow"
@@ -52,7 +52,7 @@ help () {
   echo -e "      Options and parameters:                                                          "
   echo -e "        PATH_TO_BACKUP  Path to store the folders with the backups.                    "
   echo -e "              -d        Delete backups older than X days (by default 7 days). You can  "
-  echo -e "                        edit a folder's prefix (ROB_) to prevent it from being deleted."
+  echo -e "                        edit a folder's prefix (ORB_) to prevent it from being deleted."
   echo -e "              -u        Update system before backup. Use if it is going to regenerate  "
   echo -e "                        immediately.                                                   "
   echo -e "          [folders]     Optional folders to add to the backup. Separate with spaces.   "
@@ -72,7 +72,7 @@ Analiza () {
   VersionOR=""
   VersionDI=""
   InstII=""
-  VersionOR=$(awk -v i="$1" '$2 == i {print $3}' "${Ruta}${ROB[Dpkg]}")
+  VersionOR=$(awk -v i="$1" '$2 == i {print $3}' "${Ruta}${ORB[Dpkg]}")
   VersionDI=$(apt-cache madison "$1" | awk 'NR==1{print $3}')
   InstII=$(dpkg -l | awk -v i="$1" '$2 == i {print $1}')
   if [ "${InstII}" == "ii" ]; then
@@ -93,8 +93,13 @@ InstalaPlugin () {
   if ! apt-get --yes install "$1"; then
     "${confCmd}" "$1"
     apt-get --yes --fix-broken install
-    echoe "Failed to install $1 plugin. Exiting..." "El complemento $1 no se pudo instalar. Saliendo..."
-    exit
+    apt-get update
+    if ! apt-get --yes install "$1"; then
+      "${confCmd}" "$1"
+      apt-get --yes --fix-broken install
+      echoe "Failed to install $1 plugin. Exiting..." "El complemento $1 no se pudo instalar. Saliendo..."
+      exit
+    fi
   fi
 }
 
@@ -205,7 +210,7 @@ fi
 if [ $Back ]; then
 
   # Crea carpeta Destino
-  Destino="${Ruta}/omv-regen/ROB_${Fecha}"
+  Destino="${Ruta}/omv-regen/ORB_${Fecha}"
   if [ -d "${Destino}" ]; then
     rm "${Destino}"
   fi
@@ -233,27 +238,27 @@ if [ $Back ]; then
 
   # Crea registro dpkg
   echoe ">>>    Extracting version list (dpkg)..." ">>>    Extrayendo lista de versiones (dpkg)..."
-  dpkg -l | grep openmediavault > "${Destino}${ROB[Dpkg]}"
-  cat "${Destino}${ROB[Dpkg]}" | awk '{print $2" "$3}'
+  dpkg -l | grep openmediavault > "${Destino}${ORB[Dpkg]}"
+  cat "${Destino}${ORB[Dpkg]}" | awk '{print $2" "$3}'
 
   # Crea registro uname -a
   echoe ">>>    Extracting system info (uname -a)..." ">>>    Extrayendo información del sistema (uname -a)..."
-  uname -a | tee "${Destino}${ROB[Unamea]}"
+  uname -a | tee "${Destino}${ORB[Unamea]}"
 
   # Crea registro zpool list
   echoe ">>>    Extracting zfs info (zpool list)..." ">>>    Extrayendo información de zfs (zpool list)..."
-  zpool list | tee "${Destino}${ROB[Zpoollist]}"
+  zpool list | tee "${Destino}${ORB[Zpoollist]}"
     
   # Copia directorios opcionales
   while [ "$*" ]; do
     echoe ">>>    Copying optional $1 directory..." ">>>    Copiando directorio opcional $1..."
-    rsync -av "$1"/ "${Destino}/ROB_OptionalFolders$1"
+    rsync -av "$1"/ "${Destino}/ORB_OptionalFolders$1"
     shift
   done
 
   # Elimina backups antiguos
   echoe ">>>    Deleting backups larger than ${OpDias} days..." ">>>    Eliminando backups de hace más de ${OpDias} días..."
-  find "${Ruta}/omv-regen/" -maxdepth 1 -type d -name "ROB_*" -mtime "+$OpDias" -exec rm -rv {} +
+  find "${Ruta}/omv-regen/" -maxdepth 1 -type d -name "ORB_*" -mtime "+$OpDias" -exec rm -rv {} +
   # Nota:   -mmin = minutos  ///  -mtime = dias
   
   echoe "\n       Backup completed!\n" "\n       ¡Backup completado!\n"
@@ -263,7 +268,7 @@ fi
 # EJECUTA REGENERACION DE SISTEMA
 
 # Comprobar backup
-for i in "${ROB[@]}"; do
+for i in "${ORB[@]}"; do
   if [ ! -f "${Ruta}$i" ]; then
     echoe "TRADUCCION" "Falta el archivo $i en ${Ruta}.  Saliendo..."
     help
@@ -323,9 +328,9 @@ fi
 
 # Analizar versiones y complementos especiales
 cont=0
-for i in $(awk '{print NR}' "${Ruta}${ROB[Dpkg]}")
+for i in $(awk '{print NR}' "${Ruta}${ORB[Dpkg]}")
 do
-  Plugin=$(awk -v i="$i" 'NR==i{print $2}' "${Ruta}${ROB[Dpkg]}")
+  Plugin=$(awk -v i="$i" 'NR==i{print $2}' "${Ruta}${ORB[Dpkg]}")
   Analiza "${Plugin}"
   if [ "${InstII}" = "NO" ]; then
     echoe "Versions $VersIdem \tInstalled $InstII \t${Plugin} \c" "Versiones $VersIdem \tInstalado $InstII \t${Plugin} \c"
@@ -354,21 +359,22 @@ fi
 
 # Instalar Kernel proxmox
 if [ $OpKern ]; then
-  KernelOR=$(awk '{print $3}' "${Ruta}${ROB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
+  KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
   KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2}')
   if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
     echoe "Installing proxmox kernel" "Instalando kernel proxmox"
     source /usr/sbin/omv-installproxmox "${KernelOR}"
+    echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nReinicia y ejecuta de nuevo el script para completar la regeneración."
     #
     #
     # SOLUCIONAR EXIT AL FINAL DEL PROGRAMA LLAMADO
     #
     #
-    if [ ! -f /etc/cron.d/omvregenreboot ]; then
-      touch /etc/cron.d/omvregenreboot
-    fi
-    echo "@ reboot ${Comando}" >> /etc/cron.d/omvregenreboot
-    reboot
+#    if [ ! -f /etc/cron.d/omvregenreboot ]; then
+#      touch /etc/cron.d/omvregenreboot
+#    fi
+#    echo "@ reboot ${Comando}" >> /etc/cron.d/omvregenreboot
+#    reboot
   fi
 fi
 
@@ -376,7 +382,9 @@ fi
 Analiza openmediavault-zfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
-  zpool import -f
+  for i in $(awk 'NR>2{print $1}'); do
+    zpool import -f $i 
+  done
 fi
 
 # Instalar resto de complementos
@@ -388,13 +396,14 @@ for i in "${ListaInstalar[@]}"; do
 done
 
 # Restaurar configuración del servidor original si no se ha hecho ya
-if [ "$(diff "$Ruta$Passwd" = "$Passwd")" ]; then
+if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
   echoe "TRADUCCION" "Implementando configuración del servidor original..."
-  rsync -av "${Ruta}" "/" --exclude ROB_*
+  rsync -av "${Ruta}"/ "/" --exclude ROB_*
   omv-salt stage run prepare
   omv-salt stage run deploy
-  
+
   # Reinstalar openmediavault-sharerootfs
+  echoe "TRADUCCION" "Configurando openmediavault-sharerootfs..."
   source /usr/share/openmediavault/scripts/helper-functions
   uuid="79684322-3eac-11ea-a974-63a080abab18"
   if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
@@ -406,15 +415,11 @@ if [ "$(diff "$Ruta$Passwd" = "$Passwd")" ]; then
   # Instalar paquetes de apttools
   # Extraer symlinks base de datos y crear
 
-#  if [ ! -f /etc/cron.d/omvregenreboot ]
-#    touch /etc/cron.d/omvregenreboot
-#  fi
-#  echo "@ reboot ${Comando}" >> /etc/cron.d/omvregenreboot
-  reboot
-
+  echoe "TRADUCCION" "Regeneración completada. Reinicia para aplicar cambios."
+  exit
 fi
 
-echoe "\n       Regeneration completed!\n" "\n       ¡Regeneración completada!\n"
+echoe "\n       Done!\n" "\n       ¡Hecho!\n"
 exit
 
 

@@ -8,6 +8,7 @@ OpDias=7
 OpFold=""
 OpUpda=""
 OpKern=1
+OpRebo=""
 declare -A ORB
 ORB[Dpkg]='/ORB_Dpkg'
 ORB[Unamea]='/ORB_Unamea'
@@ -35,7 +36,22 @@ URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
-echoe () { [ ! "$Sp" ] && echo -e "$1" || echo -e "$2"; }
+
+# Muestra el mensaje en español o inglés según el sistema.
+# $1 opcional segundos de espera. Pulsar una tecla sale y devuelve 1, si no se pulsa es 0.
+echoe () {
+  if [[ "$1" =~ ^[0-9]+$ ]]; then
+    [ ! "$Sp" ] && echo -e "$2" || echo -e "$3"
+    read -t$1 -n1 -r -p "" tecla
+    if [ "$?" -eq "0" ]; then
+      tecla=1
+    else
+      tecla=0
+    fi
+  else
+    [ ! "$Sp" ] && echo -e "$1" || echo -e "$2"
+  fi
+}
 
 help () {
   echo -e "\033[0;32m                                                                     "
@@ -83,7 +99,7 @@ help () {
   echo -e "                                                                               "
   echo -e "    -k     Skip installing the proxmox kernel.                                 "
   echo -e "                                                                               "
-  echo -e "    -r     Skip reboot. Manually reboot and run again if a kernel is installed."
+  echo -e "    -r     Reboot and run again if kernel is installed (default manual reboot) "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                        \033[0m"
   exit
@@ -155,6 +171,10 @@ ExecStart=omv-regen regenera
 WantedBy=multi-user.target" > "${Sysreboot}"
 echoe "omv-regen has been installed." "Se ha instalado omv-regen."
 help
+}
+
+Seg (){
+  read -t$1 -n1 -r -p " " segundos
 }
 
 # Root
@@ -272,8 +292,8 @@ if [ $Rege ]; then
         echoe "TRADUCCION" "No se instalará el kernel proxmox."
         ;;
       r)
-        OpRebo=""
-        echoe "TRADUCCION" "No se reiniciará el sistema, será necesario hacerlo manualmente."
+        OpRebo=1
+        echoe 3 "TRADUCCION" "Se reiniciará automáticamente el sistema después de instalar un kernel."
         ;;
       *)
         echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
@@ -515,10 +535,23 @@ if [ $OpKern ]; then
     . /tmp/installproxmox "${KernelOR}"
     rm /tmp/installproxmox
     echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nSe debe reiniciar el servidor y ejecutar de nuevo omv-regen regenera para completar la regeneración."
-    sed -i "s/^ExecStart=.*$/ExecStart=${Comando}/" "${Sysreboot}"
-    systemctl enable omv-regen-reboot
-    reboot
-    exit
+    if [ "${OpRebo}"]; then
+      echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nSe va a reiniciar el sistema y continuará la regeneración en segundo plano. No apagues el servidor."
+      echoe 10 "Para   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
+      if [ "${tecla}" = "1" ]; then
+        echoe "TRADUCCION" "Reinicio abortado. \nPara completar la regeneración reinicia el sistema y ejecuta de nuevo omv-regen regenera. Saliendo..."
+        exit
+      else
+        echoe "Rebooting..." "Reiniciando..."
+        sed -i "s/^ExecStart=.*$/ExecStart=${Comando}/" "${Sysreboot}"
+        systemctl enable omv-regen-reboot
+        reboot
+        exit
+      fi
+    else
+      echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nPara completar la regeneración reinicia el sistema y ejecuta de nuevo omv-regen regenera. Saliendo..."
+      exit
+    fi
   fi
 fi
 
@@ -526,25 +559,26 @@ fi
 Analiza openmediavault-zfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
-  for i in $(awk 'NR>1{print $1}' "${Ruta}""$ORB[Zpoollist]"); do
+  # SOLUCIONAR. ESTE BUCLE NO FUNCIONA.
+  for i in $(awk 'NR>1{print $1}' "${Ruta}$ORB[Zpoollist]"); do
     zpool import -f $i 
   done
 fi
 
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
-DockerOR=$(cat "${Ruta}"ORB[Systemctl] | grep docker.service | awk '{print $2}')
-DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
-if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
-  echoe "TRADUCCION" "Instalando docker..."
-  LeeConfig "dockerStorage"
-  if [ ! "${ValorConfig}" = "/var/lib/docker" ]; then
+#DockerOR=$(cat "${Ruta}"ORB[Systemctl] | grep docker.service | awk '{print $2}')
+#DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
+#if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
+#  echoe "TRADUCCION" "Instalando docker..."
+#  LeeConfig "dockerStorage"
+#  if [ ! "${ValorConfig}" = "/var/lib/docker" ]; then
     #   Montar sistema de archivos en el que estaba docker
     #   Instalar docker
-  else
+#  else
     # Si compose estaba instalado instalar compose 
       # Si no Instala docker en ubicacion predeterminada
-  fi
-fi
+#  fi
+#fi
 
 # Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do

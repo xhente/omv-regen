@@ -148,6 +148,7 @@ After=network.target network-online.target
 Wants=network-online.target
 
 [Service]
+ExecStartPre=/bin/sleep 60
 ExecStart=omv-regen regenera
 
 [Install]
@@ -525,7 +526,7 @@ fi
 Analiza openmediavault-zfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
-  for i in $(awk 'NR>1{print $1}' "${Ruta}$ORB[Zpoollist]"); do
+  for i in $(awk 'NR>1{print $1}' "${Ruta}""$ORB[Zpoollist]"); do
     zpool import -f $i 
   done
 fi

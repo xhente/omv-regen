@@ -5,12 +5,14 @@ Back=""
 Rege=""
 Ruta=""
 OpDias=7
+OpFold=""
 OpUpda=""
 OpKern=1
 declare -A ORB
 ORB[Dpkg]='/ORB_Dpkg'
 ORB[Unamea]='/ORB_Unamea'
 ORB[Zpoollist]='/ORB_Zpoollist'
+ORB[Systemctl]='/ORB_Systemctl'
 Config="/etc/openmediavault/config.xml"
 Passwd="/etc/passwd"
 Shadow="/etc/shadow"
@@ -26,6 +28,9 @@ cont=0
 declare -a ListaInstalar
 KernelOR=""
 KernelIN=""
+Inst="/usr/sbin/omv-regen"
+Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
+ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 confCmd="omv-salt deploy run"
 
@@ -33,37 +38,54 @@ confCmd="omv-salt deploy run"
 echoe () { [ ! "$Sp" ] && echo -e "$1" || echo -e "$2"; }
 
 help () {
-  echo -e "                                                                                       "
-  echo -e "               HELP FOR USING OMV-REGEN      (BACKUP AND REGENERATE)                   "
-  echo -e "                                                                                       "
-  echo -e "  - omv-regen regenerates an OMV system from a clean install by restoring the existing "
-  echo -e "  configurations to the original system.                                               "
-  echo -e "  - Update the system. Install omv-regen on the original system and make a backup. Then"
-  echo -e "  install OMV on an empty disk without configuring anything. Then Install omv-regen and"
-  echo -e "  mount the backup on a flash drive, then regenerate.  The version available on the in-"
-  echo -e "  ternet must match.                                                                   "
-  echo -e "  - Use omv-regen backup      to store the necessary information to regenerate.        "
-  echo -e "  - Use omv-regen regenerate  to run a system regeneration from a clean install of OMV."
-  echo -e "  - This script must be executed as root or using sudo.                                "
-  echo -e "  - Only OMV 6.x. are supported.                                                       "
-  echo -e "_______________________________________________________________________________________"
-  echo -e "    omv-regen backup PATH_TO_BACKUP [OPTIONS] [/folder1 \"/folder 2\" /folder3...]     "
-  echo -e "                                                                                       "
-  echo -e "      Options and parameters:                                                          "
-  echo -e "        PATH_TO_BACKUP  Path to store the folders with the backups.                    "
-  echo -e "              -d        Delete backups older than X days (by default 7 days). You can  "
-  echo -e "                        edit a folder's prefix (ORB_) to prevent it from being deleted."
-  echo -e "              -u        Update system before backup. Use if it is going to regenerate  "
-  echo -e "                        immediately.                                                   "
-  echo -e "          [folders]     Optional folders to add to the backup. Separate with spaces.   "
-  echo -e "                        Use quotes for paths with spaces.                              "
-  echo -e "_______________________________________________________________________________________"
-  echo -e "    omv-regen regenera PATH_TO_BACKUP [OPTIONS]                                        "
-  echo -e "                                                                                       "
-  echo -e "      Options and parameters:                                                          "
-  echo -e "        PATH_TO_BACKUP  Path where the backup is stored with the data to regenerate.   "
-  echo -e "              -k        Skip installing the proxmox kernel.                            "
-  echo -e "                                                                                       "
+  echo -e "\033[0;32m                                                                     "
+  echo -e "_______________________________________________________________________________"
+  echo -e "                                                                               "
+  echo -e "              HELP FOR USING OMV-REGEN    (BACKUP AND REGENERATE)              "
+  echo -e "                                                                               "
+  echo -e "  - omv-regen   regenerates an OMV system from a clean install by restoring the"
+  echo -e "    existing configurations to the original system.                            "
+  echo -e "  - Install omv-regen on the original system, update and make a backup. Install"
+  echo -e "    OMV on an empty disk without configuring anything.  Mount a backup, install"
+  echo -e "    omv-regen and then regenerate. The version available on the internet of the"
+  echo -e "    plugins and OMV must match.                                                "
+  echo -e "  - Use omv-regen install     to install omv-regen on your system.             "
+  echo -e "  - Use omv-regen backup      to store the necessary information to regenerate."
+  echo -e "  - Use omv-regen regenerate  to run a system regeneration from a clean OMV.   "
+  echo -e "_______________________________________________________________________________"
+  echo -e "                                                                               "
+  echo -e "   omv-regen install                                                           "
+  echo -e "                     Enable the command on the system and enable reboot.       "
+  echo -e "                     1.Make this file executable with    ->  chmod +x omv-regen"
+  echo -e "                     2.Run it with the install parameter ->  omv-regen install "
+  echo -e "_______________________________________________________________________________"
+  echo -e "                                                                               "
+  echo -e "   omv-regen backup   [OPTIONS]   [/folder_one \"/folder two\" ... ]           "
+  echo -e "                                                                               "
+  echo -e "                                                                               "
+  echo -e "    -b     Path to store the subfolders with the backups.                      "
+  echo -e "                                                                               "
+  echo -e "    -d     Delete backups older than X days (by default 7 days).               "
+  echo -e "                          Edit ORB_ prefix to keep subfolder.                  "
+  echo -e "    -h     Help.                                                               "
+  echo -e "                                                                               "
+  echo -e "    -o     Optional folders to backup. Spaces to separate, quotes if necessary."
+  echo -e "                                                                               "
+  echo -e "    -u     Automatically update the system while the backup is being made.     "
+  echo -e "_______________________________________________________________________________"
+  echo -e "                                                                               "
+  echo -e "   omv-regen regenera   [OPTIONS]   [/backup_folder]                           "
+  echo -e "                                                                               "
+  echo -e "                                                                               "
+  echo -e "    -b     Path where the backup with the configuration is stored.             "
+  echo -e "                                                                               "
+  echo -e "    -h     Help                                                                "
+  echo -e "                                                                               "
+  echo -e "    -k     Skip installing the proxmox kernel.                                 "
+  echo -e "                                                                               "
+  echo -e "    -r     Skip reboot. Manually reboot and run again if a kernel is installed."
+  echo -e "_______________________________________________________________________________"
+  echo -e "                                                                        \033[0m"
   exit
 }
 
@@ -103,6 +125,37 @@ InstalaPlugin () {
   fi
 }
 
+# Extraer entrada de la base de datos
+LeeConfig () {
+  Etiqueta=$1
+  ValorConfig=$(cat "${Ruta}${Config}" | sed -n "s:.*<${Etiqueta}>\(.*\)</$Etiqueta>.*:\1:p")
+}
+
+# Instalar omv-regen
+InstalarOR (){
+if [ ! $0 = "${Inst}" ];then
+  if [ -f "${Inst}" ]; then
+    rm "${Inst}"
+  fi
+  touch "${Inst}"
+  cp -a $0 "${Inst}"
+  chmod +x "${Inst}"
+fi
+touch "${Sysreboot}"
+echo "[Unit]
+Description=reboot regen service
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=omv-regen regenera
+
+[Install]
+WantedBy=multi-user.target" > "${Sysreboot}"
+echoe "omv-regen has been installed." "Se ha instalado omv-regen."
+help
+}
+
 # Root
 if [[ $(id -u) -ne 0 ]]; then
   echoe "This script must be executed as root or using sudo.  Exiting..." "Este script se debe ejecutar como root o usando sudo.  Saliendo..."
@@ -110,9 +163,13 @@ if [[ $(id -u) -ne 0 ]]; then
 fi
 
 # Eliminar programación de ejecución tras reinicio. Recopilar información para reinicio.
-if [ -f /etc/cron.d/omvregenreboot ]; then
-  rm /etc/cron.d/omvregenreboot
+if [ -f "${Sysreboot}" ]; then
+  Habilit=$(systemctl list-unit-files | grep omv-regen-reboot | awk '{print $2}')
+  if [ "${Habilit}" = "enabled" ]; then
+    systemctl disable omv-regen-reboot
+  fi
 fi
+
 Comando=$0
 for i in "$@"; do
   Comando="${Comando} $i"
@@ -124,37 +181,66 @@ if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
   help
 fi
 
-# Procesa parámetros y argumentos
-if [[ $1 == "backup" ]]; then
-  Back=1
-  echoe  "\n       <<< Backup to regenerate system dated ${Fecha} >>>\n" "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>\n"
-elif [[ $1 == "regenera" ]]; then
-  Rege=1
-  echoe  "\n       <<< Regenerating OMV system >>>\n" "\n       <<< Regenerando sistema OMV >>>\n"
-else  
-  help
-fi
+# Procesa primer argumento
+case "$1" in
+  backup)
+    Back=1
+    echoe  "\n       <<< Backup to regenerate system dated ${Fecha} >>>\n" "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>\n"
+    ;;
+  regenera)
+    Rege=1
+    echoe  "\n       <<< Regenerating OMV system >>>\n" "\n       <<< Regenerando sistema OMV >>>\n"
+    ;;
+  install)
+    InstalarOR
+    ;;
+  help)
+    help
+    ;;
+  *)
+    echoe "TRADUCCION" "Argumento inválido. Solo puede ser backup, regenera o install."
+    help
+    ;;
+esac
+shift
 
-if [ -d "${2}" ]; then
-  Ruta="$2"
-  shift 2
-else
-  echoe "TRADUCCION" "La ruta $2 no existe. Saliendo..."
-  help
-fi
-
+# Procesa parámetros backup
 if [ $Back ]; then
-  while getopts "d:hu" opt; do
+  while getopts "b:d:ho:u" opt; do
     case "$opt" in
+      b)
+        if [ -d "${OPTARG}" ]; then
+          Ruta="${OPTARG}"
+          echoe "TRADUCCION" "El backup se almacenará en ${Ruta}"
+        else
+          echoe "TRADUCCION" "La carpeta ${OPTARG} no existe. Saliendo..."
+          help
+        fi
+        ;;
       d)
-        OpDias=$OPTARG
-        echoe "TRADUCCION" "Se eliminarán los backups de mas de $OpDias días de antigüedad."
+        if [[ "$OPTARG" =~ ^[0-9]+$ ]]; then
+          OpDias=$OPTARG
+          echoe "TRADUCCION" "Se eliminarán los backups de mas de $OpDias días de antigüedad."
+        else
+          echoe "TRADUCCION" "La opción -d debe ser un número. Saliendo..."
+          help
+        fi
         ;;
       h)
         help
         ;;
+      o)
+        if [ -d "${OPTARG}" ]; then
+          OpFold="${OPTARG}"
+          echoe "TRADUCCION" "La carpeta ${OpFold} se va a copiar."
+        else
+          echoe "TRADUCCION" "La carpeta ${OPTARG} no existe. Saliendo..."
+          help
+        fi
+        ;;
       u)
         OpUpda=1
+        echoe "TRADUCCION" "Se va a actualizar el sistema antes de hacer el backup."
         ;;
       *)
         echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
@@ -164,9 +250,19 @@ if [ $Back ]; then
   done
 fi
 
+# Procesa parámetros regenera
 if [ $Rege ]; then
-  while getopts "hk" opt; do
+  while getopts "b:hkr" opt; do
     case "$opt" in
+      b)
+        if [ -d "${OPTARG}" ]; then
+          Ruta="${OPTARG}"
+          echoe "TRADUCCION" "Se ha establecido ${Ruta} como origen de datos."
+        else
+          echoe "TRADUCCION" "La carpeta ${OPTARG} no existe. Saliendo..."
+          help
+        fi
+        ;;
       h)
         help
         ;;
@@ -174,6 +270,10 @@ if [ $Rege ]; then
         OpKern=""
         echoe "TRADUCCION" "No se instalará el kernel proxmox."
         ;;
+      r)
+        OpRebo=""
+        echoe "TRADUCCION" "No se reiniciará el sistema, será necesario hacerlo manualmente."
+        ;;
       *)
         echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
         help
@@ -182,19 +282,57 @@ if [ $Rege ]; then
   done
 fi
 
+# Procesa resto de argumentos 
 shift $((OPTIND -1))
-if [[ -n "$Rege" && -n $1 ]]; then
-  echoe "$1 Invalid argument. Exiting..." "$1 Argumento inválido. Saliendo..."
+if [ "$Back" ] && [ "$1" ]; then
+  if [ "${OpFold}" ]; then
+    for i in "$@"; do
+      if [ -d "$i" ]; then
+        echoe "TRADUCCION" "La carpeta $i se va a copiar."
+      else
+        echoe "TRADUCCION" "La carpeta $i no existe. Saliendo..."
+        help
+      fi
+    done
+  else
+  echoe "TRADUCCION" "Para elegir carpetas opcionales debes seleccionar la opción -o"
   help
-else
-  for i in "$@"; do
-    if [ -d "$i" ]; then
-      echoe "TRADUCCION" "La carpeta $i se va a copiar."
-    else  
-      echoe "TRADUCCION" "La carpeta $i no existe o no es accesible. Saliendo..."
-      help
+  fi
+fi
+
+if [ "$Back" ] && [ ! "${Ruta}" ]; then
+  echoe "TRADUCCION" "No se ha establecido carpeta para el backup. Se almacenará en ${ORBackup}"
+  if [ ! -d "${ORBackup}" ]; then
+    mkdir -p "${ORBackup}"
+  fi
+  Ruta="${ORBackup}"
+fi
+
+if [ "$Rege" ]; then
+  if [ "$2" ]; then
+    echoe "TRADUCCION" "Argumento inválido $2 Saliendo..."
+    help
+  else
+    if [ "$1" ]; then
+      if [ "${Ruta}" ]; then
+        echoe "TRADUCCION" "Argumento inválido $1 Saliendo..."
+        help
+      else
+        if [ -d "$1" ]; then
+          Ruta="$1"
+          echoe "TRADUCCION" "Se ha establecido ${Ruta} como origen de datos."
+        else
+          echoe "TRADUCCION" "La carpeta $1 no existe. Saliendo..."
+          help
+        fi
+      fi
+    else
+      if [ ! "${Ruta}" ]; then
+        echoe "TRADUCCION" "Falta la ruta de origen del backup para regenerar. Saliendo..."
+        help
+      fi
     fi
-  done
+  fi
 fi
 
 # EJECUTA BACKUP
@@ -210,13 +348,13 @@ fi
 if [ $Back ]; then
 
   # Crea carpeta Destino
-  Destino="${Ruta}/omv-regen/ORB_${Fecha}"
+  Destino="${Ruta}/ORB_${Fecha}"
   if [ -d "${Destino}" ]; then
     rm "${Destino}"
   fi
   mkdir -p "${Destino}"
 
-  # Copiar directorios existentes de la lista
+  # Copiar directorios existentes predeterminados
   for i in "${Directorios[@]}"; do
     if [ -d "$i" ]; then
       echoe ">>>    Copying $i directory..." ">>>    Copiando directorio $i..."
@@ -227,7 +365,7 @@ if [ $Back ]; then
     fi
   done
 
-  # Copiar archivos de la lista
+  # Copiar archivos predeterminados
   echoe ">>>    Copying files to ${Destino}..." ">>>    Copiando archivos a ${Destino}..."
   for i in "${Archivos[@]}"; do
     if [ ! -d "$(dirname "${Destino}$i")" ]; then
@@ -248,17 +386,25 @@ if [ $Back ]; then
   # Crea registro zpool list
   echoe ">>>    Extracting zfs info (zpool list)..." ">>>    Extrayendo información de zfs (zpool list)..."
   zpool list | tee "${Destino}${ORB[Zpoollist]}"
-    
+
+  # Crea registro docker systemctl
+  echoe "TRADUCCION" ">>>    Extrayendo información de systemd (systemctl)..."
+  systemctl list-unit-files | tee "${Destino}${ORB[Systemctl]}"
+
   # Copia directorios opcionales
+  echoe ">>>    Copying optional $OpFold directory..." ">>>    Copiando directorio opcional $OpFold..."
+  mkdir -p "${Destino}/ORB_OptionalFolders$OpFold"
+  rsync -av "$OpFold"/ "${Destino}/ORB_OptionalFolders$OpFold"
   while [ "$*" ]; do
     echoe ">>>    Copying optional $1 directory..." ">>>    Copiando directorio opcional $1..."
+    mkdir -p "${Destino}/ORB_OptionalFolders$OpFold"
     rsync -av "$1"/ "${Destino}/ORB_OptionalFolders$1"
     shift
   done
 
   # Elimina backups antiguos
   echoe ">>>    Deleting backups larger than ${OpDias} days..." ">>>    Eliminando backups de hace más de ${OpDias} días..."
-  find "${Ruta}/omv-regen/" -maxdepth 1 -type d -name "ORB_*" -mtime "+$OpDias" -exec rm -rv {} +
+  find "${Ruta}/" -maxdepth 1 -type d -name "ORB_*" -mtime "+$OpDias" -exec rm -rv {} +
   # Nota:   -mmin = minutos  ///  -mtime = dias
   
   echoe "\n       Backup completed!\n" "\n       ¡Backup completado!\n"
@@ -362,19 +508,16 @@ if [ $OpKern ]; then
   KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
   KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2}')
   if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
-    echoe "Installing proxmox kernel" "Instalando kernel proxmox"
-    source /usr/sbin/omv-installproxmox "${KernelOR}"
-    echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nReinicia y ejecuta de nuevo el script para completar la regeneración."
-    #
-    #
-    # SOLUCIONAR EXIT AL FINAL DEL PROGRAMA LLAMADO
-    #
-    #
-#    if [ ! -f /etc/cron.d/omvregenreboot ]; then
-#      touch /etc/cron.d/omvregenreboot
-#    fi
-#    echo "@ reboot ${Comando}" >> /etc/cron.d/omvregenreboot
-#    reboot
+    echoe "Installing proxmox kernel ${KernelOR}" "Instalando kernel proxmox ${KernelOR}"
+    cp -a /usr/sbin/omv-installproxmox /tmp/installproxmox
+    sed -i 's/^exit 0.*$/echo "0"/' /tmp/installproxmox
+    . /tmp/installproxmox "${KernelOR}"
+    rm /tmp/installproxmox
+    echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nSe debe reiniciar el servidor y ejecutar de nuevo omv-regen regenera para completar la regeneración."
+    sed -i "s/^ExecStart=.*$/ExecStart=${Comando}/" "${Sysreboot}"
+    systemctl enable omv-regen-reboot
+    reboot
+    exit
   fi
 fi
 
@@ -382,9 +525,24 @@ fi
 Analiza openmediavault-zfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
-  for i in $(awk 'NR>2{print $1}'); do
+  for i in $(awk 'NR>1{print $1}' "${Ruta}$ORB[Zpoollist]"); do
     zpool import -f $i 
   done
+fi
+
+# Instalar docker en la ubicacion original si estaba instalado y no está instalado
+DockerOR=$(cat "${Ruta}"ORB[Systemctl] | grep docker.service | awk '{print $2}')
+DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
+if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
+  echoe "TRADUCCION" "Instalando docker..."
+  LeeConfig "dockerStorage"
+  if [ ! "${ValorConfig}" = "/var/lib/docker" ]; then
+    #   Montar sistema de archivos en el que estaba docker
+    #   Instalar docker
+  else
+    # Si compose estaba instalado instalar compose 
+      # Si no Instala docker en ubicacion predeterminada
+  fi
 fi
 
 # Instalar resto de complementos
@@ -421,6 +579,3 @@ fi
 
 echoe "\n       Done!\n" "\n       ¡Hecho!\n"
 exit
-
-
-

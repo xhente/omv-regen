@@ -37,8 +37,11 @@ confCmd="omv-salt deploy run"
 
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
+# FUNCIONES
+
 # Muestra el mensaje en español o inglés según el sistema.
-# $1 opcional segundos de espera. Pulsar una tecla sale y devuelve 1, si no se pulsa es "".
+# Opcional $1 = segundos de espera.
+# Si hay espera -> Pulsar una tecla sale y devuelve Tecla=1, si no se pulsa Tecla="".
 echoe () {
   Tecla=""
   if [[ "$1" =~ ^[0-9]+$ ]]; then
@@ -166,6 +169,7 @@ InstalarOR (){
   help
 }
 
+# Crear servicio reboot
 Creasysreboot (){
   echoe "Generating reboot service..." "Generando servicio de reinicio..."
   if [ -f "${Sysreboot}" ]; then
@@ -185,6 +189,8 @@ ExecStart=$Comando
 WantedBy=multi-user.target" > "${Sysreboot}"
 }
 
+# VALIDA ENTORNO
+
 # Root
 if [[ $(id -u) -ne 0 ]]; then
   echoe "This script must be executed as root or using sudo.  Exiting..." "Este script se debe ejecutar como root o usando sudo.  Saliendo..."
@@ -200,17 +206,19 @@ if [ -f "${Sysreboot}" ]; then
   fi
 fi
 
-# Almacenar argumentos de ejecución.
-Comando=$0
-for i in "$@"; do
-  Comando="${Comando} $i"
-done
-
 # Release 6.x.
 if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
   echoe "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
   help
 fi
+
+# PROCESA ARGUMENTOS
+
+# Almacenar argumentos de ejecución.
+Comando=$0
+for i in "$@"; do
+  Comando="${Comando} $i"
+done
 
 # Procesa primer argumento
 case "$1" in

@@ -38,15 +38,16 @@ confCmd="omv-salt deploy run"
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
 # Muestra el mensaje en español o inglés según el sistema.
-# $1 opcional segundos de espera. Pulsar una tecla sale y devuelve 1, si no se pulsa es 0.
+# $1 opcional segundos de espera. Pulsar una tecla sale y devuelve 1, si no se pulsa es "".
 echoe () {
+  Tecla=""
   if [[ "$1" =~ ^[0-9]+$ ]]; then
     [ ! "$Sp" ] && echo -e "$2" || echo -e "$3"
-    read -t$1 -n1 -r -p "" tecla
+    read -t$1 -n1 -r -p "" Tecla
     if [ "$?" -eq "0" ]; then
-      tecla=1
+      Tecla=1
     else
-      tecla=0
+      Tecla=""
     fi
   else
     [ ! "$Sp" ] && echo -e "$1" || echo -e "$2"
@@ -71,35 +72,36 @@ help () {
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
   echo -e "   omv-regen install                                                           "
-  echo -e "                     Enable the command on the system and enable reboot.       "
+  echo -e "                     Enable the command on the system.                         "
   echo -e "                     1.Make this file executable with    ->  chmod +x omv-regen"
   echo -e "                     2.Run it with the install parameter ->  omv-regen install "
+  echo -e "                     3.Delete this file.                                       "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
-  echo -e "   omv-regen backup   [OPTIONS]   [/folder_one \"/folder two\" ... ]           "
+  echo -e "   omv-regen backup   [OPTIONS]   [/folder_one \"/folder two\" /folder ... ]   "
   echo -e "                                                                               "
   echo -e "                                                                               "
   echo -e "    -b     Path to store the subfolders with the backups.                      "
   echo -e "                                                                               "
-  echo -e "    -d     Delete backups older than X days (by default 7 days).               "
-  echo -e "                          Edit ORB_ prefix to keep subfolder.                  "
+  echo -e "    -d     Establishes the days of age of the backups kept (by default 7 days)."
+  echo -e "                          You can edit the ORB_ prefix to keep a version.      "
   echo -e "    -h     Help.                                                               "
   echo -e "                                                                               "
-  echo -e "    -o     Optional folders to backup. Spaces to separate, quotes if necessary."
+  echo -e "    -o     Enable optional folder backup. Spaces to separate (can use quotes). "
   echo -e "                                                                               "
-  echo -e "    -u     Automatically update the system while the backup is being made.     "
+  echo -e "    -u     Enable automatic system update before backup.                       "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
   echo -e "   omv-regen regenera   [OPTIONS]   [/backup_folder]                           "
   echo -e "                                                                               "
   echo -e "                                                                               "
-  echo -e "    -b     Path where the backup with the configuration is stored.             "
+  echo -e "    -b     Path where the backup created by omv-regen is stored.               "
   echo -e "                                                                               "
   echo -e "    -h     Help                                                                "
   echo -e "                                                                               "
   echo -e "    -k     Skip installing the proxmox kernel.                                 "
   echo -e "                                                                               "
-  echo -e "    -r     Reboot and run again if kernel is installed (default manual reboot) "
+  echo -e "    -r     Enable automatic reboot if needed (create reboot service).          "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                        \033[0m"
   exit
@@ -149,32 +151,38 @@ LeeConfig () {
 
 # Instalar omv-regen
 InstalarOR (){
-if [ ! $0 = "${Inst}" ];then
-  if [ -f "${Inst}" ]; then
-    rm "${Inst}"
+  if [ ! $0 = "${Inst}" ];then
+    if [ -f "${Inst}" ]; then
+      rm "${Inst}"
+    fi
+    touch "${Inst}"
+    cp -a $0 "${Inst}"
+    chmod +x "${Inst}"
+    echoe "\n  omv-regen has been installed. You can delete the installation file.\n" "\n  omv-regen se ha instalado. Puedes eliminar el archivo de instalación.\n"
+  else
+    echoe "\n  omv-regen was already installed.\n" "\n  omv-regen ya estaba instalado.\n"
   fi
-  touch "${Inst}"
-  cp -a $0 "${Inst}"
-  chmod +x "${Inst}"
-fi
-touch "${Sysreboot}"
-echo "[Unit]
-Description=reboot regen service
+  echoe "Showing the usage:\n" "Mostrando el uso:\n"
+  help
+}
+
+Creasysreboot (){
+  echoe "Generating reboot service..." "Generando servicio de reinicio..."
+  if [ -f "${Sysreboot}" ]; then
+    rm "${Sysreboot}"
+  fi
+  touch "${Sysreboot}"
+  echo "[Unit]
+Description=reboot omv-regen service
 After=network.target network-online.target
 Wants=network-online.target
 
 [Service]
 ExecStartPre=/bin/sleep 60
-ExecStart=omv-regen regenera
+ExecStart=$Comando
 
 [Install]
 WantedBy=multi-user.target" > "${Sysreboot}"
-echoe "omv-regen has been installed." "Se ha instalado omv-regen."
-help
-}
-
-Seg (){
-  read -t$1 -n1 -r -p " " segundos
 }
 
 # Root
@@ -183,14 +191,16 @@ if [[ $(id -u) -ne 0 ]]; then
   help
 fi
 
-# Eliminar programación de ejecución tras reinicio. Recopilar información para reinicio.
+# Deshabilitar reboot.
 if [ -f "${Sysreboot}" ]; then
   Habilit=$(systemctl list-unit-files | grep omv-regen-reboot | awk '{print $2}')
   if [ "${Habilit}" = "enabled" ]; then
-    systemctl disable omv-regen-reboot
+    echoe "Disabling reboot..." "Deshabilitando reinicio..."
+    systemctl disable omv-regen-reboot.service
   fi
 fi
 
+# Almacenar argumentos de ejecución.
 Comando=$0
 for i in "$@"; do
   Comando="${Comando} $i"
@@ -534,24 +544,23 @@ if [ $OpKern ]; then
     sed -i 's/^exit 0.*$/echo "0"/' /tmp/installproxmox
     . /tmp/installproxmox "${KernelOR}"
     rm /tmp/installproxmox
-    echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nSe debe reiniciar el servidor y ejecutar de nuevo omv-regen regenera para completar la regeneración."
-    if [ "${OpRebo}"]; then
-      echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nSe va a reiniciar el sistema y continuará la regeneración en segundo plano. No apagues el servidor."
-      echoe 10 "Para   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
-      if [ "${tecla}" = "1" ]; then
-        echoe "TRADUCCION" "Reinicio abortado. \nPara completar la regeneración reinicia el sistema y ejecuta de nuevo omv-regen regenera. Saliendo..."
-        exit
+    echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado."
+    if [ "${OpRebo}" ]; then
+      echoe "TRADUCCION" "\nOpción reinicio activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
+      echoe 10 "\nPara   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
+      if [ "${Tecla}" ]; then
+        echoe "TRADUCCION" "Reinicio abortado.\n"
       else
+        Creasysreboot
+        systemctl enable omv-regen-reboot.service
+        echoe 3 "TRADUCCION" "Servicio de reinicio habilitado."
         echoe "Rebooting..." "Reiniciando..."
-        sed -i "s/^ExecStart=.*$/ExecStart=${Comando}/" "${Sysreboot}"
-        systemctl enable omv-regen-reboot
         reboot
         exit
       fi
-    else
-      echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado.\nPara completar la regeneración reinicia el sistema y ejecuta de nuevo omv-regen regenera. Saliendo..."
-      exit
     fi
+    echoe "TRADUCCION" "Opción reinicio deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\nPara completar la regeneración ejecuta de nuevo omv-regen regenera después de reiniciar.\n Saliendo..."
+    exit
   fi
 fi
 
@@ -566,19 +575,19 @@ if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
 fi
 
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
-#DockerOR=$(cat "${Ruta}"ORB[Systemctl] | grep docker.service | awk '{print $2}')
-#DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
-#if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
-#  echoe "TRADUCCION" "Instalando docker..."
-#  LeeConfig "dockerStorage"
-#  if [ ! "${ValorConfig}" = "/var/lib/docker" ]; then
+DockerOR=$(cat "${Ruta}"ORB[Systemctl] | grep docker.service | awk '{print $2}')
+DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
+if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
+  echoe "TRADUCCION" "Instalando docker..."
+  LeeConfig "dockerStorage"
+  if [ ! "${ValorConfig}" = "/var/lib/docker" ]; then
     #   Montar sistema de archivos en el que estaba docker
     #   Instalar docker
-#  else
+  else
     # Si compose estaba instalado instalar compose 
       # Si no Instala docker en ubicacion predeterminada
-#  fi
-#fi
+  fi
+fi
 
 # Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do

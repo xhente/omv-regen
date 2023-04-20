@@ -30,6 +30,11 @@ declare -a ListaInstalar
 KernelOR=""
 KernelIN=""
 Inst="/usr/sbin/omv-regen"
+Tecla=""
+EtiqOR=""
+EtiqAC=""
+SeccOR=""
+SeccAC=""
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
@@ -39,6 +44,9 @@ confCmd="omv-salt deploy run"
 
 # FUNCIONES
 
+# Funciones OMV
+. /usr/share/openmediavault/scripts/helper-functions
+
 # Muestra el mensaje en español o inglés según el sistema.
 # Opcional $1 = segundos de espera.
 # Si hay espera -> Pulsar una tecla sale y devuelve Tecla=1, si no se pulsa Tecla="".
@@ -47,7 +55,7 @@ echoe () {
   if [[ "$1" =~ ^[0-9]+$ ]]; then
     [ ! "$Sp" ] && echo -e "$2" || echo -e "$3"
     read -t$1 -n1 -r -p "" Tecla
-    if [ "$?" -eq "0" ]; then
+    if [ $? -eq 0 ]; then
       Tecla=1
     else
       Tecla=""
@@ -147,19 +155,64 @@ InstalaPlugin () {
 }
 
 # Extraer entrada de la base de datos
-LeeConfig () {
-  Etiqueta=$1
-  ValorConfig=$(cat "${Ruta}${Config}" | sed -n "s:.*<${Etiqueta}>\(.*\)</$Etiqueta>.*:\1:p")
+LeeEtiqueta () {
+  local Etiqueta=$1
+  EtiqOR=$(sed -n "s:.*<${Etiqueta}>\(.*\)</${Etiqueta}>.*:\1:p" "${Ruta}${Config}")
+  EtiqAC=$(sed -n "s:.*<${Etiqueta}>\(.*\)</${Etiqueta}>.*:\1:p" "${Config}")
+}
+
+# Extraer Sección de la base de datos
+LeeSeccion () {
+  echoe "" "Leyendo sección $1 de la base de datos"
+  local Seccion
+  local InOR
+  local FiOR
+  local InAC
+  local FiAC
+  Seccion=$1
+  InOR=$(awk "/<${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '1p')
+  FiOR=$(awk "/<\/${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '$p')
+  InAC=$(awk "/<${Seccion}/ {print NR}" "${Config}" | sed -n '1p')
+  FiAC=$(awk "/<\/${Seccion}/ {print NR}" "${Config}" | sed -n '$p')
+  SeccOR=$(awk -v IO=$InOR -v FO=$FiOR 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}")
+  SeccAC=$(awk -v IA=$InAC -v FA=$FiAC 'NR==IA, NR==FA {print $0}' "${Config}")
+}
+
+# Actualiza sección de la base de datos original a la base de datos actual
+ActualizaSeccion () {
+  echoe "" "Actualizando sección $1 de la base de datos"
+  local Seccion
+  local InOR
+  local FiOR
+  local InAC
+  local LoAC
+  local ConfTmp
+  Seccion=$1
+  InOR="$(awk "/<${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '1p')"
+  FiOR="$(awk "/<\/${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '$p')"
+  InAC="$(awk "/<${Seccion}/ {print NR}" "${Config}" | sed -n '1p')"
+  FiAC="$(awk "/<\/${Seccion}/ {print NR}" "${Config}" | sed -n '$p')"
+  LoAC="$(awk 'END {print NR}' "${Config}")"
+  ConfTmp=/etc/openmediavault/config.rg
+  [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
+  cp -a "${Config}" "${ConfTmp}"
+  sed -i '1,$d' "${ConfTmp}"
+  awk -v IA=$InAC 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
+  awk -v IO=$InOR -v FO=$FiOR 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+  awk -v FA=$FiAC -v LA=$LoAC 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
+  rm "${Config}"
+  cp -a "${ConfTmp}" "${Config}"
+  rm "${ConfTmp}"
 }
 
 # Instalar omv-regen
 InstalarOR (){
-  if [ ! $0 = "${Inst}" ];then
+  if [ ! "$0" = "${Inst}" ];then
     if [ -f "${Inst}" ]; then
       rm "${Inst}"
     fi
     touch "${Inst}"
-    cp -a $0 "${Inst}"
+    cp -a "$0" "${Inst}"
     chmod +x "${Inst}"
     echoe "\n  omv-regen has been installed. You can delete the installation file.\n" "\n  omv-regen se ha instalado. Puedes eliminar el archivo de instalación.\n"
   else
@@ -212,10 +265,16 @@ if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
   help
 fi
 
+# Comprobar si omv-regen está instalado
+if [ ! "$0" = "${Inst}" ] && [ ! $1 = "install" ]; then
+  echoe "TRADUCCION" "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen install\nSaliendo..."
+  help
+fi
+
 # PROCESA ARGUMENTOS
 
 # Almacenar argumentos de ejecución.
-Comando=$0
+Comando="$0"
 for i in "$@"; do
   Comando="${Comando} $i"
 done
@@ -388,10 +447,16 @@ if [ $Back ]; then
 
   # Crea carpeta Destino
   Destino="${Ruta}/ORB_${Fecha}"
-  if [ -d "${Destino}" ]; then
-    rm "${Destino}"
+  echoe 3 "TRADUCCION" "Se va a realizar un backup en ${Destino} \nPulsa cualquier tecla antes de 3 segundos para  ABORTAR"
+  if [ "${Tecla}" ]; then
+    echoe "Exiting..." "Saliendo..."
+    help
+  else
+    if [ -d "${Destino}" ]; then
+      rm "${Destino}"
+    fi
+    mkdir -p "${Destino}"
   fi
-  mkdir -p "${Destino}"
 
   # Copiar directorios existentes predeterminados
   for i in "${Directorios[@]}"; do
@@ -416,7 +481,7 @@ if [ $Back ]; then
   # Crea registro dpkg
   echoe ">>>    Extracting version list (dpkg)..." ">>>    Extrayendo lista de versiones (dpkg)..."
   dpkg -l | grep openmediavault > "${Destino}${ORB[Dpkg]}"
-  cat "${Destino}${ORB[Dpkg]}" | awk '{print $2" "$3}'
+  awk '{print $2" "$3}' "${Destino}${ORB[Dpkg]}"
 
   # Crea registro uname -a
   echoe ">>>    Extracting system info (uname -a)..." ">>>    Extrayendo información del sistema (uname -a)..."
@@ -451,6 +516,12 @@ if [ $Back ]; then
 fi
 
 # EJECUTA REGENERACION DE SISTEMA
+
+echoe 5 "TRADUCCION" "\n\nSe va a ejecutar la  REGENERACION DEL SISTEMA ACTUAL  desde ${Ruta} \nPulsa cualquier tecla antes de 5 segundos para  ABORTAR....."
+if [ "${Tecla}" ]; then
+  echoe "Exiting..." "Saliendo..."
+  help
+fi
 
 # Comprobar backup
 for i in "${ORB[@]}"; do
@@ -522,6 +593,7 @@ do
     case "${Plugin}" in
       *"kernel" ) ;;
       *"zfs" ) ;;
+      *"sharerootfs" ) ;;
       * )
         (( cont++ ))
         ListaInstalar[cont]="${Plugin}"
@@ -549,12 +621,12 @@ if [ $OpKern ]; then
   if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
     echoe "Installing proxmox kernel ${KernelOR}" "Instalando kernel proxmox ${KernelOR}"
     cp -a /usr/sbin/omv-installproxmox /tmp/installproxmox
-    sed -i 's/^exit 0.*$/echo "0"/' /tmp/installproxmox
+    sed -i 's/^exit 0.*$/echo "Completado"/' /tmp/installproxmox
     . /tmp/installproxmox "${KernelOR}"
     rm /tmp/installproxmox
-    echoe "TRADUCCION" "Kernel proxmox "${KernelOR}" instalado."
+    echoe "TRADUCCION" "Kernel proxmox ${KernelOR} instalado."
     if [ "${OpRebo}" ]; then
-      echoe "TRADUCCION" "\nOpción reinicio activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
+      echoe "TRADUCCION" "\nOpción reinicio automático activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
       echoe 10 "\nPara   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
       if [ "${Tecla}" ]; then
         echoe "TRADUCCION" "Reinicio abortado.\n"
@@ -567,7 +639,7 @@ if [ $OpKern ]; then
         exit
       fi
     fi
-    echoe "TRADUCCION" "Opción reinicio deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\nPara completar la regeneración ejecuta de nuevo omv-regen regenera después de reiniciar.\n Saliendo..."
+    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\nPara completar la regeneración -> Después de reiniciar ejecuta de nuevo omv-regen regenera.\n Saliendo..."
     exit
   fi
 fi
@@ -576,10 +648,32 @@ fi
 Analiza openmediavault-zfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
-  # SOLUCIONAR. ESTE BUCLE NO FUNCIONA.
-  for i in $(awk 'NR>1{print $1}' "${Ruta}$ORB[Zpoollist]"); do
-    zpool import -f $i 
+  for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
+    zpool import -f "$i" 
   done
+  "${confCmd}" zfszed collectd fstab monit quota
+fi
+
+# Montar sistemas de archivos. Actualizar datos básicos.
+Analiza openmediavault-sharerootfs
+if [ "${InstII}" = "NO" ]; then
+  InstalaPlugin openmediavault-sharerootfs
+  echoe "TRADUCCION" "Montando sistemas de archivos..."
+  ActualizaSeccion fstab
+  ActualizaSeccion timezone
+  ############################################
+  #
+  # AÑADIR OTROS ACTUALIZABLES EN ESTE MOMENTO
+  #
+  ############################################
+  omv-salt stage run prepare
+  omv-salt stage run deploy
+  echoe "TRADUCCION" "Configurando openmediavault-sharerootfs..."
+  uuid="79684322-3eac-11ea-a974-63a080abab18"
+  if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
+    omv-confdbadm delete --uuid "${uuid}" "conf.system.filesystem.mountpoint"
+  fi
+  apt-get install --reinstall openmediavault-sharerootfs
 fi
 
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
@@ -587,9 +681,8 @@ DockerOR=$(cat "${Ruta}"ORB[Systemctl] | grep docker.service | awk '{print $2}')
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "TRADUCCION" "Instalando docker..."
-  LeeConfig "dockerStorage"
-  if [ ! "${ValorConfig}" = "/var/lib/docker" ]; then
-    #   Montar sistema de archivos en el que estaba docker
+  LeeEtiqueta "dockerStorage"
+  if [ ! "${EtiqOR}" = "/var/lib/docker" ]; then
     #   Instalar docker
   else
     # Si compose estaba instalado instalar compose 
@@ -612,15 +705,6 @@ if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
   omv-salt stage run prepare
   omv-salt stage run deploy
 
-  # Reinstalar openmediavault-sharerootfs
-  echoe "TRADUCCION" "Configurando openmediavault-sharerootfs..."
-  source /usr/share/openmediavault/scripts/helper-functions
-  uuid="79684322-3eac-11ea-a974-63a080abab18"
-  if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
-    omv-confdbadm delete --uuid "${uuid}" "conf.system.filesystem.mountpoint"
-  fi
-  apt-get install --reinstall openmediavault-sharerootfs
-  # Mover docker a su sitio
   # Conseguir los grupos de los usuarios
   # Instalar paquetes de apttools
   # Extraer symlinks base de datos y crear

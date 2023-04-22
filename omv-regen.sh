@@ -14,6 +14,7 @@ ORB[Dpkg]='/ORB_Dpkg'
 ORB[Unamea]='/ORB_Unamea'
 ORB[Zpoollist]='/ORB_Zpoollist'
 ORB[Systemctl]='/ORB_Systemctl'
+ORB[Ipa]='/ORB_Ipa'
 Config="/etc/openmediavault/config.xml"
 Passwd="/etc/passwd"
 Shadow="/etc/shadow"
@@ -142,11 +143,9 @@ Analiza () {
 InstalaPlugin () {
   echoe "\nInstall $1 plugin\n" "\nInstalando el complemento $1\n"
   if ! apt-get --yes install "$1"; then
-    omv-salt deploy run "$1"
     apt-get --yes --fix-broken install
     apt-get update
     if ! apt-get --yes install "$1"; then
-      omv-salt deploy run "$1"
       apt-get --yes --fix-broken install
       echoe "Failed to install $1 plugin. Exiting..." "El complemento $1 no se pudo instalar. Saliendo..."
       exit
@@ -520,6 +519,10 @@ if [ $Back ]; then
   echoe "TRADUCCION" ">>>    Extrayendo información de systemd (systemctl)..."
   systemctl list-unit-files | tee "${Destino}${ORB[Systemctl]}"
 
+  # Crea registro de configuracion de red
+  echoe "TRADUCCION" ">>>    Extrayendo información de red (ip a)..."
+  ip a | tee "${Destino}${ORB[Ipa]}"
+
   # Elimina backups antiguos
   echoe ">>>    Deleting backups larger than ${OpDias} days..." ">>>    Eliminando backups de hace más de ${OpDias} días..."
   find "${Ruta}/" -maxdepth 1 -type d -name "ORB_*" -mtime "+$OpDias" -exec rm -rv {} +
@@ -562,7 +565,7 @@ fi
 Analiza "openmediavault-omvextrasorg"
 if [ "${InstII}" = "NO" ]; then
   echoe "TRADUCCION" "Restaurando archivos..."
-  rsync -av "${Ruta}"/ / --exclude /*config.xml
+  rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "" "Regenerando Sistema..."
   Regenera time
   Aplica chrony cron timezone
@@ -610,8 +613,6 @@ if [ "${InstII}" = "NO" ]; then
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
   fi
-  Regenera omvextras
-  Aplica omvextras
 fi
 
 # Analizar versiones y complementos especiales
@@ -764,6 +765,9 @@ if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
   Aplica apt profile
   Regenera iptables
   Aplica iptables hdparm
+  echoe "" "Regenerando omvextras"
+  Regenera omvextras
+  Aplica omvextras
 fi
 
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
@@ -771,17 +775,17 @@ DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "TRADUCCION" "Instalando docker..."
-  Actualiza omvextras
-  Aplica omvextras
   LeeEtiqueta dockerStorage
   dockerStorage="${EtiqOR}"
   Regenera omvextras
-  . /usr/sbin/omv-installdocker
-  installDocker
+  Aplica omvextras
+  cp -a /usr/sbin/omv-installdocker /tmp/installdocker
+    sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
+    . /tmp/installdocker "${dockerStorage}"
+    rm /tmp/installdocker
+    echoe "TRADUCCION" "Docker instalado."
   # REVISAR ESTO. NO SE INSTALA DONDE DEBE
 fi
-
-
 
 # Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do
@@ -795,6 +799,8 @@ done
 # Extraer symlinks base de datos y crear
 
 
+#omv-salt stage run prepare
+#omv-salt stage run deploy
 
 echoe "\n       Done!\n" "\n       ¡Hecho!\n"
 exit

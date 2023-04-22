@@ -24,7 +24,6 @@ VersionOR=""
 VersionDI=""
 InstII=""
 VersIdem=""
-confCmd="omv-salt deploy run"
 cont=0
 declare -a ListaInstalar
 KernelOR=""
@@ -38,7 +37,8 @@ SeccAC=""
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
-confCmd="omv-salt deploy run"
+Sucio="/var/lib/openmediavault/.dirtymodules.json"
+. /etc/default/openmediavault
 
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
@@ -54,7 +54,7 @@ echoe () {
   Tecla=""
   if [[ "$1" =~ ^[0-9]+$ ]]; then
     [ ! "$Sp" ] && echo -e "$2" || echo -e "$3"
-    read -t$1 -n1 -r -p "" Tecla
+    read -t"$1" -n1 -r -p "" Tecla
     if [ $? -eq 0 ]; then
       Tecla=1
     else
@@ -98,8 +98,8 @@ help () {
   echo -e "                          You can edit the ORB_ prefix to keep a version.      "
   echo -e "    -h     Help.                                                               "
   echo -e "                                                                               "
-  echo -e "    -o     Enable optional folder backup. Spaces to separate (can use quotes). "
-  echo -e "                                                                               "
+  echo -e "    -o     Enable optional folder backup. (by default /home /etc/libvirt/qemu) "
+  echo -e "                          Spaces to separate (can use quotes).                 "
   echo -e "    -u     Enable automatic system update before backup.                       "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
@@ -142,11 +142,11 @@ Analiza () {
 InstalaPlugin () {
   echoe "\nInstall $1 plugin\n" "\nInstalando el complemento $1\n"
   if ! apt-get --yes install "$1"; then
-    "${confCmd}" "$1"
+    omv-salt deploy run "$1"
     apt-get --yes --fix-broken install
     apt-get update
     if ! apt-get --yes install "$1"; then
-      "${confCmd}" "$1"
+      omv-salt deploy run "$1"
       apt-get --yes --fix-broken install
       echoe "Failed to install $1 plugin. Exiting..." "El complemento $1 no se pudo instalar. Saliendo..."
       exit
@@ -170,17 +170,17 @@ LeeSeccion () {
   local InAC
   local FiAC
   Seccion=$1
-  InOR=$(awk "/<${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '1p')
-  FiOR=$(awk "/<\/${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '$p')
-  InAC=$(awk "/<${Seccion}/ {print NR}" "${Config}" | sed -n '1p')
-  FiAC=$(awk "/<\/${Seccion}/ {print NR}" "${Config}" | sed -n '$p')
+  InOR=$(awk "/<${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '1p')
+  FiOR=$(awk "/<\/${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '$p')
+  InAC=$(awk "/<${Seccion}>/ {print NR}" "${Config}" | sed -n '1p')
+  FiAC=$(awk "/<\/${Seccion}>/ {print NR}" "${Config}" | sed -n '$p')
   SeccOR=$(awk -v IO=$InOR -v FO=$FiOR 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}")
   SeccAC=$(awk -v IA=$InAC -v FA=$FiAC 'NR==IA, NR==FA {print $0}' "${Config}")
 }
 
 # Actualiza sección de la base de datos original a la base de datos actual
-ActualizaSeccion () {
-  echoe "" "Actualizando sección $1 de la base de datos"
+Regenera () {
+  echoe "" "Regenerando sección $1 de la base de datos"
   local Seccion
   local InOR
   local FiOR
@@ -188,21 +188,33 @@ ActualizaSeccion () {
   local LoAC
   local ConfTmp
   Seccion=$1
-  InOR="$(awk "/<${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '1p')"
-  FiOR="$(awk "/<\/${Seccion}/ {print NR}" "${Ruta}${Config}" | sed -n '$p')"
-  InAC="$(awk "/<${Seccion}/ {print NR}" "${Config}" | sed -n '1p')"
-  FiAC="$(awk "/<\/${Seccion}/ {print NR}" "${Config}" | sed -n '$p')"
+  InOR="$(awk "/<${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '1p')"
+  FiOR="$(awk "/<\/${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '$p')"
+  InAC="$(awk "/<${Seccion}>/ {print NR}" "${Config}" | sed -n '1p')"
+  FiAC="$(awk "/<\/${Seccion}>/ {print NR}" "${Config}" | sed -n '$p')"
   LoAC="$(awk 'END {print NR}' "${Config}")"
   ConfTmp=/etc/openmediavault/config.rg
   [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
   cp -a "${Config}" "${ConfTmp}"
   sed -i '1,$d' "${ConfTmp}"
   awk -v IA=$InAC 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
-  awk -v IO=$InOR -v FO=$FiOR 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+  if [ $InOR -eq $FiOR ]; then
+    awk -v IO=$InOR 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+  else
+    awk -v IO=$InOR -v FO=$FiOR 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+  fi
   awk -v FA=$FiAC -v LA=$LoAC 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
   rm "${Config}"
   cp -a "${ConfTmp}" "${Config}"
   rm "${ConfTmp}"
+}
+
+Aplica () {
+  for i in "$@"; do
+    omv-salt deploy run "${i}"
+  done 
+  sed -i '1,$d' "${Sucio}"
+  printf "[]" > "${Sucio}"
 }
 
 # Instalar omv-regen
@@ -266,7 +278,7 @@ if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
 fi
 
 # Comprobar si omv-regen está instalado
-if [ ! "$0" = "${Inst}" ] && [ ! $1 = "install" ]; then
+if [ ! "$0" = "${Inst}" ] && [ ! "$1" = "install" ]; then
   echoe "TRADUCCION" "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen install\nSaliendo..."
   help
 fi
@@ -393,7 +405,7 @@ if [ "$Back" ] && [ "$1" ]; then
       fi
     done
   else
-  echoe "TRADUCCION" "Para elegir carpetas opcionales debes seleccionar la opción -o"
+  echoe "TRADUCCION" "Argumento inválido. Saliendo..."
   help
   fi
 fi
@@ -458,6 +470,19 @@ if [ $Back ]; then
     mkdir -p "${Destino}"
   fi
 
+# Copia directorios opcionales
+  if [ "${OpFold}" ]; then
+    echoe ">>>    Copying optional $OpFold directory..." ">>>    Copiando directorio opcional $OpFold..."
+    mkdir -p "${Destino}$OpFold"
+    rsync -av "$OpFold"/ "${Destino}$OpFold"
+    while [ "$*" ]; do
+      echoe ">>>    Copying optional ${1} directory..." ">>>    Copiando directorio opcional ${1}..."
+      mkdir -p "${Destino}$OpFold"
+      rsync -av "${1}"/ "${Destino}${1}"
+      shift
+    done
+  fi
+
   # Copiar directorios existentes predeterminados
   for i in "${Directorios[@]}"; do
     if [ -d "$i" ]; then
@@ -494,17 +519,6 @@ if [ $Back ]; then
   # Crea registro docker systemctl
   echoe "TRADUCCION" ">>>    Extrayendo información de systemd (systemctl)..."
   systemctl list-unit-files | tee "${Destino}${ORB[Systemctl]}"
-
-  # Copia directorios opcionales
-  echoe ">>>    Copying optional $OpFold directory..." ">>>    Copiando directorio opcional $OpFold..."
-  mkdir -p "${Destino}/ORB_OptionalFolders$OpFold"
-  rsync -av "$OpFold"/ "${Destino}/ORB_OptionalFolders$OpFold"
-  while [ "$*" ]; do
-    echoe ">>>    Copying optional $1 directory..." ">>>    Copiando directorio opcional $1..."
-    mkdir -p "${Destino}/ORB_OptionalFolders$OpFold"
-    rsync -av "$1"/ "${Destino}/ORB_OptionalFolders$1"
-    shift
-  done
 
   # Elimina backups antiguos
   echoe ">>>    Deleting backups larger than ${OpDias} days..." ">>>    Eliminando backups de hace más de ${OpDias} días..."
@@ -544,9 +558,25 @@ if ! omv-upgrade; then
   exit
 fi
 
-# Instalar omv-extras si existía y no está instalado
+# Regenerar sección Sistema. Restaurar archivos. Instalar omv-extras.
 Analiza "openmediavault-omvextrasorg"
-if [ "${VersionOR}" ] && [ "${InstII}" = "NO" ]; then
+if [ "${InstII}" = "NO" ]; then
+  echoe "TRADUCCION" "Restaurando archivos..."
+  rsync -av "${Ruta}"/ / --exclude /*config.xml
+  echoe "" "Regenerando Sistema..."
+  Regenera time
+  Aplica chrony cron timezone
+  Regenera certificates
+  Aplica certificates
+  Regenera webadmin
+  Aplica monit nginx
+  Regenera powermanagement
+  Aplica cpufrequtils cron systemd-logind
+  Regenera monitoring
+  Aplica collectd monit rrdcached
+  Regenera crontab
+  Aplica cron
+  echoe "" "Instalando omv-extras..."
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
   if [ -f "${File}" ]; then
@@ -559,12 +589,12 @@ if [ "${VersionOR}" ] && [ "${InstII}" = "NO" ]; then
       apt-get --yes --fix-broken install
       Analiza "openmediavault-omvextrasorg"
       if [[ "${InstII}" = "NO" ]]; then
-        echoe "omv-extras failed to install correctly.  Trying to fix with ${confCmd} ..." "omv-extras no se pudo instalar correctamente. Intentando corregir con ${confCmd} ..."
-        if "${confCmd}" omvextras; then
+        echoe "omv-extras failed to install correctly.  Trying to fix with omv-salt deploy run ..." "omv-extras no se pudo instalar correctamente. Intentando corregir con omv-salt deploy run ..."
+        if Aplica omvextras; then
           echoe "Trying to fix apt ..." "Tratando de corregir apt..."
           apt-get --yes --fix-broken install
         else
-          echoe "${confCmd} failed and openmediavault-omvextrasorg is in a bad state. Exiting..." "${confCmd} falló y openmediavault-omvextrasorg está en mal estado. Saliendo..."
+          echoe "omv-salt deploy run failed and openmediavault-omvextrasorg is in a bad state. Exiting..." "omv-salt deploy run falló y openmediavault-omvextrasorg está en mal estado. Saliendo..."
           exit 3
         fi
       fi
@@ -575,17 +605,18 @@ if [ "${VersionOR}" ] && [ "${InstII}" = "NO" ]; then
       fi
     fi
     echoe "Updating repos ..." "Actualizando repositorios..."
-    "${confCmd}" omvextras
+    Aplica omvextras
   else
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
   fi
+  Regenera omvextras
+  Aplica omvextras
 fi
 
 # Analizar versiones y complementos especiales
 cont=0
-for i in $(awk '{print NR}' "${Ruta}${ORB[Dpkg]}")
-do
+for i in $(awk '{print NR}' "${Ruta}${ORB[Dpkg]}"); do
   Plugin=$(awk -v i="$i" 'NR==i{print $2}' "${Ruta}${ORB[Dpkg]}")
   Analiza "${Plugin}"
   if [ "${InstII}" = "NO" ]; then
@@ -593,6 +624,8 @@ do
     case "${Plugin}" in
       *"kernel" ) ;;
       *"zfs" ) ;;
+      *"mergerfs" ) ;;
+      *"remotemount" ) ;;
       *"sharerootfs" ) ;;
       * )
         (( cont++ ))
@@ -644,30 +677,16 @@ if [ $OpKern ]; then
   fi
 fi
 
-# Instalar openmediavault-zfs. Importar pools.
-Analiza openmediavault-zfs
-if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
-  InstalaPlugin openmediavault-zfs
-  for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
-    zpool import -f "$i" 
-  done
-  "${confCmd}" zfszed collectd fstab monit quota
-fi
+# MONTAR SISTEMAS DE ARCHIVOS.
 
-# Montar sistemas de archivos. Actualizar datos básicos.
+# Instala sharerootfs. Regenera fstab.
 Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
-  InstalaPlugin openmediavault-sharerootfs
   echoe "TRADUCCION" "Montando sistemas de archivos..."
-  ActualizaSeccion fstab
-  ActualizaSeccion timezone
-  ############################################
-  #
-  # AÑADIR OTROS ACTUALIZABLES EN ESTE MOMENTO
-  #
-  ############################################
-  omv-salt stage run prepare
-  omv-salt stage run deploy
+  InstalaPlugin openmediavault-sharerootfs
+  Regenera fstab
+  Aplica hdparm collectd fstab monit quota
+  # Cambia UUID disco de sistema si es nuevo
   echoe "TRADUCCION" "Configurando openmediavault-sharerootfs..."
   uuid="79684322-3eac-11ea-a974-63a080abab18"
   if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
@@ -676,19 +695,93 @@ if [ "${InstII}" = "NO" ]; then
   apt-get install --reinstall openmediavault-sharerootfs
 fi
 
+# FALTA mdadm
+
+# Instalar openmediavault-zfs. Importar pools.
+Analiza openmediavault-zfs
+if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  InstalaPlugin openmediavault-zfs
+  for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
+    zpool import -f "$i"
+  done
+  Aplica zfszed collectd fstab monit quota
+fi
+
+# Instalar mergerfs
+Analiza openmediavault-mergerfs
+if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  InstalaPlugin openmediavault-mergerfs
+  # Aplica
+  
+  
+fi
+
+# Instalar remotemount
+Analiza openmediavault-remotemount
+if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  InstalaPlugin openmediavault-remotemount
+  # Aplica
+  
+  
+fi
+
+# Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red.
+if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
+  echoe "" "Regenerando usuarios..."
+  Regenera homedirectory
+  Aplica samba
+  Regenera users
+  Aplica postfix rsync samba sharedfolders systemd ssh
+  Regenera groups
+  Aplica rsync samba sharedfolders systemd
+  echoe "" "Regenerando carpetas compartidas..."
+  Regenera shares
+  Aplica sharedfolders systemd
+  echoe "" "Regenerando SMART..."
+  Regenera smart
+  Aplica smartmontools
+  echoe "" "Regenerando Servicios..."
+  Regenera nfs
+  Aplica avahi collectd fstab monit nfs quota
+  Regenera rsync
+  Aplica rsync avahi rsyncd 
+  Regenera smb
+  Aplica avahi samba
+  Regenera ssh
+  Aplica avahi samba
+  Regenera email
+  Aplica cronapt mdadm monit postfix smartmontools
+  Regenera notification
+  Aplica cronapt mdadm monit smartmontools
+  Regenera syslog
+  Aplica rsyslog
+  echoe "" "Regenerando Red..."
+  Regenera dns
+  Aplica avahi hostname hosts postfix systemd-network
+  Regenera interfaces
+  Aplica avahi halt hosts issue systemd-network
+  Regenera proxy
+  Aplica apt profile
+  Regenera iptables
+  Aplica iptables hdparm
+fi
+
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
-DockerOR=$(cat "${Ruta}"ORB[Systemctl] | grep docker.service | awk '{print $2}')
+DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "TRADUCCION" "Instalando docker..."
-  LeeEtiqueta "dockerStorage"
-  if [ ! "${EtiqOR}" = "/var/lib/docker" ]; then
-    #   Instalar docker
-  else
-    # Si compose estaba instalado instalar compose 
-      # Si no Instala docker en ubicacion predeterminada
-  fi
+  Actualiza omvextras
+  Aplica omvextras
+  LeeEtiqueta dockerStorage
+  dockerStorage="${EtiqOR}"
+  Regenera omvextras
+  . /usr/sbin/omv-installdocker
+  installDocker
+  # REVISAR ESTO. NO SE INSTALA DONDE DEBE
 fi
+
+
 
 # Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do
@@ -698,20 +791,10 @@ for i in "${ListaInstalar[@]}"; do
   fi
 done
 
-# Restaurar configuración del servidor original si no se ha hecho ya
-if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
-  echoe "TRADUCCION" "Implementando configuración del servidor original..."
-  rsync -av "${Ruta}"/ "/" --exclude ROB_*
-  omv-salt stage run prepare
-  omv-salt stage run deploy
+# Instalar paquetes de apttools
+# Extraer symlinks base de datos y crear
 
-  # Conseguir los grupos de los usuarios
-  # Instalar paquetes de apttools
-  # Extraer symlinks base de datos y crear
 
-  echoe "TRADUCCION" "Regeneración completada. Reinicia para aplicar cambios."
-  exit
-fi
 
 echoe "\n       Done!\n" "\n       ¡Hecho!\n"
 exit

@@ -16,6 +16,7 @@ ORB[Zpoollist]='/ORB_Zpoollist'
 ORB[Systemctl]='/ORB_Systemctl'
 ORB[Ipa]='/ORB_Ipa'
 Config="/etc/openmediavault/config.xml"
+ConfTmp="/etc/openmediavault/config.rg"
 Passwd="/etc/passwd"
 Shadow="/etc/shadow"
 declare -a Archivos=( "$Config" "$Passwd" "$Shadow" )
@@ -33,12 +34,10 @@ Inst="/usr/sbin/omv-regen"
 Tecla=""
 EtiqOR=""
 EtiqAC=""
-SeccOR=""
-SeccAC=""
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
-Sucio="/var/lib/openmediavault/.dirtymodules.json"
+Sucio="/var/lib/openmediavault/dirtymodules.json"
 . /etc/default/openmediavault
 
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
@@ -78,16 +77,12 @@ help () {
   echo -e "    OMV on an empty disk without configuring anything.  Mount a backup, install"
   echo -e "    omv-regen and then regenerate. The version available on the internet of the"
   echo -e "    plugins and OMV must match.                                                "
-  echo -e "  - Use omv-regen install     to install omv-regen on your system.             "
+  echo -e "  - Use omv-regen install     to enable omv-regen on your system.             "
   echo -e "  - Use omv-regen backup      to store the necessary information to regenerate."
   echo -e "  - Use omv-regen regenerate  to run a system regeneration from a clean OMV.   "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
-  echo -e "   omv-regen install                                                           "
-  echo -e "                     Enable the command on the system.                         "
-  echo -e "                     1.Make this file executable with    ->  chmod +x omv-regen"
-  echo -e "                     2.Run it with the install parameter ->  omv-regen install "
-  echo -e "                     3.Delete this file.                                       "
+  echo -e "   omv-regen install     -->       Enable the command on the system.           "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
   echo -e "   omv-regen backup   [OPTIONS]   [/folder_one \"/folder two\" /folder ... ]   "
@@ -153,67 +148,218 @@ InstalaPlugin () {
   fi
 }
 
-# Extraer entrada de la base de datos
+# Extraer valor de una entrada de la base de datos
 LeeEtiqueta () {
-  local Etiqueta=$1
-  EtiqOR=$(sed -n "s:.*<${Etiqueta}>\(.*\)</${Etiqueta}>.*:\1:p" "${Ruta}${Config}")
-  EtiqAC=$(sed -n "s:.*<${Etiqueta}>\(.*\)</${Etiqueta}>.*:\1:p" "${Config}")
+  EtiqOR=$(sed -n "s:.*<${1}>\(.*\)</${1}>.*:\1:p" "${Ruta}${Config}")
+  echoe "" "El valor de ${1} en Config Original es ${EtiqOR}"
+  EtiqAC=$(sed -n "s:.*<${1}>\(.*\)</${1}>.*:\1:p" "${Config}")
+  echoe "" "El valor de ${1} en Config Actual es ${EtiqAC}"
 }
 
-# Extraer Sección de la base de datos
+# Lee campos completos entre todas las etiquetas de la seccion $1/$2
 LeeSeccion () {
-  echoe "" "Leyendo sección $1 de la base de datos"
-  local Seccion
-  local InOR
-  local FiOR
-  local InAC
-  local FiAC
-  Seccion=$1
-  InOR=$(awk "/<${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '1p')
-  FiOR=$(awk "/<\/${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '$p')
-  InAC=$(awk "/<${Seccion}>/ {print NR}" "${Config}" | sed -n '1p')
-  FiAC=$(awk "/<\/${Seccion}>/ {print NR}" "${Config}" | sed -n '$p')
-  SeccOR=$(awk -v IO=$InOR -v FO=$FiOR 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}")
-  SeccAC=$(awk -v IA=$InAC -v FA=$FiAC 'NR==IA, NR==FA {print $0}' "${Config}")
+  ValorOR="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${Ruta}${Config})"
+  echoe "" "El valor original de ${1} ${2} es ${ValorOR}"
+  ValorAC="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${Config})"
+  echoe "" "El valor actual de ${1} ${2} es ${ValorAC}"
+  if [ -f "${ConfTmp}" ]; then
+    ValorTM="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${ConfTmp})"
+    echoe "" "El valor temporal de ${1} ${2} es ${ValorTM}"
+  else
+    ValorTM=""
+    echoe "" "El valor temporal de ${1} ${2} es nulo"
+  fi
 }
 
-# Actualiza sección de la base de datos original a la base de datos actual
-Regenera () {
-  echoe "" "Regenerando sección $1 de la base de datos"
-  local Seccion
-  local InOR
-  local FiOR
-  local InAC
-  local LoAC
-  local ConfTmp
-  Seccion=$1
-  InOR="$(awk "/<${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '1p')"
-  FiOR="$(awk "/<\/${Seccion}>/ {print NR}" "${Ruta}${Config}" | sed -n '$p')"
-  InAC="$(awk "/<${Seccion}>/ {print NR}" "${Config}" | sed -n '1p')"
-  FiAC="$(awk "/<\/${Seccion}>/ {print NR}" "${Config}" | sed -n '$p')"
-  LoAC="$(awk 'END {print NR}' "${Config}")"
-  ConfTmp=/etc/openmediavault/config.rg
+# Crear config temporal
+CreaConfTmp () {
   [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
   cp -a "${Config}" "${ConfTmp}"
   sed -i '1,$d' "${ConfTmp}"
-  awk -v IA=$InAC 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
-  if [ $InOR -eq $FiOR ]; then
-    awk -v IO=$InOR 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+  awk -v IA="${InAC}" 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
+  if [ "${InOR}" -eq "${FiOR}" ]; then
+    awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
   else
-    awk -v IO=$InOR -v FO=$FiOR 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+    awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
   fi
-  awk -v FA=$FiAC -v LA=$LoAC 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
-  rm "${Config}"
-  cp -a "${ConfTmp}" "${Config}"
-  rm "${ConfTmp}"
+  awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
 }
 
+# Sustituye sección de la base de datos actual por la existente en la base de datos original
+Regenera () {
+  InOR=""
+  FiOR=""
+  InAC=""
+  FiAC=""
+  LoAC=""
+  NmInOR=""
+  NmFiOR=""
+  NmInAC=""
+  NmFiAC=""
+  ValorOR=""
+  ValorAC=""
+  ValorTM=""
+  echoe "" "Regenerando sección $1 $2 de la base de datos"
+  LeeSeccion "${1}" "${2}"
+  if [ ! "${ValorOR}" = "${ValorAC}" ]; then
+    echoe "" "Regenerando $1 $2..."
+    NmInOR="$(awk "/<${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
+    echoe "" "$2 tiene ${NmInOR} posibles inicios en Config Original"
+    NmFiOR="$(awk "/<\/${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
+    echoe "" "$2 tiene ${NmFiOR} posibles finales en Config Original"
+    NmInAC="$(awk "/<${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+    echoe "" "$2 tiene ${NmInAC} posibles inicios en Config Actual"
+    NmFiAC="$(awk "/<\/${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
+    echoe "" "$2 tiene ${NmFiAC} posibles finales en Config Actual"
+    LoAC="$(awk 'END {print NR}' "${Config}")"
+    echoe "" "Config actual tiene ${LoAC} lineas en total"
+    IO=0
+    Gen=""
+    while [ $IO -lt ${NmInOR} ]; do
+      [ "${Gen}" ] && break
+      ((IO++))
+      InOR="$(awk "/<${2}>/ {print NR}" ${Ruta}${Config} | awk -v i=$IO 'NR==i {print $1}')"
+      echoe "" "Comprobando Inicio de $2 en Config Origen en linea ${InOR}..."
+      FO=0
+      while [ $FO -lt ${NmFiOR} ]; do
+        [ "${Gen}" ] && break
+        ((FO++))
+        FiOR="$(awk "/<\/${2}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
+        echoe "" "Comprobando Final de $2 en Config Origen en linea ${FiOR}..."
+        IA=0
+        while [ $IA -lt ${NmInAC} ]; do
+          [ "${Gen}" ] && break
+          ((IA++))
+          InAC="$(awk "/<${2}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
+          echoe "" "Comprobando Inicio de $2 en Config Actual en linea ${InAC}..."
+          FA=0
+          while [ $FA -lt ${NmFiAC} ]; do
+            ((FA++))
+            FiAC="$(awk "/<\/${2}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
+            echoe "" "Comprobando Final de $2 en Config Actual en linea ${FiAC}..."
+            echoe "" "Creando Config Temporal..."
+            CreaConfTmp
+            echoe "" "Comparando $1 $2 de Config Temporal con el Original..."
+            LeeSeccion $1 $2
+            if [ "${ValorOR}" = "${ValorTM}" ]; then
+              Gen="OK"
+              echoe "" "La seccion $1 $2 en Config Temporal y Config Original son iguales. Regenerando..."
+              cp -a "${Config}" "${ConfTmp}ps"
+              rm "${Config}"
+              cp -a "${ConfTmp}" "${Config}"
+              #rm "${ConfTmp}"
+              echoe "" "Seccion $1 $2 regenerada en base de datos. Aplicando cambios..."
+              Aplica $2
+              break
+            else
+              echoe "" "Generando Config Temporal para seccion $1 $2 ..."
+            fi
+          done
+        done
+      done
+    done
+    if [ ! "${Gen}" ]; then
+      echoe "" "No se ha podido generar la seccion $1 $2 en la base de datos actual. Saliendo..."
+      exit
+    fi
+  else
+    echoe "" "$1 $2 son iguales en Config Original y Actual. Saliendo de función Regenera..."
+  fi
+}
+
+# Configura módulos salt
 Aplica () {
-  for i in "$@"; do
-    omv-salt deploy run "${i}"
-  done 
-  sed -i '1,$d' "${Sucio}"
-  printf "[]" > "${Sucio}"
+  case $1 in
+    time)
+      Mod="chrony cron timezone"
+      ;;
+    certificates)
+      Mod="certificates"
+      ;;
+    webadmin)
+      Mod="monit nginx"
+      ;;
+    powermanagement)
+      Mod="cpufrequtils cron systemd-logind"
+      ;;
+    monitoring)
+      Mod="collectd monit rrdcached"
+      ;;
+    crontab)
+      Mod="cron"
+      ;;
+    fstab)
+      Mod="hdparm collectd fstab monit quota"
+      ;;
+    homedirectory)
+      Mod="samba"
+      ;;
+    users)
+      Mod="postfix rsync samba systemd ssh"
+      ;;
+    groups)
+      Mod="rsync samba systemd"
+      ;;
+    shares)
+      Mod="systemd"
+      ;;
+    smart)
+      Mod="smartmontools"
+      ;;
+    nfs)
+      Mod="avahi collectd fstab monit nfs quota"
+      ;;
+    rsync)
+      Mod="rsync avahi rsyncd"
+      ;;
+    smb)
+      Mod="avahi samba"
+      ;;
+    ssh)
+      Mod="avahi samba"
+      ;;
+    email)
+      Mod="cronapt mdadm monit postfix smartmontools"
+      ;;
+    notification)
+      Mod="cronapt mdadm monit smartmontools"
+      ;;
+    syslog)
+      Mod="rsyslog"
+      ;;
+    dns)
+      Mod="avahi hostname hosts postfix systemd-network"
+      ;;
+    interfaces)
+      Mod="avahi halt hosts issue systemd-network"
+      ;;
+    proxy)
+      Mod="apt profile"
+      ;;
+    iptables)
+      Mod="iptables hdparm"
+      ;;
+    ssh)
+      Mod="avahi samba"
+      ;;
+    zfs)
+      Mod="zfszed collectd fstab monit quota"
+      ;;
+    omvextras)
+      Mod="omvextras"
+      ;;
+    *)
+      echoe "" "No se puede aplicar cambios a los módulos de la sección $1. Deshaciendo cambios..."
+      cp -a "${ConfTmp}ps" "${Config}"
+      echoe "" "No se ha podido completar la regeneración. Saliendo..."
+      exit
+  esac
+  omv-salt deploy run "${Mod}"
+  Modulo="$(cat "${Sucio}")"
+  if [[ ! "${Modulo}" == "[]" ]]; then
+    omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
+  fi
+  #[ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
 }
 
 # Instalar omv-regen
@@ -567,18 +713,12 @@ if [ "${InstII}" = "NO" ]; then
   echoe "TRADUCCION" "Restaurando archivos..."
   rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "" "Regenerando Sistema..."
-  Regenera time
-  Aplica chrony cron timezone
-  Regenera certificates
-  Aplica certificates
-  Regenera webadmin
-  Aplica monit nginx
-  Regenera powermanagement
-  Aplica cpufrequtils cron systemd-logind
-  Regenera monitoring
-  Aplica collectd monit rrdcached
-  Regenera crontab
-  Aplica cron
+  Regenera system time
+  Regenera system certificates
+  Regenera config webadmin
+  Regenera system powermanagement
+  Regenera system monitoring
+  Regenera system crontab
   echoe "" "Instalando omv-extras..."
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
@@ -613,6 +753,10 @@ if [ "${InstII}" = "NO" ]; then
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
   fi
+  echoe "" "Preparando configuraciones de la base de datos (puede tardar unos minutos)..."
+  omv-salt stage run prepare
+  echoe "" "Actualizando configuraciones de la base de datos (puede tardar unos minutos)..."
+  omv-salt stage run deploy
 fi
 
 # Analizar versiones y complementos especiales
@@ -673,7 +817,7 @@ if [ $OpKern ]; then
         exit
       fi
     fi
-    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\nPara completar la regeneración -> Después de reiniciar ejecuta de nuevo omv-regen regenera.\n Saliendo..."
+    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\nPara completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen regenera\n\n Saliendo..."
     exit
   fi
 fi
@@ -685,8 +829,7 @@ Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
   echoe "TRADUCCION" "Montando sistemas de archivos..."
   InstalaPlugin openmediavault-sharerootfs
-  Regenera fstab
-  Aplica hdparm collectd fstab monit quota
+  Regenera system fstab
   # Cambia UUID disco de sistema si es nuevo
   echoe "TRADUCCION" "Configurando openmediavault-sharerootfs..."
   uuid="79684322-3eac-11ea-a974-63a080abab18"
@@ -705,7 +848,7 @@ if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
     zpool import -f "$i"
   done
-  Aplica zfszed collectd fstab monit quota
+  Aplica zfs
 fi
 
 # Instalar mergerfs
@@ -726,48 +869,33 @@ if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   
 fi
 
+# REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
+
 # Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red.
 if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
   echoe "" "Regenerando usuarios..."
-  Regenera homedirectory
-  Aplica samba
-  Regenera users
-  Aplica postfix rsync samba sharedfolders systemd ssh
-  Regenera groups
-  Aplica rsync samba sharedfolders systemd
+  Regenera usermanagement homedirectory
+  Regenera usermanagement users
+  Regenera usermanagement groups
   echoe "" "Regenerando carpetas compartidas..."
-  Regenera shares
-  Aplica sharedfolders systemd
+  Regenera system shares
   echoe "" "Regenerando SMART..."
-  Regenera smart
-  Aplica smartmontools
+  Regenera services smart
   echoe "" "Regenerando Servicios..."
-  Regenera nfs
-  Aplica avahi collectd fstab monit nfs quota
-  Regenera rsync
-  Aplica rsync avahi rsyncd 
-  Regenera smb
-  Aplica avahi samba
-  Regenera ssh
-  Aplica avahi samba
-  Regenera email
-  Aplica cronapt mdadm monit postfix smartmontools
-  Regenera notification
-  Aplica cronapt mdadm monit smartmontools
-  Regenera syslog
-  Aplica rsyslog
+  Regenera services nfs
+  Regenera services rsync
+  Regenera services smb
+  Regenera services ssh
+  Regenera system email
+  Regenera system notification
+  Regenera system syslog
   echoe "" "Regenerando Red..."
-  Regenera dns
-  Aplica avahi hostname hosts postfix systemd-network
-  Regenera interfaces
-  Aplica avahi halt hosts issue systemd-network
-  Regenera proxy
-  Aplica apt profile
-  Regenera iptables
-  Aplica iptables hdparm
+  Regenera network dns
+  Regenera network interfaces
+  Regenera network proxy
+  Regenera network iptables
   echoe "" "Regenerando omvextras"
-  Regenera omvextras
-  Aplica omvextras
+  Regenera system omvextras
 fi
 
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
@@ -777,13 +905,11 @@ if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "TRADUCCION" "Instalando docker..."
   LeeEtiqueta dockerStorage
   dockerStorage="${EtiqOR}"
-  Regenera omvextras
-  Aplica omvextras
   cp -a /usr/sbin/omv-installdocker /tmp/installdocker
-    sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
-    . /tmp/installdocker "${dockerStorage}"
-    rm /tmp/installdocker
-    echoe "TRADUCCION" "Docker instalado."
+  sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
+  . /tmp/installdocker "${dockerStorage}"
+  rm /tmp/installdocker
+  echoe "TRADUCCION" "Docker instalado."
   # REVISAR ESTO. NO SE INSTALA DONDE DEBE
 fi
 
@@ -798,7 +924,7 @@ done
 # Instalar paquetes de apttools
 # Extraer symlinks base de datos y crear
 
-
+# COMPROBAR BASE DE DATOS diff
 #omv-salt stage run prepare
 #omv-salt stage run deploy
 

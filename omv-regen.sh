@@ -171,20 +171,6 @@ LeeSeccion () {
   fi
 }
 
-# Crear config temporal
-CreaConfTmp () {
-  [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
-  cp -a "${Config}" "${ConfTmp}"
-  sed -i '1,$d' "${ConfTmp}"
-  awk -v IA="${InAC}" 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
-  if [ "${InOR}" -eq "${FiOR}" ]; then
-    awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
-  else
-    awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
-  fi
-  awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
-}
-
 # Sustituye sección de la base de datos actual por la existente en la base de datos original
 Regenera () {
   InOR=""
@@ -249,7 +235,7 @@ Regenera () {
               cp -a "${ConfTmp}" "${Config}"
               #rm "${ConfTmp}"
               echoe "" "Seccion $1 $2 regenerada en base de datos. Aplicando cambios..."
-              Aplica $2
+              Modulos $2
               break
             else
               echoe "" "Generando Config Temporal para seccion $1 $2 ..."
@@ -259,7 +245,7 @@ Regenera () {
       done
     done
     if [ ! "${Gen}" ]; then
-      echoe "" "No se ha podido generar la seccion $1 $2 en la base de datos actual. Saliendo..."
+      echoe "" "No se ha podido regenerar la seccion $1 $2 en la base de datos actual. Saliendo..."
       exit
     fi
   else
@@ -267,8 +253,22 @@ Regenera () {
   fi
 }
 
+# Crear config temporal
+CreaConfTmp () {
+  [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
+  cp -a "${Config}" "${ConfTmp}"
+  sed -i '1,$d' "${ConfTmp}"
+  awk -v IA="${InAC}" 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
+  if [ "${InOR}" -eq "${FiOR}" ]; then
+    awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+  else
+    awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+  fi
+  awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
+}
+
 # Configura módulos salt
-Aplica () {
+Modulos () {
   case $1 in
     time)
       Mod="chrony cron timezone"
@@ -328,10 +328,10 @@ Aplica () {
       Mod="rsyslog"
       ;;
     dns)
-      Mod="avahi hostname hosts postfix systemd-network"
+      Mod="avahi hostname hosts postfix systemd-networkd"
       ;;
     interfaces)
-      Mod="avahi halt hosts issue systemd-network"
+      Mod="avahi halt hosts issue systemd-networkd"
       ;;
     proxy)
       Mod="apt profile"
@@ -354,9 +354,16 @@ Aplica () {
       echoe "" "No se ha podido completar la regeneración. Saliendo..."
       exit
   esac
-  omv-salt deploy run "${Mod}"
-  Modulo="$(cat "${Sucio}")"
-  if [[ ! "${Modulo}" == "[]" ]]; then
+  Aplica "${Mod}"
+}
+
+Aplica () {
+  for i in $@; do
+    omv-salt deploy run "$i"
+    echoe 1 "" "Configurando $i..."
+  done
+  Resto="$(cat "${Sucio}")"
+  if [[ ! "${Resto}" == "[]" ]]; then
     omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
   fi
   #[ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
@@ -707,11 +714,9 @@ if ! omv-upgrade; then
   exit
 fi
 
-# Regenerar sección Sistema. Restaurar archivos. Instalar omv-extras.
+# Regenerar sección Sistema. Instalar omv-extras.
 Analiza "openmediavault-omvextrasorg"
 if [ "${InstII}" = "NO" ]; then
-  echoe "TRADUCCION" "Restaurando archivos..."
-  rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "" "Regenerando Sistema..."
   Regenera system time
   Regenera system certificates
@@ -733,7 +738,7 @@ if [ "${InstII}" = "NO" ]; then
       Analiza "openmediavault-omvextrasorg"
       if [[ "${InstII}" = "NO" ]]; then
         echoe "omv-extras failed to install correctly.  Trying to fix with omv-salt deploy run ..." "omv-extras no se pudo instalar correctamente. Intentando corregir con omv-salt deploy run ..."
-        if Aplica omvextras; then
+        if omv-salt deploy run omvextras; then
           echoe "Trying to fix apt ..." "Tratando de corregir apt..."
           apt-get --yes --fix-broken install
         else
@@ -748,14 +753,14 @@ if [ "${InstII}" = "NO" ]; then
       fi
     fi
     echoe "Updating repos ..." "Actualizando repositorios..."
-    Aplica omvextras
+    omv-salt deploy run omvextras
   else
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
   fi
-  echoe "" "Preparando configuraciones de la base de datos (puede tardar unos minutos)..."
+  echoe "" "Preparando configuraciones de la base de datos (puede tardar mas de un minuto)..."
   omv-salt stage run prepare
-  echoe "" "Actualizando configuraciones de la base de datos (puede tardar unos minutos)..."
+  echoe "" "Actualizando configuraciones de la base de datos (puede tardar mas de un minuto)..."
   omv-salt stage run deploy
 fi
 
@@ -817,7 +822,7 @@ if [ $OpKern ]; then
         exit
       fi
     fi
-    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\nPara completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen regenera\n\n Saliendo..."
+    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\n\033[0;32m Para completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO ${Comando}\n\n\033[0m Saliendo..."
     exit
   fi
 fi
@@ -848,14 +853,14 @@ if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
     zpool import -f "$i"
   done
-  Aplica zfs
+  Modulos zfs
 fi
 
 # Instalar mergerfs
 Analiza openmediavault-mergerfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-mergerfs
-  # Aplica
+  # Modulos
   
   
 fi
@@ -864,15 +869,17 @@ fi
 Analiza openmediavault-remotemount
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-remotemount
-  # Aplica
+  # Modulos
   
   
 fi
 
 # REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
 
-# Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red.
+# Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red.
 if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
+  echoe "TRADUCCION" "Restaurando archivos..."
+  rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "" "Regenerando usuarios..."
   Regenera usermanagement homedirectory
   Regenera usermanagement users
@@ -891,12 +898,16 @@ if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
   Regenera system syslog
   echoe "" "Regenerando Red..."
   Regenera network dns
-  Regenera network interfaces
   Regenera network proxy
   Regenera network iptables
   echoe "" "Regenerando omvextras"
   Regenera system omvextras
+  echoe "" "Preparando configuraciones de la base de datos (puede tardar mas de un minuto)..."
+  omv-salt stage run prepare
+  echoe "" "Actualizando configuraciones de la base de datos (puede tardar mas de un minuto)..."
+  omv-salt stage run deploy
 fi
+exit
 
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
 DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
@@ -913,6 +924,7 @@ if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   # REVISAR ESTO. NO SE INSTALA DONDE DEBE
 fi
 
+exit
 # Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do
   Analiza "$i"
@@ -928,5 +940,10 @@ done
 #omv-salt stage run prepare
 #omv-salt stage run deploy
 
-echoe "\n       Done!\n" "\n       ¡Hecho!\n"
+cat "${Ruta}${ORB[Ipa]}"
+echoe 5 "" "Se va a regenerar la interfaz de red y reiniciar el servidor.\nDespués de reiniciar podrás acceder desde la IP original."
+Regenera network interfaces
+cat "${Ruta}${ORB[Ipa]}"
+echoe "\n       Done!\n" "\n       ¡Hecho!\n\nAccede desde tu IP original después del reinicio."
+#reboot
 exit

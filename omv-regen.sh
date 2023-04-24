@@ -14,12 +14,15 @@ ORB[Dpkg]='/ORB_Dpkg'
 ORB[Unamea]='/ORB_Unamea'
 ORB[Zpoollist]='/ORB_Zpoollist'
 ORB[Systemctl]='/ORB_Systemctl'
-ORB[Ipa]='/ORB_Ipa'
+ORB[HostnameI]='/ORB_HostnameI'
 Config="/etc/openmediavault/config.xml"
 ConfTmp="/etc/openmediavault/config.rg"
 Passwd="/etc/passwd"
 Shadow="/etc/shadow"
-declare -a Archivos=( "$Config" "$Passwd" "$Shadow" )
+Group="/etc/group"
+Subuid="/etc/subuid"
+Subgid="/etc/subgid"
+declare -a Archivos=( "$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid")
 declare -a Directorios=( "/home" "/etc/libvirt/qemu" "/etc/wireguard" )
 Fecha=$(date +%y%m%d_%H%M)
 VersionOR=""
@@ -38,6 +41,8 @@ Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 Sucio="/var/lib/openmediavault/dirtymodules.json"
+IpOR=""
+IpAC=""
 . /etc/default/openmediavault
 
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
@@ -290,7 +295,7 @@ Modulos () {
       Mod="cron"
       ;;
     fstab)
-      Mod="hdparm collectd fstab monit quota"
+      Mod="hdparm collectd fstab monit quota initramfs mdadm"
       ;;
     homedirectory)
       Mod="samba"
@@ -675,7 +680,7 @@ if [ $Back ]; then
 
   # Crea registro de configuracion de red
   echoe "TRADUCCION" ">>>    Extrayendo información de red (ip a)..."
-  ip a | tee "${Destino}${ORB[Ipa]}"
+  ip a | tee "${Destino}${ORB[HostnameI]}"
 
   # Elimina backups antiguos
   echoe ">>>    Deleting backups larger than ${OpDias} days..." ">>>    Eliminando backups de hace más de ${OpDias} días..."
@@ -715,16 +720,26 @@ if ! omv-upgrade; then
   exit
 fi
 
-# Regenerar sección Sistema. Instalar omv-extras.
-Analiza "openmediavault-omvextrasorg"
-if [ "${InstII}" = "NO" ]; then
-  echoe "" "Regenerando Sistema..."
+# 1-Regenerar sección Sistema.
+if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
+  cp -apv "$Ruta$Passwd" "${$Passwd}"
+  echoe "" "Regenerando ajustes básicos de Sistema..."
   Regenera system time
   Regenera system certificates
   Regenera config webadmin
   Regenera system powermanagement
   Regenera system monitoring
   Regenera system crontab
+  Regenera system syslog
+  echoe "" "Preparando configuraciones de la base de datos (puede tardar)..."
+  omv-salt stage run prepare
+  echoe "" "Actualizando configuraciones de la base de datos (puede tardar)..."
+  omv-salt stage run deploy
+fi
+
+# 2-Instalar omv-extras si estaba y no está instalado.
+Analiza "openmediavault-omvextrasorg"
+if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
   echoe "" "Instalando omv-extras..."
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
@@ -759,10 +774,6 @@ if [ "${InstII}" = "NO" ]; then
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
   fi
-  echoe "" "Preparando configuraciones de la base de datos (puede tardar mas de un minuto)..."
-  omv-salt stage run prepare
-  echoe "" "Actualizando configuraciones de la base de datos (puede tardar mas de un minuto)..."
-  omv-salt stage run deploy
 fi
 
 # Analizar versiones y complementos especiales
@@ -792,7 +803,7 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[Dpkg]}"); do
   fi
 done
 
-# Instalar openmediavault-kernel
+# 3-Instalar openmediavault-kernel
 Analiza openmediavault-kernel
 if [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-kernel
@@ -830,7 +841,7 @@ fi
 
 # MONTAR SISTEMAS DE ARCHIVOS.
 
-# Instala sharerootfs. Regenera fstab.
+# 4-Instala sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS mdadm)
 Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
   echoe "TRADUCCION" "Montando sistemas de archivos..."
@@ -845,9 +856,7 @@ if [ "${InstII}" = "NO" ]; then
   apt-get install --reinstall openmediavault-sharerootfs
 fi
 
-# FALTA mdadm
-
-# Instalar openmediavault-zfs. Importar pools.
+# 5-Instalar openmediavault-zfs. Importar pools. (Sistemas de archivos ZFS)
 Analiza openmediavault-zfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
@@ -857,7 +866,7 @@ if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Modulos zfs
 fi
 
-# Instalar mergerfs
+# 6-Instalar mergerfs
 Analiza openmediavault-mergerfs
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-mergerfs
@@ -866,7 +875,7 @@ if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   
 fi
 
-# Instalar remotemount
+# 7-Instalar remotemount
 Analiza openmediavault-remotemount
 if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-remotemount
@@ -877,8 +886,8 @@ fi
 
 # REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
 
-# Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red.
-if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
+# 8-Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
+if [ "$(diff "$Ruta$Shadow" "$Shadow")" ]; then
   echoe "TRADUCCION" "Restaurando archivos..."
   rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "" "Regenerando usuarios..."
@@ -901,31 +910,33 @@ if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
   Regenera network dns
   Regenera network proxy
   Regenera network iptables
-  echoe "" "Regenerando omvextras"
-  Regenera system omvextras
   echoe "" "Preparando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run prepare
   echoe "" "Actualizando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run deploy
 fi
 
-# Instalar docker en la ubicacion original si estaba instalado y no está instalado
+# 9-Instalar docker en la ubicacion original si estaba instalado y no está instalado
 DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "TRADUCCION" "Instalando docker..."
-  LeeEtiqueta dockerStorage
-  dockerStorage="${EtiqOR}"
-  cp -a /usr/sbin/omv-installdocker /tmp/installdocker
-  sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
-  . /tmp/installdocker "${dockerStorage}"
-  rm /tmp/installdocker
-  echoe "TRADUCCION" "Docker instalado."
+  echoe "" "Regenerando omvextras"
+  Regenera system omvextras
+  DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
+  if [ ! "${DockerII}" ]; then
+    LeeEtiqueta dockerStorage
+    dockerStorage="${EtiqOR}"
+    cp -a /usr/sbin/omv-installdocker /tmp/installdocker
+    sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
+    . /tmp/installdocker "${dockerStorage}"
+    rm /tmp/installdocker
+    echoe "TRADUCCION" "Docker instalado."
+  fi
   # REVISAR ESTO. NO SE INSTALA DONDE DEBE
 fi
 
-exit
-# Instalar resto de complementos
+# 10-Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do
   Analiza "$i"
   if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
@@ -940,10 +951,22 @@ done
 #omv-salt stage run prepare
 #omv-salt stage run deploy
 
-cat "${Ruta}${ORB[Ipa]}"
-echoe 5 "" "Se va a regenerar la interfaz de red y reiniciar el servidor.\nDespués de reiniciar podrás acceder desde la IP original."
+IpAC=$(hostname -I)
+IpOR=$(cat "${Ruta}${ORB[HostnameI]}")
+echoe "" "\nLa regeneración del sistema ha finalizado. Se va a regenerar la interfaz de red y reiniciar el servidor.\n"
+if [ ! "${IpOR}" = "${IpAC}" ]; then
+  echoe 10 "" "Después de reiniciar podrás acceder desde la IP ${IpOR}\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
+  if [ "${Tecla}" ]; then
+    Tecla=""
+    echoe "TRADUCCION" "Configuración de red abortada. Reiniciando...\n"
+    reboot
+    echoe 3 "" ""
+    exit
+  fi
+fi
+
+echoe "" "Configurando red y reiniciando...\nLa IP después de reiniciar será ${IpOR}"
 Regenera network interfaces
-cat "${Ruta}${ORB[Ipa]}"
-echoe "\n       Done!\n" "\n       ¡Hecho!\n\nAccede desde tu IP original después del reinicio."
 #reboot
+echoe 3 "" ""
 exit

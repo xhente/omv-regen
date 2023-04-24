@@ -16,14 +16,15 @@ ORB[Zpoollist]='/ORB_Zpoollist'
 ORB[Systemctl]='/ORB_Systemctl'
 ORB[HostnameI]='/ORB_HostnameI'
 Config="/etc/openmediavault/config.xml"
-ConfTmp="/etc/openmediavault/config.rg"
 Passwd="/etc/passwd"
 Shadow="/etc/shadow"
 Group="/etc/group"
 Subuid="/etc/subuid"
 Subgid="/etc/subgid"
-declare -a Archivos=( "$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid")
+Passdb="/var/lib/samba/private/passdb.tdb"
+declare -a Archivos=( "$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" )
 declare -a Directorios=( "/home" "/etc/libvirt/qemu" "/etc/wireguard" )
+ConfTmp="/etc/openmediavault/config.rg"
 Fecha=$(date +%y%m%d_%H%M)
 VersionOR=""
 VersionDI=""
@@ -124,6 +125,7 @@ Analiza () {
   VersionOR=""
   VersionDI=""
   InstII=""
+  VersIdem=""
   VersionOR=$(awk -v i="$1" '$2 == i {print $3}' "${Ruta}${ORB[Dpkg]}")
   VersionDI=$(apt-cache madison "$1" | awk 'NR==1{print $3}')
   InstII=$(dpkg -l | awk -v i="$1" '$2 == i {print $1}')
@@ -680,7 +682,7 @@ if [ $Back ]; then
 
   # Crea registro de configuracion de red
   echoe "TRADUCCION" ">>>    Extrayendo información de red (ip a)..."
-  ip a | tee "${Destino}${ORB[HostnameI]}"
+  hostname -I | tee "${Destino}${ORB[HostnameI]}"
 
   # Elimina backups antiguos
   echoe ">>>    Deleting backups larger than ${OpDias} days..." ">>>    Eliminando backups de hace más de ${OpDias} días..."
@@ -721,8 +723,10 @@ if ! omv-upgrade; then
 fi
 
 # 1-Regenerar sección Sistema.
-if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
-  cp -apv "$Ruta$Passwd" "${$Passwd}"
+Dif=""
+Dif="$(diff ${Ruta}${Passwd} ${Passwd})"
+if [ "${Dif}" ]; then
+  cp -apv "${Ruta}${Passwd}" "${Passwd}"
   echoe "" "Regenerando ajustes básicos de Sistema..."
   Regenera system time
   Regenera system certificates
@@ -805,37 +809,36 @@ done
 
 # 3-Instalar openmediavault-kernel
 Analiza openmediavault-kernel
-if [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
+if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-kernel
-fi
-
-# Instalar Kernel proxmox
-if [ $OpKern ]; then
-  KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
-  KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2}')
-  if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
-    echoe "Installing proxmox kernel ${KernelOR}" "Instalando kernel proxmox ${KernelOR}"
-    cp -a /usr/sbin/omv-installproxmox /tmp/installproxmox
-    sed -i 's/^exit 0.*$/echo "Completado"/' /tmp/installproxmox
-    . /tmp/installproxmox "${KernelOR}"
-    rm /tmp/installproxmox
-    echoe "TRADUCCION" "Kernel proxmox ${KernelOR} instalado."
-    if [ "${OpRebo}" ]; then
-      echoe "TRADUCCION" "\nOpción reinicio automático activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
-      echoe 10 "\nPara   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
-      if [ "${Tecla}" ]; then
-        echoe "TRADUCCION" "Reinicio abortado.\n"
-      else
-        Creasysreboot
-        systemctl enable omv-regen-reboot.service
-        echoe 3 "TRADUCCION" "Servicio de reinicio habilitado."
-        echoe "Rebooting..." "Reiniciando..."
-        reboot
-        exit
+  # Instalar Kernel proxmox si no se ha deshabilitado la opción y estaba instalado
+  if [ $OpKern ]; then
+    KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
+    KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2}')
+    if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
+      echoe "Installing proxmox kernel ${KernelOR}" "Instalando kernel proxmox ${KernelOR}"
+      cp -a /usr/sbin/omv-installproxmox /tmp/installproxmox
+      sed -i 's/^exit 0.*$/echo "Completado"/' /tmp/installproxmox
+      . /tmp/installproxmox "${KernelOR}"
+      rm /tmp/installproxmox
+      echoe "TRADUCCION" "Kernel proxmox ${KernelOR} instalado."
+      if [ "${OpRebo}" ]; then
+        echoe "TRADUCCION" "\nOpción reinicio automático activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
+        echoe 10 "\nPara   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
+        if [ "${Tecla}" ]; then
+          echoe "TRADUCCION" "Reinicio abortado.\n"
+        else
+          Creasysreboot
+          systemctl enable omv-regen-reboot.service
+          echoe 3 "TRADUCCION" "Servicio de reinicio habilitado."
+          echoe "Rebooting..." "Reiniciando..."
+          reboot
+          exit
+        fi
       fi
+      echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\n\033[0;32m Para completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen regenera\n\n\033[0m Saliendo..."
+      exit
     fi
-    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\n\033[0;32m Para completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen regenera\n\n\033[0m Saliendo..."
-    exit
   fi
 fi
 
@@ -858,7 +861,7 @@ fi
 
 # 5-Instalar openmediavault-zfs. Importar pools. (Sistemas de archivos ZFS)
 Analiza openmediavault-zfs
-if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-zfs
   for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
     zpool import -f "$i"
@@ -868,7 +871,7 @@ fi
 
 # 6-Instalar mergerfs
 Analiza openmediavault-mergerfs
-if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-mergerfs
   # Modulos
   
@@ -877,7 +880,7 @@ fi
 
 # 7-Instalar remotemount
 Analiza openmediavault-remotemount
-if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-remotemount
   # Modulos
   
@@ -887,7 +890,8 @@ fi
 # REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
 
 # 8-Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
-if [ "$(diff "$Ruta$Shadow" "$Shadow")" ]; then
+Dif=$(diff "${Ruta}${Shadow}" "${Shadow}")
+if [ "${Dif}" ]; then
   echoe "TRADUCCION" "Restaurando archivos..."
   rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "" "Regenerando usuarios..."
@@ -951,8 +955,10 @@ done
 #omv-salt stage run prepare
 #omv-salt stage run deploy
 
-IpAC=$(hostname -I)
-IpOR=$(cat "${Ruta}${ORB[HostnameI]}")
+IpAC=$(hostname -I | awk '{print $1}')
+IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
+echoe "IP actual    ${IpAC}"
+echoe "IP original  ${IpOR}"
 echoe "" "\nLa regeneración del sistema ha finalizado. Se va a regenerar la interfaz de red y reiniciar el servidor.\n"
 if [ ! "${IpOR}" = "${IpAC}" ]; then
   echoe 10 "" "Después de reiniciar podrás acceder desde la IP ${IpOR}\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."

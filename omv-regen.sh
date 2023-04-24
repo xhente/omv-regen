@@ -186,6 +186,7 @@ Regenera () {
   ValorAC=""
   ValorTM=""
   echoe "" "Regenerando sección $1 $2 de la base de datos"
+  omv_config_delete $2
   LeeSeccion "${1}" "${2}"
   if [ ! "${ValorOR}" = "${ValorAC}" ]; then
     echoe "" "Regenerando $1 $2..."
@@ -822,7 +823,7 @@ if [ $OpKern ]; then
         exit
       fi
     fi
-    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\n\033[0;32m Para completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO ${Comando}\n\n\033[0m Saliendo..."
+    echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\n\033[0;32m Para completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen regenera\n\n\033[0m Saliendo..."
     exit
   fi
 fi
@@ -902,12 +903,11 @@ if [ "$(diff "$Ruta$Passwd" "$Passwd")" ]; then
   Regenera network iptables
   echoe "" "Regenerando omvextras"
   Regenera system omvextras
-  echoe "" "Preparando configuraciones de la base de datos (puede tardar mas de un minuto)..."
+  echoe "" "Preparando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run prepare
-  echoe "" "Actualizando configuraciones de la base de datos (puede tardar mas de un minuto)..."
+  echoe "" "Actualizando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run deploy
 fi
-exit
 
 # Instalar docker en la ubicacion original si estaba instalado y no está instalado
 DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")

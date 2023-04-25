@@ -197,7 +197,7 @@ Regenera () {
   ValorAC=""
   ValorTM=""
   echoe "Regenerating section $1 $2 of the database" "Regenerando sección $1 $2 de la base de datos"
-  if [ $2 = "omvextras" ]; then
+  if [ "${2}" = "omvextras" ]; then
     omv_config_delete $2
   fi
   LeeSeccion "${1}" "${2}"
@@ -218,7 +218,7 @@ Regenera () {
     while [ $IO -lt ${NmInOR} ]; do
       [ "${Gen}" ] && break
       ((IO++))
-      InOR="$(awk "/<${2}>/ {print NR}" ${Ruta}${Config} | awk -v i=$IO 'NR==i {print $1}')"
+      InOR="$(awk "/<${2}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$IO 'NR==i {print $1}')"
       echoe "Checking Start of $2 in Config Origin in line ${InOR}..." "Comprobando Inicio de $2 en Config Origen en linea ${InOR}..."
       FO=0
       while [ $FO -lt ${NmFiOR} ]; do
@@ -352,9 +352,6 @@ Modulos () {
     iptables)
       Mod="iptables hdparm"
       ;;
-    ssh)
-      Mod="avahi samba"
-      ;;
     zfs)
       Mod="zfszed collectd fstab monit quota"
       ;;
@@ -371,7 +368,7 @@ Modulos () {
 }
 
 Aplica () {
-  for i in $@; do
+  for i in "$@"; do
     echoe "Configuring $i..." "Configurando $i..."
     omv-salt deploy run "$i"
     echoe 1 "$i configured." "$i configurado."
@@ -396,7 +393,7 @@ InstalarOR (){
       echo "${Archivo}" > "${Inst}"
     fi
     chmod +x "${Inst}"
-    echoe "\n  omv-regen has been installed. You can delete the installation file.\n" "\n  omv-regen se ha instalado. Puedes eliminar el archivo de instalación.\n"
+    echoe "\n  omv-regen has been installed.\n" "\n  omv-regen se ha instalado.\n"
   else
     echoe "\n  omv-regen was already installed.\n" "\n  omv-regen ya estaba instalado.\n"
   fi
@@ -737,7 +734,7 @@ fi
 
 # 1-Regenerar sección Sistema.
 Dif=""
-Dif="$(diff ${Ruta}${Passwd} ${Passwd})"
+Dif="$(diff "${Ruta}${Passwd}" ${Passwd})"
 if [ "${Dif}" ]; then
   cp -apv "${Ruta}${Passwd}" "${Passwd}"
   echoe "Regenerating basic System settings..." "Regenerando ajustes básicos de Sistema..."
@@ -963,9 +960,8 @@ done
 # Instalar paquetes de apttools
 # Extraer symlinks base de datos y crear
 
-# COMPROBAR BASE DE DATOS diff
-#omv-salt stage run prepare
-#omv-salt stage run deploy
+omv-salt stage run prepare
+omv-salt stage run deploy
 
 # Elimina archivos temporales
 [ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
@@ -977,7 +973,7 @@ if [ ! "${IpOR}" = "${IpAC}" ]; then
   echoe 10 "It will regenerate the network interface and restart the server.\nAfter restart you will be able to access from IP ${IpOR}\n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\nDespués de reiniciar podrás acceder desde la IP ${IpOR}\n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
   if [ "${Tecla}" ]; then
     Tecla=""
-    echoe "\nNetwork configuration aborted.\n\nSystem rebuild finished!!\n\nIP after reboot will remain ${IpAC} Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar seguirá siendo ${IpAC} Reiniciando...\n"
+    echoe "\nNetwork configuration aborted.\n\nSystem regeneration finished!!\n\nIP after reboot will remain ${IpAC} Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar seguirá siendo ${IpAC} Reiniciando...\n"
     reboot
     echoe 3 "" ""
     exit
@@ -986,7 +982,7 @@ fi
 
 echoe "Configuring network..." "Configurando red..."
 Regenera network interfaces
-echoe "\n\nSystem rebuild finished!!\n\nIP after reboot will be ${IpOR} Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar será ${IpOR} Reiniciando..."
+echoe "\n\nSystem regeneration finished!!\n\nIP after reboot will be ${IpOR} Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar será ${IpOR} Reiniciando..."
 reboot
 echoe 3 "" ""
 exit

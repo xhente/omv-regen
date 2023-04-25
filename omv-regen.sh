@@ -1,6 +1,10 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+# This file is licensed under the terms of the GNU General Public
+# License version 3. This program is licensed "as is" without any
+# warranty of any kind, whether express or implied.
+
 Back=""
 Rege=""
 Ruta=""
@@ -193,7 +197,9 @@ Regenera () {
   ValorAC=""
   ValorTM=""
   echoe "" "Regenerando sección $1 $2 de la base de datos"
-  omv_config_delete $2
+  if [ $2 = "omvextras" ]; then
+    omv_config_delete $2
+  fi
   LeeSeccion "${1}" "${2}"
   if [ ! "${ValorOR}" = "${ValorAC}" ]; then
     echoe "" "Regenerando $1 $2..."
@@ -241,7 +247,6 @@ Regenera () {
               cp -a "${Config}" "${ConfTmp}ps"
               rm "${Config}"
               cp -a "${ConfTmp}" "${Config}"
-              #rm "${ConfTmp}"
               echoe "" "Seccion $1 $2 regenerada en base de datos. Aplicando cambios..."
               Modulos $2
               break
@@ -367,14 +372,14 @@ Modulos () {
 
 Aplica () {
   for i in $@; do
+    echoe "" "Configurando $i..."
     omv-salt deploy run "$i"
-    echoe 1 "" "Configurando $i..."
+    echoe 1 "" "$i configurado."
   done
   Resto="$(cat "${Sucio}")"
   if [[ ! "${Resto}" == "[]" ]]; then
     omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
   fi
-  #[ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
 }
 
 # Instalar omv-regen
@@ -955,24 +960,26 @@ done
 #omv-salt stage run prepare
 #omv-salt stage run deploy
 
+# Elimina archivos temporales
+[ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
+[ -f "${ConfTmp}" ] && rm "${ConfTmp}"
+
 IpAC=$(hostname -I | awk '{print $1}')
 IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
-echoe "IP actual    ${IpAC}"
-echoe "IP original  ${IpOR}"
-echoe "" "\nLa regeneración del sistema ha finalizado. Se va a regenerar la interfaz de red y reiniciar el servidor.\n"
 if [ ! "${IpOR}" = "${IpAC}" ]; then
-  echoe 10 "" "Después de reiniciar podrás acceder desde la IP ${IpOR}\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
+  echoe 10 "" "Se va a regenerar la interfaz de red y reiniciar el servidor.\nDespués de reiniciar podrás acceder desde la IP ${IpOR}\n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
   if [ "${Tecla}" ]; then
     Tecla=""
-    echoe "TRADUCCION" "Configuración de red abortada. Reiniciando...\n"
+    echoe "TRADUCCION" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar seguirá siendo ${IpAC} Reiniciando...\n"
     reboot
     echoe 3 "" ""
     exit
   fi
 fi
 
-echoe "" "Configurando red y reiniciando...\nLa IP después de reiniciar será ${IpOR}"
+echoe "" "Configurando red..."
 Regenera network interfaces
-#reboot
+echoe "" "\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar será ${IpOR} Reiniciando..."
+reboot
 echoe 3 "" ""
 exit

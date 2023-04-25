@@ -473,8 +473,7 @@ case "$1" in
     help
     ;;
   *)
-    echoe "TRADUCCION" "Argumento inválido. Solo puede ser backup, regenera o install."
-    help
+    InstalarOR
     ;;
 esac
 shift

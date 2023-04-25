@@ -162,23 +162,23 @@ InstalaPlugin () {
 # Extraer valor de una entrada de la base de datos
 LeeEtiqueta () {
   EtiqOR=$(sed -n "s:.*<${1}>\(.*\)</${1}>.*:\1:p" "${Ruta}${Config}")
-  echoe "" "El valor de ${1} en Config Original es ${EtiqOR}"
+  echoe "The value of ${1} in Original Config is ${EtiqOR}" "El valor de ${1} en Config Original es ${EtiqOR}"
   EtiqAC=$(sed -n "s:.*<${1}>\(.*\)</${1}>.*:\1:p" "${Config}")
-  echoe "" "El valor de ${1} en Config Actual es ${EtiqAC}"
+  echoe "The value of ${1} in Current Config is ${EtiqAC}" "El valor de ${1} en Config Actual es ${EtiqAC}"
 }
 
 # Lee campos completos entre todas las etiquetas de la seccion $1/$2
 LeeSeccion () {
   ValorOR="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${Ruta}${Config})"
-  echoe "" "El valor original de ${1} ${2} es ${ValorOR}"
+  echoe "The original value of ${1} ${2} is ${ValorOR}" "El valor original de ${1} ${2} es ${ValorOR}"
   ValorAC="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${Config})"
-  echoe "" "El valor actual de ${1} ${2} es ${ValorAC}"
+  echoe "The current value of ${1} ${2} is ${ValorAC}" "El valor actual de ${1} ${2} es ${ValorAC}"
   if [ -f "${ConfTmp}" ]; then
     ValorTM="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${ConfTmp})"
-    echoe "" "El valor temporal de ${1} ${2} es ${ValorTM}"
+    echoe "The time value of ${1} ${2} is ${ValorTM}" "El valor temporal de ${1} ${2} es ${ValorTM}"
   else
     ValorTM=""
-    echoe "" "El valor temporal de ${1} ${2} es nulo"
+    echoe "The temporary value of ${1} ${2} is null" "El valor temporal de ${1} ${2} es nulo"
   fi
 }
 
@@ -196,58 +196,58 @@ Regenera () {
   ValorOR=""
   ValorAC=""
   ValorTM=""
-  echoe "" "Regenerando sección $1 $2 de la base de datos"
+  echoe "Regenerating section $1 $2 of the database" "Regenerando sección $1 $2 de la base de datos"
   if [ $2 = "omvextras" ]; then
     omv_config_delete $2
   fi
   LeeSeccion "${1}" "${2}"
   if [ ! "${ValorOR}" = "${ValorAC}" ]; then
-    echoe "" "Regenerando $1 $2..."
+    echoe "Regenerating $1 $2..." "Regenerando $1 $2..."
     NmInOR="$(awk "/<${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-    echoe "" "$2 tiene ${NmInOR} posibles inicios en Config Original"
+    echoe "$2 has ${NmInOR} possible starts in Original Config" "$2 tiene ${NmInOR} posibles inicios en Config Original"
     NmFiOR="$(awk "/<\/${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-    echoe "" "$2 tiene ${NmFiOR} posibles finales en Config Original"
+    echoe "$2 has ${NmFiOR} possible endings in Original Config" "$2 tiene ${NmFiOR} posibles finales en Config Original"
     NmInAC="$(awk "/<${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
-    echoe "" "$2 tiene ${NmInAC} posibles inicios en Config Actual"
+    echoe "$2 has ${NmInAC} possible starts in Current Config" "$2 tiene ${NmInAC} posibles inicios en Config Actual"
     NmFiAC="$(awk "/<\/${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
-    echoe "" "$2 tiene ${NmFiAC} posibles finales en Config Actual"
+    echoe "$2 has ${NmFiAC} possible endings in Current Config" "$2 tiene ${NmFiAC} posibles finales en Config Actual"
     LoAC="$(awk 'END {print NR}' "${Config}")"
-    echoe "" "Config actual tiene ${LoAC} lineas en total"
+    echoe "Current config has ${LoAC} lines in total" "Config actual tiene ${LoAC} lineas en total"
     IO=0
     Gen=""
     while [ $IO -lt ${NmInOR} ]; do
       [ "${Gen}" ] && break
       ((IO++))
       InOR="$(awk "/<${2}>/ {print NR}" ${Ruta}${Config} | awk -v i=$IO 'NR==i {print $1}')"
-      echoe "" "Comprobando Inicio de $2 en Config Origen en linea ${InOR}..."
+      echoe "Checking Start of $2 in Config Origin in line ${InOR}..." "Comprobando Inicio de $2 en Config Origen en linea ${InOR}..."
       FO=0
       while [ $FO -lt ${NmFiOR} ]; do
         [ "${Gen}" ] && break
         ((FO++))
         FiOR="$(awk "/<\/${2}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
-        echoe "" "Comprobando Final de $2 en Config Origen en linea ${FiOR}..."
+        echoe "Checking End of $2 in Config Origin in line ${FiOR}..." "Comprobando Final de $2 en Config Origen en linea ${FiOR}..."
         IA=0
         while [ $IA -lt ${NmInAC} ]; do
           [ "${Gen}" ] && break
           ((IA++))
           InAC="$(awk "/<${2}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
-          echoe "" "Comprobando Inicio de $2 en Config Actual en linea ${InAC}..."
+          echoe "Checking Start of $2 in Current Config in line ${InAC}..." "Comprobando Inicio de $2 en Config Actual en linea ${InAC}..."
           FA=0
           while [ $FA -lt ${NmFiAC} ]; do
             ((FA++))
             FiAC="$(awk "/<\/${2}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
-            echoe "" "Comprobando Final de $2 en Config Actual en linea ${FiAC}..."
-            echoe "" "Creando Config Temporal..."
+            echoe "Checking End of $2 in Current Config in line ${FiAC}..." "Comprobando Final de $2 en Config Actual en linea ${FiAC}..."
+            echoe "Creating Temporary Config..." "Creando Config Temporal..."
             CreaConfTmp
-            echoe "" "Comparando $1 $2 de Config Temporal con el Original..."
+            echoe "Comparing $1 $2 of Temporary Config with the Original..." "Comparando $1 $2 de Config Temporal con el Original..."
             LeeSeccion $1 $2
             if [ "${ValorOR}" = "${ValorTM}" ]; then
               Gen="OK"
-              echoe "" "La seccion $1 $2 en Config Temporal y Config Original son iguales. Regenerando..."
+              echoe "The $1 $2 section in Temporary Config and Original Config are the same. Regenerating..." "La seccion $1 $2 en Config Temporal y Config Original son iguales. Regenerando..."
               cp -a "${Config}" "${ConfTmp}ps"
               rm "${Config}"
               cp -a "${ConfTmp}" "${Config}"
-              echoe "" "Seccion $1 $2 regenerada en base de datos. Aplicando cambios..."
+              echoe "Section $1 $2 regenerated in the database. Applying changes..." "Seccion $1 $2 regenerada en base de datos. Aplicando cambios..."
               Modulos $2
               break
             else
@@ -258,11 +258,11 @@ Regenera () {
       done
     done
     if [ ! "${Gen}" ]; then
-      echoe "" "No se ha podido regenerar la seccion $1 $2 en la base de datos actual. Saliendo..."
+      echoe "Generating Temporary Config for section $1 $2 ..." "No se ha podido regenerar la seccion $1 $2 en la base de datos actual. Saliendo..."
       exit
     fi
   else
-    echoe "" "$1 $2 son iguales en Config Original y Actual. Saliendo de función Regenera..."
+    echoe "$1 $2 are the same in Original and Current Config. Exiting Regenerate function..." "$1 $2 son iguales en Config Original y Actual. Saliendo de función Regenera..."
   fi
 }
 
@@ -362,9 +362,9 @@ Modulos () {
       Mod="omvextras"
       ;;
     *)
-      echoe "" "No se puede aplicar cambios a los módulos de la sección $1. Deshaciendo cambios..."
+      echoe "Changes cannot be applied to modules in section $1. Undoing changes..." "No se puede aplicar cambios a los módulos de la sección $1. Deshaciendo cambios..."
       cp -a "${ConfTmp}ps" "${Config}"
-      echoe "" "No se ha podido completar la regeneración. Saliendo..."
+      echoe "The regeneration could not be completed. Coming out..." "No se ha podido completar la regeneración. Saliendo..."
       exit
   esac
   Aplica "${Mod}"
@@ -372,9 +372,9 @@ Modulos () {
 
 Aplica () {
   for i in $@; do
-    echoe "" "Configurando $i..."
+    echoe "Configuring $i..." "Configurando $i..."
     omv-salt deploy run "$i"
-    echoe 1 "" "$i configurado."
+    echoe 1 "$i configured." "$i configurado."
   done
   Resto="$(cat "${Sucio}")"
   if [[ ! "${Resto}" == "[]" ]]; then
@@ -418,7 +418,7 @@ Wants=network-online.target
 
 [Service]
 ExecStartPre=/bin/sleep 60
-ExecStart=$Comando
+ExecStart=${Comando}
 
 [Install]
 WantedBy=multi-user.target" > "${Sysreboot}"
@@ -428,7 +428,7 @@ WantedBy=multi-user.target" > "${Sysreboot}"
 
 # Root
 if [[ $(id -u) -ne 0 ]]; then
-  echoe "This script must be executed as root or using sudo.  Exiting..." "Este script se debe ejecutar como root o usando sudo.  Saliendo..."
+  echoe "Run omv-regen with sudo or as root.  Exiting..." "Ejecuta omv-regen con sudo o como root.  Saliendo..."
   help
 fi
 
@@ -452,7 +452,7 @@ if [ ! "$0" = "${Inst}" ]; then
   if [ "$1" = "install" ] || [ "$1" = "" ]; then
     InstalarOR
   else
-    echoe "TRADUCCION" "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen install\nSaliendo..."
+    echoe "omv-regen is not installed.\nTo install it run omv-regen install\nExiting..." "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen install\nSaliendo..."
     help
   fi
 fi
@@ -494,18 +494,18 @@ if [ $Back ]; then
       b)
         if [ -d "${OPTARG}" ]; then
           Ruta="${OPTARG}"
-          echoe "TRADUCCION" "El backup se almacenará en ${Ruta}"
+          echoe "The backup will be stored in ${Ruta}" "El backup se almacenará en ${Ruta}"
         else
-          echoe "TRADUCCION" "La carpeta ${OPTARG} no existe. Saliendo..."
+          echoe "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
           help
         fi
         ;;
       d)
         if [[ "$OPTARG" =~ ^[0-9]+$ ]]; then
           OpDias=$OPTARG
-          echoe "TRADUCCION" "Se eliminarán los backups de mas de $OpDias días de antigüedad."
+          echoe "Backups older than $OpDias days will be deleted." "Se eliminarán los backups de mas de $OpDias días de antigüedad."
         else
-          echoe "TRADUCCION" "La opción -d debe ser un número. Saliendo..."
+          echoe "The -d option must be a number. Coming out..." "La opción -d debe ser un número. Saliendo..."
           help
         fi
         ;;
@@ -515,15 +515,15 @@ if [ $Back ]; then
       o)
         if [ -d "${OPTARG}" ]; then
           OpFold="${OPTARG}"
-          echoe "TRADUCCION" "La carpeta ${OpFold} se va a copiar."
+          echoe "The folder ${OpFold} is to be copied." "La carpeta ${OpFold} se va a copiar."
         else
-          echoe "TRADUCCION" "La carpeta ${OPTARG} no existe. Saliendo..."
+          echoe "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
           help
         fi
         ;;
       u)
         OpUpda=1
-        echoe "TRADUCCION" "Se va a actualizar el sistema antes de hacer el backup."
+        echoe "The system will be updated before making the backup." "Se va a actualizar el sistema antes de hacer el backup."
         ;;
       *)
         echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
@@ -540,9 +540,9 @@ if [ $Rege ]; then
       b)
         if [ -d "${OPTARG}" ]; then
           Ruta="${OPTARG}"
-          echoe "TRADUCCION" "Se ha establecido ${Ruta} como origen de datos."
+          echoe "${Ruta} has been set as data source." "Se ha establecido ${Ruta} como origen de datos."
         else
-          echoe "TRADUCCION" "La carpeta ${OPTARG} no existe. Saliendo..."
+          echoe "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
           help
         fi
         ;;
@@ -551,11 +551,11 @@ if [ $Rege ]; then
         ;;
       k)
         OpKern=""
-        echoe "TRADUCCION" "No se instalará el kernel proxmox."
+        echoe "The proxmox kernel will not be installed." "No se instalará el kernel proxmox."
         ;;
       r)
         OpRebo=1
-        echoe 3 "TRADUCCION" "Se reiniciará automáticamente el sistema después de instalar un kernel."
+        echoe 3 "It will automatically reboot the system after installing a kernel." "Se reiniciará automáticamente el sistema después de instalar un kernel."
         ;;
       *)
         echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
@@ -571,20 +571,20 @@ if [ "$Back" ] && [ "$1" ]; then
   if [ "${OpFold}" ]; then
     for i in "$@"; do
       if [ -d "$i" ]; then
-        echoe "TRADUCCION" "La carpeta $i se va a copiar."
+        echoe "The folder $i is to be copied." "La carpeta $i se va a copiar."
       else
-        echoe "TRADUCCION" "La carpeta $i no existe. Saliendo..."
+        echoe "The folder $i does not exist. Coming out..." "La carpeta $i no existe. Saliendo..."
         help
       fi
     done
   else
-  echoe "TRADUCCION" "Argumento inválido. Saliendo..."
+  echoe "Invalid argument. Coming out..." "Argumento inválido. Saliendo..."
   help
   fi
 fi
 
 if [ "$Back" ] && [ ! "${Ruta}" ]; then
-  echoe "TRADUCCION" "No se ha establecido carpeta para el backup. Se almacenará en ${ORBackup}"
+  echoe "No backup folder has been set. It will be stored in ${ORBackup}" "No se ha establecido carpeta para el backup. Se almacenará en ${ORBackup}"
   if [ ! -d "${ORBackup}" ]; then
     mkdir -p "${ORBackup}"
   fi
@@ -593,25 +593,25 @@ fi
 
 if [ "$Rege" ]; then
   if [ "$2" ]; then
-    echoe "TRADUCCION" "Argumento inválido $2 Saliendo..."
+    echoe "Invalid argument $2 Exiting..." "Argumento inválido $2 Saliendo..."
     help
   else
     if [ "$1" ]; then
       if [ "${Ruta}" ]; then
-        echoe "TRADUCCION" "Argumento inválido $1 Saliendo..."
+        echoe "Invalid argument $1 Exiting..." "Argumento inválido $1 Saliendo..."
         help
       else
         if [ -d "$1" ]; then
           Ruta="$1"
-          echoe "TRADUCCION" "Se ha establecido ${Ruta} como origen de datos."
+          echoe "${Ruta} has been set as data source." "Se ha establecido ${Ruta} como origen de datos."
         else
-          echoe "TRADUCCION" "La carpeta $1 no existe. Saliendo..."
+          echoe "The folder $1 does not exist. Exiting..." "La carpeta $1 no existe. Saliendo..."
           help
         fi
       fi
     else
       if [ ! "${Ruta}" ]; then
-        echoe "TRADUCCION" "Falta la ruta de origen del backup para regenerar. Saliendo..."
+        echoe "The source path of the backup to rebuild is missing. Exiting..." "Falta la ruta de origen del backup para regenerar. Saliendo..."
         help
       fi
     fi
@@ -632,7 +632,7 @@ if [ $Back ]; then
 
   # Crea carpeta Destino
   Destino="${Ruta}/ORB_${Fecha}"
-  echoe 3 "TRADUCCION" "Se va a realizar un backup en ${Destino} \nPulsa cualquier tecla antes de 3 segundos para  ABORTAR"
+  echoe 3 "A backup is going to be made in ${Destino} \nPress any key within 3 seconds to  ABORT" "Se va a realizar un backup en ${Destino} \nPulsa cualquier tecla antes de 3 segundos para  ABORTAR"
   if [ "${Tecla}" ]; then
     echoe "Exiting..." "Saliendo..."
     help
@@ -690,11 +690,11 @@ if [ $Back ]; then
   zpool list | tee "${Destino}${ORB[Zpoollist]}"
 
   # Crea registro docker systemctl
-  echoe "TRADUCCION" ">>>    Extrayendo información de systemd (systemctl)..."
+  echoe ">>>    Extracting information from systemd (systemctl)..." ">>>    Extrayendo información de systemd (systemctl)..."
   systemctl list-unit-files | tee "${Destino}${ORB[Systemctl]}"
 
   # Crea registro de configuracion de red
-  echoe "TRADUCCION" ">>>    Extrayendo información de red (ip a)..."
+  echoe ">>>    Retrieving network information (hostname -I)..." ">>>    Extrayendo información de red (hostname -I)..."
   hostname -I | tee "${Destino}${ORB[HostnameI]}"
 
   # Elimina backups antiguos
@@ -708,7 +708,7 @@ fi
 
 # EJECUTA REGENERACION DE SISTEMA
 
-echoe 5 "TRADUCCION" "\n\nSe va a ejecutar la  REGENERACION DEL SISTEMA ACTUAL  desde ${Ruta} \nPulsa cualquier tecla antes de 5 segundos para  ABORTAR....."
+echoe 5 "\n\nThe REGENERATION OF THE CURRENT SYSTEM will be executed from ${Ruta} \nPress any key within 5 seconds to  ABORT....." "\n\nSe va a ejecutar la  REGENERACION DEL SISTEMA ACTUAL  desde ${Ruta} \nPulsa cualquier tecla antes de 5 segundos para  ABORTAR....."
 if [ "${Tecla}" ]; then
   echoe "Exiting..." "Saliendo..."
   help
@@ -717,7 +717,7 @@ fi
 # Comprobar backup
 for i in "${ORB[@]}"; do
   if [ ! -f "${Ruta}$i" ]; then
-    echoe "TRADUCCION" "Falta el archivo $i en ${Ruta}.  Saliendo..."
+    echoe "Missing file $i in ${Ruta}. Coming out..." "Falta el archivo $i en ${Ruta}.  Saliendo..."
     help
   fi
 done
@@ -725,13 +725,13 @@ done
 # Versión de OMV original
 Analiza "openmediavault"
 if [ "${VersIdem}" = "NO" ]; then
-  echoe "TRADUCCION" "La versión de OMV del servidor original no coincide.  Saliendo..."
+  echoe "The OMV version of the original server does not match.  Exiting..." "La versión de OMV del servidor original no coincide.  Saliendo..."
   help
 fi
 
 # Actualizar sistema
 if ! omv-upgrade; then
-  echoe "Failed updating system. Exiting..." "Error actualizando el sistema.  Saliendo..."
+  echoe "Failed updating system.  Exiting..." "Error actualizando el sistema.  Saliendo..."
   exit
 fi
 
@@ -740,7 +740,7 @@ Dif=""
 Dif="$(diff ${Ruta}${Passwd} ${Passwd})"
 if [ "${Dif}" ]; then
   cp -apv "${Ruta}${Passwd}" "${Passwd}"
-  echoe "" "Regenerando ajustes básicos de Sistema..."
+  echoe "Regenerating basic System settings..." "Regenerando ajustes básicos de Sistema..."
   Regenera system time
   Regenera system certificates
   Regenera config webadmin
@@ -748,16 +748,16 @@ if [ "${Dif}" ]; then
   Regenera system monitoring
   Regenera system crontab
   Regenera system syslog
-  echoe "" "Preparando configuraciones de la base de datos (puede tardar)..."
+  echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run prepare
-  echoe "" "Actualizando configuraciones de la base de datos (puede tardar)..."
+  echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run deploy
 fi
 
 # 2-Instalar omv-extras si estaba y no está instalado.
 Analiza "openmediavault-omvextrasorg"
 if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
-  echoe "" "Instalando omv-extras..."
+  echoe "Installing omv-extras..." "Instalando omv-extras..."
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
   if [ -f "${File}" ]; then
@@ -812,10 +812,10 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[Dpkg]}"); do
         ;;
     esac
     if [ "${VersIdem}" = "NO" ]; then
-      echoe "TRADUCCION" "\t**********\n********** ERROR:  Versión disponible $VersionDI La versión del sistema original $VersionOR no coincide. Saliendo..."
+      echoe "\t************\n********** ERROR: Available version $VersionDI The original system version $VersionOR does not match. Exiting..." "\t**********\n********** ERROR:  Versión disponible $VersionDI La versión del sistema original $VersionOR no coincide. Saliendo..."
       help
     else
-      echoe "TRADUCCION" "  -->  Se va a instalar..."
+      echoe "--> It will install..." "  -->  Se va a instalar..."
     fi
   fi
 done
@@ -834,22 +834,22 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; the
       sed -i 's/^exit 0.*$/echo "Completado"/' /tmp/installproxmox
       . /tmp/installproxmox "${KernelOR}"
       rm /tmp/installproxmox
-      echoe "TRADUCCION" "Kernel proxmox ${KernelOR} instalado."
+      echoe "Kernel proxmox ${KernelOR} installed." "Kernel proxmox ${KernelOR} instalado."
       if [ "${OpRebo}" ]; then
-        echoe "TRADUCCION" "\nOpción reinicio automático activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
-        echoe 10 "\nPara   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
+        echoe "\nAuto reboot option enabled.\nTo use the new kernel the system will be rebooted.\nThe regeneration will continue in the background.\nDo not shut down the server." "\nOpción reinicio automático activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
+        echoe 10 "\nTo   ABORT RESET   press a key within 10 seconds..." "\nPara   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
         if [ "${Tecla}" ]; then
-          echoe "TRADUCCION" "Reinicio abortado.\n"
+          echoe "Reboot aborted.\n" "Reinicio abortado.\n"
         else
           Creasysreboot
           systemctl enable omv-regen-reboot.service
-          echoe 3 "TRADUCCION" "Servicio de reinicio habilitado."
+          echoe 3 "Reboot service enabled." "Servicio de reinicio habilitado."
           echoe "Rebooting..." "Reiniciando..."
           reboot
           exit
         fi
       fi
-      echoe "TRADUCCION" "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\n\033[0;32m Para completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen regenera\n\n\033[0m Saliendo..."
+      echoe "\nAuto reboot option disabled.\nTo use the new kernel you must reboot the system manually.\n\n\033[0;32m To complete the regeneration -> AFTER REBOOT RUN AGAIN omv-regen regenerates\n\n\033 [0m Leaving..." "\nOpción reinicio automático deshabilitada.\nPara utilizar el nuevo kernel debes reiniciar el sistema manualmente.\n\n\033[0;32m Para completar la regeneración -> DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen regenera\n\n\033[0m Saliendo..."
       exit
     fi
   fi
@@ -860,11 +860,11 @@ fi
 # 4-Instala sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS mdadm)
 Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
-  echoe "TRADUCCION" "Montando sistemas de archivos..."
+  echoe "Mounting filesystems..." "Montando sistemas de archivos..."
   InstalaPlugin openmediavault-sharerootfs
   Regenera system fstab
   # Cambia UUID disco de sistema si es nuevo
-  echoe "TRADUCCION" "Configurando openmediavault-sharerootfs..."
+  echoe "Configuring openmediavault-sharerootfs..." "Configurando openmediavault-sharerootfs..."
   uuid="79684322-3eac-11ea-a974-63a080abab18"
   if [ "$(omv_config_get_count "//mntentref[.='${uuid}']")" = "0" ]; then
     omv-confdbadm delete --uuid "${uuid}" "conf.system.filesystem.mountpoint"
@@ -905,17 +905,17 @@ fi
 # 8-Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
 Dif=$(diff "${Ruta}${Shadow}" "${Shadow}")
 if [ "${Dif}" ]; then
-  echoe "TRADUCCION" "Restaurando archivos..."
+  echoe "Restoring files..." "Restaurando archivos..."
   rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
-  echoe "" "Regenerando usuarios..."
+  echoe "Regenerating users..." "Regenerando usuarios..."
   Regenera usermanagement homedirectory
   Regenera usermanagement users
   Regenera usermanagement groups
-  echoe "" "Regenerando carpetas compartidas..."
+  echoe "Regenerating shared folders..." "Regenerando carpetas compartidas..."
   Regenera system shares
-  echoe "" "Regenerando SMART..."
+  echoe "Regenerating SMART..." "Regenerando SMART..."
   Regenera services smart
-  echoe "" "Regenerando Servicios..."
+  echoe "Regenerating Services..." "Regenerando Servicios..."
   Regenera services nfs
   Regenera services rsync
   Regenera services smb
@@ -923,13 +923,13 @@ if [ "${Dif}" ]; then
   Regenera system email
   Regenera system notification
   Regenera system syslog
-  echoe "" "Regenerando Red..."
+  echoe "Regenerating Network..." "Regenerando Red..."
   Regenera network dns
   Regenera network proxy
   Regenera network iptables
-  echoe "" "Preparando configuraciones de la base de datos (puede tardar)..."
+  echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run prepare
-  echoe "" "Actualizando configuraciones de la base de datos (puede tardar)..."
+  echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run deploy
 fi
 
@@ -937,8 +937,8 @@ fi
 DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
-  echoe "TRADUCCION" "Instalando docker..."
-  echoe "" "Regenerando omvextras"
+  echoe "Installing docker..." "Instalando docker..."
+  echoe "Regenerating omvextras..." "Regenerando omvextras..."
   Regenera system omvextras
   DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
   if [ ! "${DockerII}" ]; then
@@ -948,9 +948,8 @@ if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
     sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
     . /tmp/installdocker "${dockerStorage}"
     rm /tmp/installdocker
-    echoe "TRADUCCION" "Docker instalado."
+    echoe "Docker installed." "Docker instalado."
   fi
-  # REVISAR ESTO. NO SE INSTALA DONDE DEBE
 fi
 
 # 10-Instalar resto de complementos
@@ -975,19 +974,19 @@ done
 IpAC=$(hostname -I | awk '{print $1}')
 IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
 if [ ! "${IpOR}" = "${IpAC}" ]; then
-  echoe 10 "" "Se va a regenerar la interfaz de red y reiniciar el servidor.\nDespués de reiniciar podrás acceder desde la IP ${IpOR}\n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
+  echoe 10 "It will regenerate the network interface and restart the server.\nAfter restart you will be able to access from IP ${IpOR}\n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\nDespués de reiniciar podrás acceder desde la IP ${IpOR}\n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
   if [ "${Tecla}" ]; then
     Tecla=""
-    echoe "TRADUCCION" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar seguirá siendo ${IpAC} Reiniciando...\n"
+    echoe "\nNetwork configuration aborted.\n\nSystem rebuild finished!!\n\nIP after reboot will remain ${IpAC} Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar seguirá siendo ${IpAC} Reiniciando...\n"
     reboot
     echoe 3 "" ""
     exit
   fi
 fi
 
-echoe "" "Configurando red..."
+echoe "Configuring network..." "Configurando red..."
 Regenera network interfaces
-echoe "" "\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar será ${IpOR} Reiniciando..."
+echoe "\n\nSystem rebuild finished!!\n\nIP after reboot will be ${IpOR} Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar será ${IpOR} Reiniciando..."
 reboot
 echoe 3 "" ""
 exit

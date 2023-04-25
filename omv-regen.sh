@@ -27,7 +27,7 @@ Subuid="/etc/subuid"
 Subgid="/etc/subgid"
 Passdb="/var/lib/samba/private/passdb.tdb"
 declare -a Archivos=( "$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" )
-declare -a Directorios=( "/home" "/etc/libvirt/qemu" "/etc/wireguard" )
+declare -a Directorios=( "/home" "/etc/libvirt" )
 ConfTmp="/etc/openmediavault/config.rg"
 Fecha=$(date +%y%m%d_%H%M)
 VersionOR=""
@@ -104,7 +104,7 @@ help () {
   echo -e "                          You can edit the ORB_ prefix to keep a version.      "
   echo -e "    -h     Help.                                                               "
   echo -e "                                                                               "
-  echo -e "    -o     Enable optional folder backup. (by default /home /etc/libvirt/qemu) "
+  echo -e "    -o     Enable optional folder backup. (by default /home /etc/libvirt)      "
   echo -e "                          Spaces to separate (can use quotes).                 "
   echo -e "    -u     Enable automatic system update before backup.                       "
   echo -e "_______________________________________________________________________________"

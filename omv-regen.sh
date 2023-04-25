@@ -368,7 +368,7 @@ Modulos () {
 }
 
 Aplica () {
-  for i in "$@"; do
+  for i in $@; do
     echoe "Configuring $i..." "Configurando $i..."
     omv-salt deploy run "$i"
     echoe 1 "$i configured." "$i configurado."
@@ -381,7 +381,7 @@ Aplica () {
 
 # Instalar omv-regen
 InstalarOR (){
-  if [ ! "$0" = "${Inst}" ];then
+  if [ ! $0 = "${Inst}" ];then
     if [ -f "${Inst}" ]; then
       rm "${Inst}"
     fi

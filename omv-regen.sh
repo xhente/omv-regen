@@ -389,7 +389,11 @@ InstalarOR (){
       rm "${Inst}"
     fi
     touch "${Inst}"
-    cp -a "$0" "${Inst}"
+    if [ -f "$0" ]; then
+      cp -a "$0" "${Inst}"
+    else
+      wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh > "${Inst}"
+    fi
     chmod +x "${Inst}"
     echoe "\n  omv-regen has been installed. You can delete the installation file.\n" "\n  omv-regen se ha instalado. Puedes eliminar el archivo de instalación.\n"
   else

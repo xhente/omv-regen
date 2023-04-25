@@ -443,9 +443,13 @@ if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
 fi
 
 # Comprobar si omv-regen está instalado
-if [ ! "$0" = "${Inst}" ] && [ ! "$1" = "install" ]; then
-  echoe "TRADUCCION" "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen install\nSaliendo..."
-  help
+if [ ! "$0" = "${Inst}" ]; then
+  if [ "$1" = "install" ] || [ "$1" = "" ]; then
+    InstalarOR
+  else
+    echoe "TRADUCCION" "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen install\nSaliendo..."
+    help
+  fi
 fi
 
 # PROCESA ARGUMENTOS

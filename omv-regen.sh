@@ -84,13 +84,14 @@ Webadmin=("config" "webadmin" "monit" "nginx")
 # Complementos
 Omvextras=("system" "omvextras" "omvextras")
 Compose=("services" "compose" "compose")
+Fail2ban=("services" "fail2ban" "fail2ban")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
 Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
 Resetperms=("services" "resetperms")
 Symlinks=("services" "symlinks")
 Wetty=("services" "wetty" "avahi" "wetty")
 Wireguard=("services" "wireguard" "wireguard")
-Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota")
+Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota" "nfs" "samba" "sharedfolders" "systemd" "tftpd-hpa")
 
 # FUNCIONES
 
@@ -253,13 +254,13 @@ Regenera () {
     omv_config_delete "${Subnodo}"
     LeeNodo "${Nodo}" "${Subnodo}"
     if [ "${NodoOR}" = "${NodoAC}" ]; then
-      echoe "${Nodo} ${Subnodo} are the same in Original and Current Config. It is not modified." "${Nodo} ${Subnodo} son iguales en Config Original y Actual. No se modifica."
+      echoe "${Nodo} ${Subnodo} are the same in original and current database. It is not modified." "${Nodo} ${Subnodo} coinciden en la base de datos original y la actual. No se modifica."
     else
       echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
       NmInOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmInOR} possible starts in Original Config" "${Subnodo} tiene ${NmInOR} posibles inicios en Config Original"
+      echoe "${Subnodo} has ${NmInOR} possible starts in original database" "${Subnodo} tiene ${NmInOR} posibles inicios en la base de datos original"
       NmFiOR="$(awk "/<\/${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmFiOR} possible endings in Original Config" "${Subnodo} tiene ${NmFiOR} posibles finales en Config Original"
+      echoe "${Subnodo} has ${NmFiOR} possible endings in original database" "${Subnodo} tiene ${NmFiOR} posibles finales en la base de datos original"
       NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
       if [ "${NmInAC}" = "" ]; then
         NmInAC="$(awk "/<${Subnodo}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
@@ -268,40 +269,40 @@ Regenera () {
           sed -i "s/<\/${Nodo}>/<${Subnodo}>\n<\/${Subnodo}>\n<\/${Nodo}>/g" "${Config}"
           NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
         else
-          echoe "${Subnodo} starts and ends on the same line in Current Config. Inserting line..." "${Subnodo} inicia y finaliza en la misma línea en Config Actual. Insertando línea..."
+          echoe "${Subnodo} starts and ends on the same line in current database. Inserting line..." "${Subnodo} inicia y finaliza en la misma línea en la base de datos actual. Insertando línea..."
           sed -i "s/<${Subnodo}\/>/<${Subnodo}>\n<\/${Subnodo}>/g" "${Config}"
         fi
       fi
-      echoe "${Subnodo} has ${NmInAC} possible starts in Current Config" "${Subnodo} tiene ${NmInAC} posibles inicios en Config Actual"
+      echoe "${Subnodo} has ${NmInAC} possible starts in current database." "${Subnodo} tiene ${NmInAC} posibles inicios en la base de datos actual."
       NmFiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmFiAC} possible endings in Current Config" "${Subnodo} tiene ${NmFiAC} posibles finales en Config Actual"
+      echoe "${Subnodo} has ${NmFiAC} possible endings in current database" "${Subnodo} tiene ${NmFiAC} posibles finales en la base de datos actual"
       LoAC="$(awk 'END {print NR}' "${Config}")"
-      echoe "Current config has ${LoAC} lines in total" "Config actual tiene ${LoAC} lineas en total"
+      echoe "Current database has ${LoAC} lines in total" "La base de datos actual tiene ${LoAC} líneas en total"
       IO=0
       Gen=""
       while [ $IO -lt ${NmInOR} ]; do
         [ "${Gen}" ] && break
         ((IO++))
         InOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$IO 'NR==i {print $1}')"
-        echoe "Checking Start of ${Subnodo} in Config Origin in line ${InOR}..." "Comprobando Inicio de ${Subnodo} en Config Origen en linea ${InOR}..."
+        echoe "Checking start of ${Subnodo} in original database in line ${InOR}..." "Comprobando inicio de ${Subnodo} en la base de datos original en linea ${InOR}..."
         FO=0
         while [ $FO -lt ${NmFiOR} ]; do
           [ "${Gen}" ] && break
           ((FO++))
           FiOR="$(awk "/<\/${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
-          echoe "Checking End of ${Subnodo} in Config Origin in line ${FiOR}..." "Comprobando Final de ${Subnodo} en Config Origen en linea ${FiOR}..."
+          echoe "Checking end of ${Subnodo} in original database in line ${FiOR}..." "Comprobando final de ${Subnodo} en la base de datos original en linea ${FiOR}..."
           IA=0
           while [ $IA -lt ${NmInAC} ]; do
             [ "${Gen}" ] && break
             ((IA++))
             InAC="$(awk "/<${Subnodo}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
-            echoe "Checking Start of ${Subnodo} in Current Config in line ${InAC}..." "Comprobando Inicio de ${Subnodo} en Config Actual en linea ${InAC}..."
+            echoe "Checking start of ${Subnodo} in current database in line ${InAC}..." "Comprobando inicio de ${Subnodo} en la base de datos actual en línea ${InAC}..."
             FA=0
             while [ $FA -lt ${NmFiAC} ]; do
               ((FA++))
               FiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
-              echoe "Checking End of ${Subnodo} in Current Config in line ${FiAC}..." "Comprobando Final de ${Subnodo} en Config Actual en linea ${FiAC}..."
-              echoe "Creating Temporary Config..." "Creando Config Temporal..."
+              echoe "Checking end of ${Subnodo} in current database in line ${FiAC}..." "Comprobando final de ${Subnodo} en la base de datos actual en línea ${FiAC}..."
+              echoe "Creating temporary database..." "Creando base de datos temporal..."
               [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
               cp -a "${Config}" "${ConfTmp}"
               sed -i '1,$d' "${ConfTmp}"
@@ -312,14 +313,14 @@ Regenera () {
                 awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
               fi
                 awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
-              echoe "Comparing ${Nodo} ${Subnodo} of Temporary Config with the Original..." "Comparando ${Nodo} ${Subnodo} de Config Temporal con el Original..."
+              echoe "Comparing ${Nodo} ${Subnodo} of temporary database with the original database..." "Comparando ${Nodo} ${Subnodo} de base de datos temporal con la base de datos original..."
               LeeNodo "${Nodo}" "${Subnodo}"
               if [ "${NodoOR}" = "${NodoTM}" ]; then
                 Gen="OK"
-                echoe "The ${Nodo} ${Subnodo} node in Temporary Config and Original Config are the same." "El nodo ${Nodo} ${Subnodo} en Config Temporal y Config Original son iguales."
+                echoe "The ${Nodo} ${Subnodo} node in temporary and original database are the same." "El nodo ${Nodo} ${Subnodo} coincide en la base de datos temporal y la original."
                 break
               else
-                echoe "Generating new Temporary Config for ${Nodo} ${Subnodo} node ..." "Generando nuevo Config Temporal para el nodo ${Nodo} ${Subnodo} ..."
+                echoe "Generating new temporary database for ${Nodo} ${Subnodo} node ..." "Generando nueva base de datos temporal para el nodo ${Nodo} ${Subnodo} ..."
               fi
             done
           done
@@ -335,25 +336,25 @@ Regenera () {
         cp -a "${Config}" "${ConfTmp}ps"
         rm "${Config}"
         cp -a "${ConfTmp}" "${Config}"
-        echoe "Node ${Nodo} ${Subnodo} regenerated in the database." "Nodo ${Nodo} ${Subnodo} regenerada en base de datos."
+        echoe "${Nodo} ${Subnodo} node regenerated in the database." "Nodo ${Nodo} ${Subnodo} regenerado en la base de datos."
       fi
     fi
   fi
   # Aplica cambios a los modulos seleccionados
-  echoe "Applying changes to modules..." "Aplicando cambios en los modulos..."
+  echoe "Applying configuration changes to salt modules..." "Aplicando cambios de configuración en los módulos salt..."
   if [ $1 = "" ]; then
-    echoe "There are no changes to apply to the modules." "No hay cambios para aplicar en los módulos."
+    echoe "There are no configuration changes to apply to salt modules." "No hay cambios de configuración para aplicar en los módulos salt."
   else
     for i in $@; do
-      echoe "Configuring $i..." "Configurando $i..."
-      omv-salt deploy run  --no-color --quiet "$i"
-      echoe 1 "$i configured." "$i configurado."
+      echoe "Configuring salt $i..." "Configurando salt $i..."
+      omv-salt deploy run --quiet "$i"
+      echoe 1 "$i salt configured." "Salt $i configurado."
     done
     Resto="$(cat "${Sucio}")"
     if [[ ! "${Resto}" == "[]" ]]; then
       omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
     fi
-    echoe "The changes have been applied to the selected modules." "Se han aplicado los cambios a los módulos seleccionados."
+    echoe "The changes have been applied to the selected salt modules." "Se han aplicado los cambios a los módulos salt seleccionados."
   fi
 }
 
@@ -723,10 +724,10 @@ if [ "${Dif}" ]; then
   Regenera "${Monitoring[@]}"
   Regenera "${Crontab[@]}"
   Regenera "${Syslog[@]}"
-  echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
-  omv-salt stage run prepare
-  echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
-  omv-salt stage run deploy
+  echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
+  omv-salt stage run prepare --quiet
+  echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
+  omv-salt stage run deploy --quiet
 fi
 
 # 2-Instalar omv-extras si estaba y no está instalado.
@@ -746,7 +747,7 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
       Analiza "openmediavault-omvextrasorg"
       if [[ "${InstII}" = "NO" ]]; then
         echoe "omv-extras failed to install correctly.  Trying to fix with omv-salt deploy run ..." "omv-extras no se pudo instalar correctamente. Intentando corregir con omv-salt deploy run ..."
-        if omv-salt deploy run omvextras; then
+        if omv-salt deploy run --quiet omvextras; then
           echoe "Trying to fix apt ..." "Tratando de corregir apt..."
           apt-get --yes --fix-broken install
         else
@@ -761,7 +762,7 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
       fi
     fi
     echoe "Updating repos ..." "Actualizando repositorios..."
-    omv-salt deploy run omvextras
+    omv-salt deploy run --quiet omvextras
   else
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
@@ -898,10 +899,10 @@ if [ "${Dif}" ]; then
   Regenera "${Dns[@]}"
   Regenera "${Proxy[@]}"
   Regenera "${Iptables[@]}"
-  echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
-  omv-salt stage run prepare
-  echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
-  omv-salt stage run deploy
+  echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
+  omv-salt stage run prepare --quiet
+  echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
+  omv-salt stage run deploy --quiet
 fi
 
 # 9-Instalar docker en la ubicacion original si estaba instalado y no está instalado
@@ -963,9 +964,9 @@ done
 
 # Reconfigurar
 echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
-omv-salt stage run prepare
+omv-salt stage run prepare --quiet
 echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
-omv-salt stage run deploy
+omv-salt stage run deploy --quiet
 
 # Elimina archivos temporales
 [ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"

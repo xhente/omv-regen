@@ -82,6 +82,7 @@ Omvextras=("system" "omvextras" "omvextras")
 Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
 Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
+Compose=("services" "compose" "compose")
 Wetty=("services" "wetty" "avahi" "wetty")
 Resetperms=("services" "resetperms")
 Symlinks=("services" "symlinks")
@@ -340,7 +341,7 @@ Regenera () {
   else
     for i in $@; do
       echoe "Configuring $i..." "Configurando $i..."
-      omv-salt deploy run "$i"
+      omv-salt deploy run  --no-color --quiet "$i"
       echoe 1 "$i configured." "$i configurado."
     done
     Resto="$(cat "${Sucio}")"
@@ -923,6 +924,9 @@ for i in "${ListaInstalar[@]}"; do
   if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
     InstalaPlugin "$i"
     case $i in
+      openmediavault-compose)
+        Regenera "${Compose[@]}"
+        ;;
       openmediavault-wetty)
         Regenera "${Wetty[@]}"
         ;;
@@ -948,8 +952,8 @@ for i in "${ListaInstalar[@]}"; do
 done
 
 # Instalar paquetes de apttools
-# Extraer symlinks base de datos y crear
 
+# Reconfigurar
 echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
 omv-salt stage run prepare
 echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."

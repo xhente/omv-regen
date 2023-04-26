@@ -40,8 +40,8 @@ KernelOR=""
 KernelIN=""
 Inst="/usr/sbin/omv-regen"
 Tecla=""
-EtiqOR=""
-EtiqAC=""
+ValorOR=""
+ValorAC=""
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
@@ -52,10 +52,9 @@ IpAC=""
 
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
-# Secciones de config.xml
+# Nodos de config.xml
 # Las dos primeras variables son nodo y subnodo. (nulo -> no hay nodo en la base de datos)
 # Las siguientes variables son los módulos a actualizar)
-Wetty=("services" "wetty" "avahi" "wetty")
 Time=("system" "time" "chrony" "cron" "timezone")
 Certificates=("system" "certificates" "certificates")
 Webadmin=("config" "webadmin" "monit" "nginx")
@@ -83,6 +82,9 @@ Omvextras=("system" "omvextras" "omvextras")
 Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
 Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
+Wetty=("services" "wetty" "avahi" "wetty")
+Resetperms=("services" "resetperms")
+Symlinks=("services" "symlinks")
 
 # FUNCIONES
 
@@ -192,29 +194,33 @@ InstalaPlugin () {
 }
 
 # Extraer valor de una entrada de la base de datos
-LeeEtiqueta () {
-  EtiqOR=$(sed -n "s:.*<${1}>\(.*\)</${1}>.*:\1:p" "${Ruta}${Config}")
-  echoe "The value of ${1} in Original Config is ${EtiqOR}" "El valor de ${1} en Config Original es ${EtiqOR}"
-  EtiqAC=$(sed -n "s:.*<${1}>\(.*\)</${1}>.*:\1:p" "${Config}")
-  echoe "The value of ${1} in Current Config is ${EtiqAC}" "El valor de ${1} en Config Actual es ${EtiqAC}"
+LeeValor () {
+  ValorOR=""
+  ValorAC=""
+  ValorOR="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Ruta}${Config})"
+  echoe "The value of $1 $2 in Original Config is ${ValorOR}" "El valor de $1 $2 en Config Original es ${ValorOR}"
+  ValorAC="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Config})"
+  echoe "The value of $1 $2 in Current Config is ${ValorAC}" "El valor de $1 $2 en Config Actual es ${ValorAC}"
 }
 
-# Lee campos completos entre todas las etiquetas de la seccion $1/$2
-LeeSeccion () {
-  ValorOR="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${Ruta}${Config})"
-  echoe "The original value of ${1} ${2} is ${ValorOR}" "El valor original de ${1} ${2} es ${ValorOR}"
-  ValorAC="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${Config})"
-  echoe "The current value of ${1} ${2} is ${ValorAC}" "El valor actual de ${1} ${2} es ${ValorAC}"
+# Lee campos completos entre todas las etiquetas del nodo $1/$2
+LeeNodo () {
+  NodoOR=""
+  NodoAC=""
+  NodoTM=""
+  NodoOR="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Ruta}${Config})"
+  echoe "The original node of $1 $2 is ${NodoOR}" "El nodo original de $1 $2 es ${NodoOR}"
+  NodoAC="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Config})"
+  echoe "The current node of $1 $2 is ${NodoAC}" "El nodo actual de $1 $2 es ${NodoAC}"
   if [ -f "${ConfTmp}" ]; then
-    ValorTM="$(xmlstarlet select --template --copy-of //"${1}"/"${2}" --nl ${ConfTmp})"
-    echoe "The time value of ${1} ${2} is ${ValorTM}" "El valor temporal de ${1} ${2} es ${ValorTM}"
+    NodoTM="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${ConfTmp})"
+    echoe "The temporary node of $1 $2 is ${NodoTM}" "El nodo temporal de $1 $2 es ${NodoTM}"
   else
-    ValorTM=""
-    echoe "The temporary value of ${1} ${2} is null" "El valor temporal de ${1} ${2} es nulo"
+    echoe "The temporary node of $1 $2 is null" "El nodo temporal de $1 $2 es nulo"
   fi
 }
 
-# Sustituye sección de la base de datos actual por la existente en la base de datos original
+# Sustituye nodo de la base de datos actual por el existente en la base de datos original y aplica cambios en módulos salt
 Regenera () {
   InOR=""
   FiOR=""
@@ -225,9 +231,9 @@ Regenera () {
   NmFiOR=""
   NmInAC=""
   NmFiAC=""
-  ValorOR=""
-  ValorAC=""
-  ValorTM=""
+  NodoOR=""
+  NodoAC=""
+  NodoTM=""
   Gen=""
   Nodo=$1
   Subnodo=$2
@@ -237,10 +243,10 @@ Regenera () {
   else
     [ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
     cp -a "${Config}" "${ConfTmp}ori"
-    echoe "Regenerating section ${Nodo} ${Subnodo} of the database" "Regenerando sección ${Nodo} ${Subnodo} de la base de datos"
+    echoe "Regenerating node ${Nodo} ${Subnodo} of the database" "Regenerando nodo ${Nodo} ${Subnodo} de la base de datos"
     omv_config_delete "${Subnodo}"
-    LeeSeccion "${Nodo}" "${Subnodo}"
-    if [ "${ValorOR}" = "${ValorAC}" ]; then
+    LeeNodo "${Nodo}" "${Subnodo}"
+    if [ "${NodoOR}" = "${NodoAC}" ]; then
       echoe "${Nodo} ${Subnodo} are the same in Original and Current Config. It is not modified." "${Nodo} ${Subnodo} son iguales en Config Original y Actual. No se modifica."
     else
       echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
@@ -301,44 +307,48 @@ Regenera () {
               fi
                 awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
               echoe "Comparing ${Nodo} ${Subnodo} of Temporary Config with the Original..." "Comparando ${Nodo} ${Subnodo} de Config Temporal con el Original..."
-              LeeSeccion ${Nodo} ${Subnodo}
-              if [ "${ValorOR}" = "${ValorTM}" ]; then
+              LeeNodo "${Nodo}" "${Subnodo}"
+              if [ "${NodoOR}" = "${NodoTM}" ]; then
                 Gen="OK"
-                echoe "The ${Nodo} ${Subnodo} section in Temporary Config and Original Config are the same." "La seccion ${Nodo} ${Subnodo} en Config Temporal y Config Original son iguales."
+                echoe "The ${Nodo} ${Subnodo} node in Temporary Config and Original Config are the same." "El nodo ${Nodo} ${Subnodo} en Config Temporal y Config Original son iguales."
                 break
               else
-                echoe "Generating new Temporary Config for section ${Nodo} ${Subnodo} ..." "Generando nuevo Config Temporal para seccion ${Nodo} ${Subnodo} ..."
+                echoe "Generating new Temporary Config for ${Nodo} ${Subnodo} node ..." "Generando nuevo Config Temporal para el nodo ${Nodo} ${Subnodo} ..."
               fi
             done
           done
         done
       done
       if [ ! "${Gen}" ]; then
-        echoe "Failed to regenerate section ${Nodo} ${Subnodo} in the current database. Exiting..." "No se ha podido regenerar la seccion ${Nodo} ${Subnodo} en la base de datos actual. Saliendo..."
+        echoe "Failed to regenerate ${Nodo} ${Subnodo} node in the current database. Exiting..." "No se ha podido regenerar el nodo ${Nodo} ${Subnodo} en la base de datos actual. Saliendo..."
         rm "${Config}"
         cp -a "${ConfTmp}ori" "${Config}"
         exit
       else
-        echoe "Regenerating ${Nodo} ${Subnodo} section..." "Regenerando seccion ${Nodo} ${Subnodo} ..."
+        echoe "Regenerating ${Nodo} ${Subnodo} node in database ..." "Regenerando nodo ${Nodo} ${Subnodo} en base de datos ..."
         cp -a "${Config}" "${ConfTmp}ps"
         rm "${Config}"
         cp -a "${ConfTmp}" "${Config}"
-        echoe "Section ${Nodo} ${Subnodo} regenerated in the database." "Seccion ${Nodo} ${Subnodo} regenerada en base de datos."
+        echoe "Node ${Nodo} ${Subnodo} regenerated in the database." "Nodo ${Nodo} ${Subnodo} regenerada en base de datos."
       fi
     fi
   fi
   # Aplica cambios a los modulos seleccionados
   echoe "Applying changes to modules..." "Aplicando cambios en los modulos..."
-  for i in $@; do
-    echoe "Configuring $i..." "Configurando $i..."
-    omv-salt deploy run "$i"
-    echoe 1 "$i configured." "$i configurado."
-  done
-  Resto="$(cat "${Sucio}")"
-  if [[ ! "${Resto}" == "[]" ]]; then
-    omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
+  if [ $1 = "" ]; then
+    echoe "There are no changes to apply to the modules." "No hay cambios para aplicar en los módulos."
+  else
+    for i in $@; do
+      echoe "Configuring $i..." "Configurando $i..."
+      omv-salt deploy run "$i"
+      echoe 1 "$i configured." "$i configurado."
+    done
+    Resto="$(cat "${Sucio}")"
+    if [[ ! "${Resto}" == "[]" ]]; then
+      omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
+    fi
+    echoe "The changes have been applied to the selected modules." "Se han aplicado los cambios a los módulos seleccionados."
   fi
-  echoe "The changes have been applied to the selected modules." "Se han aplicado los cambios a los módulos seleccionados."
 }
 
 # Instalar omv-regen
@@ -897,8 +907,8 @@ if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   Regenera "${Omvextras[@]}"
   DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
   if [ ! "${DockerII}" ]; then
-    LeeEtiqueta dockerStorage
-    dockerStorage="${EtiqOR}"
+    LeeValor omvextras dockerStorage
+    dockerStorage="${ValorOR}"
     cp -a /usr/sbin/omv-installdocker /tmp/installdocker
     sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
     . /tmp/installdocker "${dockerStorage}"
@@ -915,6 +925,23 @@ for i in "${ListaInstalar[@]}"; do
     case $i in
       openmediavault-wetty)
         Regenera "${Wetty[@]}"
+        ;;
+      openmediavault-resetperms)
+        Regenera "${Resetperms[@]}"
+        ;;
+      openmediavault-symlinks)
+        Regenera "${Symlinks[@]}"
+        LeeValor symlink source
+        Nsym=$(echo "${ValorAC}" | awk '{print NR}' | sed -n '$p')
+        i=0
+        while [ $i -lt ${Nsym} ]; do
+          ((i++))
+          LeeValor symlink source
+          SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+          LeeValor symlink destination
+          SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+          ln -s "${SymFU}" "${SymDE}"
+        done
         ;;
     esac
   fi

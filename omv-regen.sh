@@ -55,37 +55,42 @@ IpAC=""
 # Nodos de config.xml
 # Las dos primeras variables son nodo y subnodo. (nulo -> no hay nodo en la base de datos)
 # Las siguientes variables son los módulos a actualizar)
-Time=("system" "time" "chrony" "cron" "timezone")
+
+# Interfaz GUI
 Certificates=("system" "certificates" "certificates")
-Webadmin=("config" "webadmin" "monit" "nginx")
-Powermanagement=("system" "powermanagement" "cpufrequtils" "cron" "systemd-logind")
-Monitoring=("system" "monitoring" "collectd" "monit" "rrdcached")
 Crontab=("system" "crontab" "cron")
+Dns=("network" "dns" "avahi" "hostname" "hosts" "postfix" "systemd-networkd")
+Email=("system" "email" "cronapt" "mdadm" "monit" "postfix" "smartmontools")
 Fstab=("system" "fstab" "hdparm" "collectd" "fstab" "monit" "quota" "initramfs" "mdadm")
-Homedirectory=("usermanagement" "homedirectory" "samba")
-Users=("usermanagement" "users" "postfix" "rsync" "samba" "systemd" "ssh")
 Groups=("usermanagement" "groups" "rsync" "samba" "systemd")
+Homedirectory=("usermanagement" "homedirectory" "samba")
+Interfaces=("network" "interfaces" "avahi" "halt" "hosts" "issue" "systemd-networkd")
+Iptables=("network" "iptables" "iptables" "hdparm")
+Monitoring=("system" "monitoring" "collectd" "monit" "rrdcached")
+Nfs=("services" "nfs" "avahi" "collectd" "fstab" "monit" "nfs" "quota")
+Notification=("system" "notification" "cronapt" "mdadm" "monit" "smartmontools")
+Powermanagement=("system" "powermanagement" "cpufrequtils" "cron" "systemd-logind")
+Proxy=("network" "proxy" "apt" "profile")
+Rsync=("services" "rsync" "rsync" "avahi" "rsyncd")
 Shares=("system" "shares" "systemd")
 Smart=("services" "smart" "smartmontools")
-Nfs=("services" "nfs" "avahi" "collectd" "fstab" "monit" "nfs" "quota")
-Rsync=("services" "rsync" "rsync" "avahi" "rsyncd")
 Smb=("services" "smb" "avahi" "samba")
 Ssh=("services" "ssh" "avahi" "samba")
-Email=("system" "email" "cronapt" "mdadm" "monit" "postfix" "smartmontools")
-Notification=("system" "notification" "cronapt" "mdadm" "monit" "smartmontools")
 Syslog=("system" "syslog" "rsyslog")
-Dns=("network" "dns" "avahi" "hostname" "hosts" "postfix" "systemd-networkd")
-Interfaces=("network" "interfaces" "avahi" "halt" "hosts" "issue" "systemd-networkd")
-Proxy=("network" "proxy" "apt" "profile")
-Iptables=("network" "iptables" "iptables" "hdparm")
+Time=("system" "time" "chrony" "cron" "timezone")
+Users=("usermanagement" "users" "postfix" "rsync" "samba" "systemd" "ssh")
+Webadmin=("config" "webadmin" "monit" "nginx")
+
+# Complementos
 Omvextras=("system" "omvextras" "omvextras")
-Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota")
+Compose=("services" "compose" "compose")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
 Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
-Compose=("services" "compose" "compose")
-Wetty=("services" "wetty" "avahi" "wetty")
 Resetperms=("services" "resetperms")
 Symlinks=("services" "symlinks")
+Wetty=("services" "wetty" "avahi" "wetty")
+Wireguard=("services" "wireguard" "wireguard")
+Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota")
 
 # FUNCIONES
 
@@ -927,9 +932,6 @@ for i in "${ListaInstalar[@]}"; do
       openmediavault-compose)
         Regenera "${Compose[@]}"
         ;;
-      openmediavault-wetty)
-        Regenera "${Wetty[@]}"
-        ;;
       openmediavault-resetperms)
         Regenera "${Resetperms[@]}"
         ;;
@@ -946,6 +948,12 @@ for i in "${ListaInstalar[@]}"; do
           SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
           ln -s "${SymFU}" "${SymDE}"
         done
+        ;;
+      openmediavault-wetty)
+        Regenera "${Wetty[@]}"
+        ;;
+      openmediavault-wireguard)
+        Regenera "${Wireguard[@]}"
         ;;
     esac
   fi

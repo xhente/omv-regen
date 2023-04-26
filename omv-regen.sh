@@ -196,18 +196,31 @@ Regenera () {
   ValorOR=""
   ValorAC=""
   ValorTM=""
+  [ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
+  cp -a "${Config}" "${ConfTmp}ori"
   echoe "Regenerating section $1 $2 of the database" "Regenerando sección $1 $2 de la base de datos"
-  if [ "${2}" = "omvextras" ]; then
-    omv_config_delete $2
-  fi
+  omv_config_delete $2
   LeeSeccion "${1}" "${2}"
-  if [ ! "${ValorOR}" = "${ValorAC}" ]; then
+  if [ "${ValorOR}" = "${ValorAC}" ]; then
+    echoe "$1 $2 are the same in Original and Current Config. Exiting Regenerate function..." "$1 $2 son iguales en Config Original y Actual. Saliendo de función Regenera..."
+  else
     echoe "Regenerating $1 $2..." "Regenerando $1 $2..."
     NmInOR="$(awk "/<${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
     echoe "$2 has ${NmInOR} possible starts in Original Config" "$2 tiene ${NmInOR} posibles inicios en Config Original"
     NmFiOR="$(awk "/<\/${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
     echoe "$2 has ${NmFiOR} possible endings in Original Config" "$2 tiene ${NmFiOR} posibles finales en Config Original"
     NmInAC="$(awk "/<${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+    if [ "${NmInAC}" = "" ]; then
+      NmInAC="$(awk "/<${2}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+      if [ "${NmInAC}" = "" ]; then
+        echoe "$2 does not exist in the current database. Generating $2 ..." "$2 no existe en la base de datos actual. Generando $2 ..."
+        sed -i "s/<\/$1>/<$2>\n<\/$2>\n<\/$1>/g" "${Config}"
+        NmInAC="$(awk "/<$2>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+      else
+        echoe "$2 starts and ends on the same line in Current Config. Inserting line..." "$2 inicia y finaliza en la misma línea en Config Actual. Insertando línea..."
+        sed -i "s/<$2\/>/<$2>\n<\/$2>/g" "${Config}"
+      fi
+    fi
     echoe "$2 has ${NmInAC} possible starts in Current Config" "$2 tiene ${NmInAC} posibles inicios en Config Actual"
     NmFiAC="$(awk "/<\/${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
     echoe "$2 has ${NmFiAC} possible endings in Current Config" "$2 tiene ${NmFiAC} posibles finales en Config Actual"
@@ -249,20 +262,21 @@ Regenera () {
               cp -a "${ConfTmp}" "${Config}"
               echoe "Section $1 $2 regenerated in the database. Applying changes..." "Seccion $1 $2 regenerada en base de datos. Aplicando cambios..."
               Modulos $2
+              echoe "Changes have been applied to modules in Section $1 $2" "Se han aplicado los cambios a los módulos de la Sección $1 $2"
               break
             else
-              echoe "" "Generando Config Temporal para seccion $1 $2 ..."
+              echoe "Generating Temporary Config for section $1 $2 ..." "Generando Config Temporal para seccion $1 $2 ..."
             fi
           done
         done
       done
     done
     if [ ! "${Gen}" ]; then
-      echoe "Generating Temporary Config for section $1 $2 ..." "No se ha podido regenerar la seccion $1 $2 en la base de datos actual. Saliendo..."
+      echoe "Failed to regenerate section $1 $2 in the current database. Exiting..." "No se ha podido regenerar la seccion $1 $2 en la base de datos actual. Saliendo..."
+      rm "${Config}"
+      cp -a "${ConfTmp}ori" "${Config}"
       exit
     fi
-  else
-    echoe "$1 $2 are the same in Original and Current Config. Exiting Regenerate function..." "$1 $2 son iguales en Config Original y Actual. Saliendo de función Regenera..."
   fi
 }
 
@@ -352,11 +366,17 @@ Modulos () {
     iptables)
       Mod="iptables hdparm"
       ;;
+    omvextras)
+      Mod="omvextras"
+      ;;
     zfs)
       Mod="zfszed collectd fstab monit quota"
       ;;
-    omvextras)
-      Mod="omvextras"
+    mergerfs)
+      Mod="collectd fstab mergerfs monit quota"
+      ;;
+    remotemount)
+      Mod="collectd fstab monit quota remotemount"
       ;;
     *)
       echoe "Changes cannot be applied to modules in section $1. Undoing changes..." "No se puede aplicar cambios a los módulos de la sección $1. Deshaciendo cambios..."
@@ -719,17 +739,17 @@ for i in "${ORB[@]}"; do
   fi
 done
 
+# Actualizar sistema
+if ! omv-upgrade; then
+  echoe "Failed updating system.  Exiting..." "Error actualizando el sistema.  Saliendo..."
+  exit
+fi
+
 # Versión de OMV original
 Analiza "openmediavault"
 if [ "${VersIdem}" = "NO" ]; then
   echoe "The OMV version of the original server does not match.  Exiting..." "La versión de OMV del servidor original no coincide.  Saliendo..."
   help
-fi
-
-# Actualizar sistema
-if ! omv-upgrade; then
-  echoe "Failed updating system.  Exiting..." "Error actualizando el sistema.  Saliendo..."
-  exit
 fi
 
 # 1-Regenerar sección Sistema.
@@ -883,18 +903,14 @@ fi
 Analiza openmediavault-mergerfs
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-mergerfs
-  # Modulos
-  
-  
+  Regenera services mergerfs
 fi
 
 # 7-Instalar remotemount
 Analiza openmediavault-remotemount
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-remotemount
-  # Modulos
-  
-  
+  Regenera services remotemount
 fi
 
 # REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
@@ -960,7 +976,9 @@ done
 # Instalar paquetes de apttools
 # Extraer symlinks base de datos y crear
 
+echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
 omv-salt stage run prepare
+echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
 omv-salt stage run deploy
 
 # Elimina archivos temporales

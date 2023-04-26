@@ -52,6 +52,38 @@ IpAC=""
 
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
+# Secciones de config.xml
+# Las dos primeras variables son nodo y subnodo. (nulo -> no hay nodo en la base de datos)
+# Las siguientes variables son los módulos a actualizar)
+Wetty=("services" "wetty" "avahi" "wetty")
+Time=("system" "time" "chrony" "cron" "timezone")
+Certificates=("system" "certificates" "certificates")
+Webadmin=("config" "webadmin" "monit" "nginx")
+Powermanagement=("system" "powermanagement" "cpufrequtils" "cron" "systemd-logind")
+Monitoring=("system" "monitoring" "collectd" "monit" "rrdcached")
+Crontab=("system" "crontab" "cron")
+Fstab=("system" "fstab" "hdparm" "collectd" "fstab" "monit" "quota" "initramfs" "mdadm")
+Homedirectory=("usermanagement" "homedirectory" "samba")
+Users=("usermanagement" "users" "postfix" "rsync" "samba" "systemd" "ssh")
+Groups=("usermanagement" "groups" "rsync" "samba" "systemd")
+Shares=("system" "shares" "systemd")
+Smart=("services" "smart" "smartmontools")
+Nfs=("services" "nfs" "avahi" "collectd" "fstab" "monit" "nfs" "quota")
+Rsync=("services" "rsync" "rsync" "avahi" "rsyncd")
+Smb=("services" "smb" "avahi" "samba")
+Ssh=("services" "ssh" "avahi" "samba")
+Email=("system" "email" "cronapt" "mdadm" "monit" "postfix" "smartmontools")
+Notification=("system" "notification" "cronapt" "mdadm" "monit" "smartmontools")
+Syslog=("system" "syslog" "rsyslog")
+Dns=("network" "dns" "avahi" "hostname" "hosts" "postfix" "systemd-networkd")
+Interfaces=("network" "interfaces" "avahi" "halt" "hosts" "issue" "systemd-networkd")
+Proxy=("network" "proxy" "apt" "profile")
+Iptables=("network" "iptables" "iptables" "hdparm")
+Omvextras=("system" "omvextras" "omvextras")
+Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota")
+Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
+Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
+
 # FUNCIONES
 
 # Funciones OMV
@@ -196,198 +228,107 @@ Regenera () {
   ValorOR=""
   ValorAC=""
   ValorTM=""
-  [ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
-  cp -a "${Config}" "${ConfTmp}ori"
-  echoe "Regenerating section $1 $2 of the database" "Regenerando sección $1 $2 de la base de datos"
-  omv_config_delete $2
-  LeeSeccion "${1}" "${2}"
-  if [ "${ValorOR}" = "${ValorAC}" ]; then
-    echoe "$1 $2 are the same in Original and Current Config. Exiting Regenerate function..." "$1 $2 son iguales en Config Original y Actual. Saliendo de función Regenera..."
+  Gen=""
+  Nodo=$1
+  Subnodo=$2
+  shift 2
+  if [ "${Nodo}" = "nulo" ]; then
+    echoe "No node to regenerate has been defined in the database." "No se ha definido nodo para regenerar en la base de datos."
   else
-    echoe "Regenerating $1 $2..." "Regenerando $1 $2..."
-    NmInOR="$(awk "/<${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-    echoe "$2 has ${NmInOR} possible starts in Original Config" "$2 tiene ${NmInOR} posibles inicios en Config Original"
-    NmFiOR="$(awk "/<\/${2}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-    echoe "$2 has ${NmFiOR} possible endings in Original Config" "$2 tiene ${NmFiOR} posibles finales en Config Original"
-    NmInAC="$(awk "/<${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
-    if [ "${NmInAC}" = "" ]; then
-      NmInAC="$(awk "/<${2}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+    [ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
+    cp -a "${Config}" "${ConfTmp}ori"
+    echoe "Regenerating section ${Nodo} ${Subnodo} of the database" "Regenerando sección ${Nodo} ${Subnodo} de la base de datos"
+    omv_config_delete "${Subnodo}"
+    LeeSeccion "${Nodo}" "${Subnodo}"
+    if [ "${ValorOR}" = "${ValorAC}" ]; then
+      echoe "${Nodo} ${Subnodo} are the same in Original and Current Config. It is not modified." "${Nodo} ${Subnodo} son iguales en Config Original y Actual. No se modifica."
+    else
+      echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
+      NmInOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
+      echoe "${Subnodo} has ${NmInOR} possible starts in Original Config" "${Subnodo} tiene ${NmInOR} posibles inicios en Config Original"
+      NmFiOR="$(awk "/<\/${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
+      echoe "${Subnodo} has ${NmFiOR} possible endings in Original Config" "${Subnodo} tiene ${NmFiOR} posibles finales en Config Original"
+      NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
       if [ "${NmInAC}" = "" ]; then
-        echoe "$2 does not exist in the current database. Generating $2 ..." "$2 no existe en la base de datos actual. Generando $2 ..."
-        sed -i "s/<\/$1>/<$2>\n<\/$2>\n<\/$1>/g" "${Config}"
-        NmInAC="$(awk "/<$2>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
-      else
-        echoe "$2 starts and ends on the same line in Current Config. Inserting line..." "$2 inicia y finaliza en la misma línea en Config Actual. Insertando línea..."
-        sed -i "s/<$2\/>/<$2>\n<\/$2>/g" "${Config}"
+        NmInAC="$(awk "/<${Subnodo}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+        if [ "${NmInAC}" = "" ]; then
+          echoe "${Subnodo} does not exist in the current database. Generating ${Subnodo} ..." "${Subnodo} no existe en la base de datos actual. Generando ${Subnodo} ..."
+          sed -i "s/<\/${Nodo}>/<${Subnodo}>\n<\/${Subnodo}>\n<\/${Nodo}>/g" "${Config}"
+          NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+        else
+          echoe "${Subnodo} starts and ends on the same line in Current Config. Inserting line..." "${Subnodo} inicia y finaliza en la misma línea en Config Actual. Insertando línea..."
+          sed -i "s/<${Subnodo}\/>/<${Subnodo}>\n<\/${Subnodo}>/g" "${Config}"
+        fi
       fi
-    fi
-    echoe "$2 has ${NmInAC} possible starts in Current Config" "$2 tiene ${NmInAC} posibles inicios en Config Actual"
-    NmFiAC="$(awk "/<\/${2}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
-    echoe "$2 has ${NmFiAC} possible endings in Current Config" "$2 tiene ${NmFiAC} posibles finales en Config Actual"
-    LoAC="$(awk 'END {print NR}' "${Config}")"
-    echoe "Current config has ${LoAC} lines in total" "Config actual tiene ${LoAC} lineas en total"
-    IO=0
-    Gen=""
-    while [ $IO -lt ${NmInOR} ]; do
-      [ "${Gen}" ] && break
-      ((IO++))
-      InOR="$(awk "/<${2}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$IO 'NR==i {print $1}')"
-      echoe "Checking Start of $2 in Config Origin in line ${InOR}..." "Comprobando Inicio de $2 en Config Origen en linea ${InOR}..."
-      FO=0
-      while [ $FO -lt ${NmFiOR} ]; do
+      echoe "${Subnodo} has ${NmInAC} possible starts in Current Config" "${Subnodo} tiene ${NmInAC} posibles inicios en Config Actual"
+      NmFiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
+      echoe "${Subnodo} has ${NmFiAC} possible endings in Current Config" "${Subnodo} tiene ${NmFiAC} posibles finales en Config Actual"
+      LoAC="$(awk 'END {print NR}' "${Config}")"
+      echoe "Current config has ${LoAC} lines in total" "Config actual tiene ${LoAC} lineas en total"
+      IO=0
+      Gen=""
+      while [ $IO -lt ${NmInOR} ]; do
         [ "${Gen}" ] && break
-        ((FO++))
-        FiOR="$(awk "/<\/${2}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
-        echoe "Checking End of $2 in Config Origin in line ${FiOR}..." "Comprobando Final de $2 en Config Origen en linea ${FiOR}..."
-        IA=0
-        while [ $IA -lt ${NmInAC} ]; do
+        ((IO++))
+        InOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$IO 'NR==i {print $1}')"
+        echoe "Checking Start of ${Subnodo} in Config Origin in line ${InOR}..." "Comprobando Inicio de ${Subnodo} en Config Origen en linea ${InOR}..."
+        FO=0
+        while [ $FO -lt ${NmFiOR} ]; do
           [ "${Gen}" ] && break
-          ((IA++))
-          InAC="$(awk "/<${2}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
-          echoe "Checking Start of $2 in Current Config in line ${InAC}..." "Comprobando Inicio de $2 en Config Actual en linea ${InAC}..."
-          FA=0
-          while [ $FA -lt ${NmFiAC} ]; do
-            ((FA++))
-            FiAC="$(awk "/<\/${2}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
-            echoe "Checking End of $2 in Current Config in line ${FiAC}..." "Comprobando Final de $2 en Config Actual en linea ${FiAC}..."
-            echoe "Creating Temporary Config..." "Creando Config Temporal..."
-            CreaConfTmp
-            echoe "Comparing $1 $2 of Temporary Config with the Original..." "Comparando $1 $2 de Config Temporal con el Original..."
-            LeeSeccion $1 $2
-            if [ "${ValorOR}" = "${ValorTM}" ]; then
-              Gen="OK"
-              echoe "The $1 $2 section in Temporary Config and Original Config are the same. Regenerating..." "La seccion $1 $2 en Config Temporal y Config Original son iguales. Regenerando..."
-              cp -a "${Config}" "${ConfTmp}ps"
-              rm "${Config}"
-              cp -a "${ConfTmp}" "${Config}"
-              echoe "Section $1 $2 regenerated in the database. Applying changes..." "Seccion $1 $2 regenerada en base de datos. Aplicando cambios..."
-              Modulos $2
-              echoe "Changes have been applied to modules in Section $1 $2" "Se han aplicado los cambios a los módulos de la Sección $1 $2"
-              break
-            else
-              echoe "Generating Temporary Config for section $1 $2 ..." "Generando Config Temporal para seccion $1 $2 ..."
-            fi
+          ((FO++))
+          FiOR="$(awk "/<\/${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
+          echoe "Checking End of ${Subnodo} in Config Origin in line ${FiOR}..." "Comprobando Final de ${Subnodo} en Config Origen en linea ${FiOR}..."
+          IA=0
+          while [ $IA -lt ${NmInAC} ]; do
+            [ "${Gen}" ] && break
+            ((IA++))
+            InAC="$(awk "/<${Subnodo}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
+            echoe "Checking Start of ${Subnodo} in Current Config in line ${InAC}..." "Comprobando Inicio de ${Subnodo} en Config Actual en linea ${InAC}..."
+            FA=0
+            while [ $FA -lt ${NmFiAC} ]; do
+              ((FA++))
+              FiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
+              echoe "Checking End of ${Subnodo} in Current Config in line ${FiAC}..." "Comprobando Final de ${Subnodo} en Config Actual en linea ${FiAC}..."
+              echoe "Creating Temporary Config..." "Creando Config Temporal..."
+              [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
+              cp -a "${Config}" "${ConfTmp}"
+              sed -i '1,$d' "${ConfTmp}"
+              awk -v IA="${InAC}" 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
+              if [ "${InOR}" -eq "${FiOR}" ]; then
+                awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+              else
+                awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+              fi
+                awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
+              echoe "Comparing ${Nodo} ${Subnodo} of Temporary Config with the Original..." "Comparando ${Nodo} ${Subnodo} de Config Temporal con el Original..."
+              LeeSeccion ${Nodo} ${Subnodo}
+              if [ "${ValorOR}" = "${ValorTM}" ]; then
+                Gen="OK"
+                echoe "The ${Nodo} ${Subnodo} section in Temporary Config and Original Config are the same." "La seccion ${Nodo} ${Subnodo} en Config Temporal y Config Original son iguales."
+                break
+              else
+                echoe "Generating new Temporary Config for section ${Nodo} ${Subnodo} ..." "Generando nuevo Config Temporal para seccion ${Nodo} ${Subnodo} ..."
+              fi
+            done
           done
         done
       done
-    done
-    if [ ! "${Gen}" ]; then
-      echoe "Failed to regenerate section $1 $2 in the current database. Exiting..." "No se ha podido regenerar la seccion $1 $2 en la base de datos actual. Saliendo..."
-      rm "${Config}"
-      cp -a "${ConfTmp}ori" "${Config}"
-      exit
+      if [ ! "${Gen}" ]; then
+        echoe "Failed to regenerate section ${Nodo} ${Subnodo} in the current database. Exiting..." "No se ha podido regenerar la seccion ${Nodo} ${Subnodo} en la base de datos actual. Saliendo..."
+        rm "${Config}"
+        cp -a "${ConfTmp}ori" "${Config}"
+        exit
+      else
+        echoe "Regenerating ${Nodo} ${Subnodo} section..." "Regenerando seccion ${Nodo} ${Subnodo} ..."
+        cp -a "${Config}" "${ConfTmp}ps"
+        rm "${Config}"
+        cp -a "${ConfTmp}" "${Config}"
+        echoe "Section ${Nodo} ${Subnodo} regenerated in the database." "Seccion ${Nodo} ${Subnodo} regenerada en base de datos."
+      fi
     fi
   fi
-}
-
-# Crear config temporal
-CreaConfTmp () {
-  [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
-  cp -a "${Config}" "${ConfTmp}"
-  sed -i '1,$d' "${ConfTmp}"
-  awk -v IA="${InAC}" 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
-  if [ "${InOR}" -eq "${FiOR}" ]; then
-    awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
-  else
-    awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
-  fi
-  awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
-}
-
-# Configura módulos salt
-Modulos () {
-  case $1 in
-    time)
-      Mod="chrony cron timezone"
-      ;;
-    certificates)
-      Mod="certificates"
-      ;;
-    webadmin)
-      Mod="monit nginx"
-      ;;
-    powermanagement)
-      Mod="cpufrequtils cron systemd-logind"
-      ;;
-    monitoring)
-      Mod="collectd monit rrdcached"
-      ;;
-    crontab)
-      Mod="cron"
-      ;;
-    fstab)
-      Mod="hdparm collectd fstab monit quota initramfs mdadm"
-      ;;
-    homedirectory)
-      Mod="samba"
-      ;;
-    users)
-      Mod="postfix rsync samba systemd ssh"
-      ;;
-    groups)
-      Mod="rsync samba systemd"
-      ;;
-    shares)
-      Mod="systemd"
-      ;;
-    smart)
-      Mod="smartmontools"
-      ;;
-    nfs)
-      Mod="avahi collectd fstab monit nfs quota"
-      ;;
-    rsync)
-      Mod="rsync avahi rsyncd"
-      ;;
-    smb)
-      Mod="avahi samba"
-      ;;
-    ssh)
-      Mod="avahi samba"
-      ;;
-    email)
-      Mod="cronapt mdadm monit postfix smartmontools"
-      ;;
-    notification)
-      Mod="cronapt mdadm monit smartmontools"
-      ;;
-    syslog)
-      Mod="rsyslog"
-      ;;
-    dns)
-      Mod="avahi hostname hosts postfix systemd-networkd"
-      ;;
-    interfaces)
-      Mod="avahi halt hosts issue systemd-networkd"
-      ;;
-    proxy)
-      Mod="apt profile"
-      ;;
-    iptables)
-      Mod="iptables hdparm"
-      ;;
-    omvextras)
-      Mod="omvextras"
-      ;;
-    zfs)
-      Mod="zfszed collectd fstab monit quota"
-      ;;
-    mergerfs)
-      Mod="collectd fstab mergerfs monit quota"
-      ;;
-    remotemount)
-      Mod="collectd fstab monit quota remotemount"
-      ;;
-    *)
-      echoe "Changes cannot be applied to modules in section $1. Undoing changes..." "No se puede aplicar cambios a los módulos de la sección $1. Deshaciendo cambios..."
-      cp -a "${ConfTmp}ps" "${Config}"
-      echoe "The regeneration could not be completed. Coming out..." "No se ha podido completar la regeneración. Saliendo..."
-      exit
-  esac
-  Aplica "${Mod}"
-}
-
-Aplica () {
+  # Aplica cambios a los modulos seleccionados
+  echoe "Applying changes to modules..." "Aplicando cambios en los modulos..."
   for i in $@; do
     echoe "Configuring $i..." "Configurando $i..."
     omv-salt deploy run "$i"
@@ -397,6 +338,7 @@ Aplica () {
   if [[ ! "${Resto}" == "[]" ]]; then
     omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
   fi
+  echoe "The changes have been applied to the selected modules." "Se han aplicado los cambios a los módulos seleccionados."
 }
 
 # Instalar omv-regen
@@ -758,13 +700,13 @@ Dif="$(diff "${Ruta}${Passwd}" ${Passwd})"
 if [ "${Dif}" ]; then
   cp -apv "${Ruta}${Passwd}" "${Passwd}"
   echoe "Regenerating basic System settings..." "Regenerando ajustes básicos de Sistema..."
-  Regenera system time
-  Regenera system certificates
-  Regenera config webadmin
-  Regenera system powermanagement
-  Regenera system monitoring
-  Regenera system crontab
-  Regenera system syslog
+  Regenera "${Time[@]}"
+  Regenera "${Certificates[@]}"
+  Regenera "${Webadmin[@]}"
+  Regenera "${Powermanagement[@]}"
+  Regenera "${Monitoring[@]}"
+  Regenera "${Crontab[@]}"
+  Regenera "${Syslog[@]}"
   echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run prepare
   echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
@@ -879,7 +821,7 @@ Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
   echoe "Mounting filesystems..." "Montando sistemas de archivos..."
   InstalaPlugin openmediavault-sharerootfs
-  Regenera system fstab
+  Regenera "${Fstab[@]}"
   # Cambia UUID disco de sistema si es nuevo
   echoe "Configuring openmediavault-sharerootfs..." "Configurando openmediavault-sharerootfs..."
   uuid="79684322-3eac-11ea-a974-63a080abab18"
@@ -896,21 +838,21 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
     zpool import -f "$i"
   done
-  Modulos zfs
+  Regenera "${Zfs[@]}"
 fi
 
 # 6-Instalar mergerfs
 Analiza openmediavault-mergerfs
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-mergerfs
-  Regenera services mergerfs
+  Regenera "${Mergerfs[@]}"
 fi
 
 # 7-Instalar remotemount
 Analiza openmediavault-remotemount
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   InstalaPlugin openmediavault-remotemount
-  Regenera services remotemount
+  Regenera "${Remotemount[@]}"
 fi
 
 # REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
@@ -921,25 +863,25 @@ if [ "${Dif}" ]; then
   echoe "Restoring files..." "Restaurando archivos..."
   rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "Regenerating users..." "Regenerando usuarios..."
-  Regenera usermanagement homedirectory
-  Regenera usermanagement users
-  Regenera usermanagement groups
+  Regenera "${Homedirectory[@]}"
+  Regenera "${Users[@]}"
+  Regenera "${Groups[@]}"
   echoe "Regenerating shared folders..." "Regenerando carpetas compartidas..."
-  Regenera system shares
+  Regenera "${Shares[@]}"
   echoe "Regenerating SMART..." "Regenerando SMART..."
-  Regenera services smart
+  Regenera "${Smart[@]}"
   echoe "Regenerating Services..." "Regenerando Servicios..."
-  Regenera services nfs
-  Regenera services rsync
-  Regenera services smb
-  Regenera services ssh
-  Regenera system email
-  Regenera system notification
-  Regenera system syslog
+  Regenera "${Nfs[@]}"
+  Regenera "${Rsync[@]}"
+  Regenera "${Smb[@]}"
+  Regenera "${Ssh[@]}"
+  Regenera "${Email[@]}"
+  Regenera "${Notification[@]}"
+  Regenera "${Syslog[@]}"
   echoe "Regenerating Network..." "Regenerando Red..."
-  Regenera network dns
-  Regenera network proxy
-  Regenera network iptables
+  Regenera "${Dns[@]}"
+  Regenera "${Proxy[@]}"
+  Regenera "${Iptables[@]}"
   echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
   omv-salt stage run prepare
   echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
@@ -952,7 +894,7 @@ DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "Installing docker..." "Instalando docker..."
   echoe "Regenerating omvextras..." "Regenerando omvextras..."
-  Regenera system omvextras
+  Regenera "${Omvextras[@]}"
   DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
   if [ ! "${DockerII}" ]; then
     LeeEtiqueta dockerStorage
@@ -970,6 +912,11 @@ for i in "${ListaInstalar[@]}"; do
   Analiza "$i"
   if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
     InstalaPlugin "$i"
+    case $i in
+      openmediavault-wetty)
+        Regenera "${Wetty[@]}"
+        ;;
+    esac
   fi
 done
 
@@ -983,6 +930,7 @@ omv-salt stage run deploy
 
 # Elimina archivos temporales
 [ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
+[ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
 [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
 
 IpAC=$(hostname -I | awk '{print $1}')
@@ -999,7 +947,7 @@ if [ ! "${IpOR}" = "${IpAC}" ]; then
 fi
 
 echoe "Configuring network..." "Configurando red..."
-Regenera network interfaces
+Regenera "${Interfaces[@]}"
 echoe "\n\nSystem regeneration finished!!\n\nIP after reboot will be ${IpOR} Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar será ${IpOR} Reiniciando..."
 reboot
 echoe 3 "" ""

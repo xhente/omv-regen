@@ -15,6 +15,7 @@ OpKern=1
 OpRebo=""
 declare -A ORB
 ORB[Dpkg]='/ORB_Dpkg'
+ORB[DpkgOMV]='/ORB_DpkgOMV'
 ORB[Unamea]='/ORB_Unamea'
 ORB[Zpoollist]='/ORB_Zpoollist'
 ORB[Systemctl]='/ORB_Systemctl'
@@ -42,6 +43,7 @@ Inst="/usr/sbin/omv-regen"
 Tecla=""
 ValorOR=""
 ValorAC=""
+NumVal=""
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
@@ -83,6 +85,7 @@ Webadmin=("config" "webadmin" "monit" "nginx")
 
 # Complementos
 Omvextras=("system" "omvextras" "omvextras")
+Apttool=("services" "apttool")
 Compose=("services" "compose" "compose")
 Fail2ban=("services" "fail2ban" "fail2ban")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
@@ -128,7 +131,7 @@ help () {
   echo -e "    OMV on an empty disk without configuring anything.  Mount a backup, install"
   echo -e "    omv-regen and then regenerate. The version available on the internet of the"
   echo -e "    plugins and OMV must match.                                                "
-  echo -e "  - Use omv-regen install     to enable omv-regen on your system.             "
+  echo -e "  - Use omv-regen install     to enable omv-regen on your system.              "
   echo -e "  - Use omv-regen backup      to store the necessary information to regenerate."
   echo -e "  - Use omv-regen regenerate  to run a system regeneration from a clean OMV.   "
   echo -e "_______________________________________________________________________________"
@@ -139,39 +142,39 @@ help () {
   echo -e "   omv-regen backup   [OPTIONS]   [/folder_one \"/folder two\" /folder ... ]   "
   echo -e "                                                                               "
   echo -e "                                                                               "
-  echo -e "    -b     Path to store the subfolders with the backups.                      "
+  echo -e "    -b     Set the path to store the subfolders with [-b]ackups.               "
   echo -e "                                                                               "
-  echo -e "    -d     Establishes the days of age of the backups kept (by default 7 days)."
+  echo -e "    -d     Sets the [-d]ays of age of the saved backups (default 7 days).      "
   echo -e "                          You can edit the ORB_ prefix to keep a version.      "
   echo -e "    -h     Help.                                                               "
   echo -e "                                                                               "
-  echo -e "    -o     Enable optional folder backup. (by default /home /etc/libvirt)      "
+  echo -e "    -o     Enable [-o]ptional folder backup. (by default /home /etc/libvirt)   "
   echo -e "                          Spaces to separate (can use quotes).                 "
-  echo -e "    -u     Enable automatic system update before backup.                       "
+  echo -e "    -u     Enable automatic system [-u]pdate before backup.                    "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
   echo -e "   omv-regen regenera   [OPTIONS]   [/backup_folder]                           "
   echo -e "                                                                               "
   echo -e "                                                                               "
-  echo -e "    -b     Path where the backup created by omv-regen is stored.               "
+  echo -e "    -b     Sets path where the [-b]ackup created by omv-regen is stored.       "
   echo -e "                                                                               "
   echo -e "    -h     Help                                                                "
   echo -e "                                                                               "
-  echo -e "    -k     Skip installing the proxmox kernel.                                 "
+  echo -e "    -k     Skip installing the proxmox [-k]ernel.                              "
   echo -e "                                                                               "
-  echo -e "    -r     Enable automatic reboot if needed (create reboot service).          "
+  echo -e "    -r     Enable automatic [-r]eboot if needed (create reboot service).       "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                        \033[0m"
   exit
 }
 
-# Analizar estado de plugin. Instalación y versiones.
+# Analizar estado de paquete. Instalación y versiones.
 Analiza () {
   VersionOR=""
   VersionDI=""
   InstII=""
   VersIdem=""
-  VersionOR=$(awk -v i="$1" '$2 == i {print $3}' "${Ruta}${ORB[Dpkg]}")
+  VersionOR=$(awk -v i="$1" '$2 == i {print $3}' "${Ruta}${ORB[DpkgOMV]}")
   VersionDI=$(apt-cache madison "$1" | awk 'NR==1{print $3}')
   InstII=$(dpkg -l | awk -v i="$1" '$2 == i {print $1}')
   if [ "${InstII}" == "ii" ]; then
@@ -186,15 +189,15 @@ Analiza () {
   fi
 }
 
-# Instalar complemento
-InstalaPlugin () {
-  echoe "\nInstall $1 plugin\n" "\nInstalando el complemento $1\n"
+# Instalar paquete
+Instala () {
+  echoe "\nInstall $1 \n" "\nInstalando $1\n"
   if ! apt-get --yes install "$1"; then
     apt-get --yes --fix-broken install
     apt-get update
     if ! apt-get --yes install "$1"; then
       apt-get --yes --fix-broken install
-      echoe "Failed to install $1 plugin. Exiting..." "El complemento $1 no se pudo instalar. Saliendo..."
+      echoe "Failed to install $1. Exiting..." "$1 no se pudo instalar. Saliendo..."
       exit
     fi
   fi
@@ -204,10 +207,13 @@ InstalaPlugin () {
 LeeValor () {
   ValorOR=""
   ValorAC=""
+  NumVal=""
   ValorOR="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Ruta}${Config})"
   echoe "The value of $1 $2 in Original Config is ${ValorOR}" "El valor de $1 $2 en Config Original es ${ValorOR}"
   ValorAC="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Config})"
   echoe "The value of $1 $2 in Current Config is ${ValorAC}" "El valor de $1 $2 en Config Actual es ${ValorAC}"
+  NumVal="$(echo "${ValorAC}" | awk '{print NR}' | sed -n '$p')"
+  echoe "The number of values ​​is ${NumVal}" "El número de valores es ${NumVal}"
 }
 
 # Lee campos completos entre todas las etiquetas del nodo $1/$2
@@ -342,7 +348,7 @@ Regenera () {
   fi
   # Aplica cambios a los modulos seleccionados
   echoe "Applying configuration changes to salt modules..." "Aplicando cambios de configuración en los módulos salt..."
-  if [ $1 = "" ]; then
+  if [ ! $1 ]; then
     echoe "There are no configuration changes to apply to salt modules." "No hay cambios de configuración para aplicar en los módulos salt."
   else
     for i in $@; do
@@ -354,7 +360,7 @@ Regenera () {
     if [[ ! "${Resto}" == "[]" ]]; then
       omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
     fi
-    echoe "The changes have been applied to the selected salt modules." "Se han aplicado los cambios a los módulos salt seleccionados."
+    echoe "The configuration of salt modules for the regeneration of the current node is complete..." "La configuración de módulos salt para la regeneración del nodo actual ha finalizado."
   fi
 }
 
@@ -654,8 +660,9 @@ if [ $Back ]; then
 
   # Crea registro dpkg
   echoe ">>>    Extracting version list (dpkg)..." ">>>    Extrayendo lista de versiones (dpkg)..."
-  dpkg -l | grep openmediavault > "${Destino}${ORB[Dpkg]}"
-  awk '{print $2" "$3}' "${Destino}${ORB[Dpkg]}"
+  dpkg -l | grep openmediavault > "${Destino}${ORB[DpkgOMV]}"
+  dpkg -l > "${Destino}${ORB[Dpkg]}"
+  awk '{print $2" "$3}' "${Destino}${ORB[DpkgOMV]}"
 
   # Crea registro uname -a
   echoe ">>>    Extracting system info (uname -a)..." ">>>    Extrayendo información del sistema (uname -a)..."
@@ -771,8 +778,8 @@ fi
 
 # Analizar versiones y complementos especiales
 cont=0
-for i in $(awk '{print NR}' "${Ruta}${ORB[Dpkg]}"); do
-  Plugin=$(awk -v i="$i" 'NR==i{print $2}' "${Ruta}${ORB[Dpkg]}")
+for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
+  Plugin=$(awk -v i="$i" 'NR==i{print $2}' "${Ruta}${ORB[DpkgOMV]}")
   Analiza "${Plugin}"
   if [ "${InstII}" = "NO" ]; then
     echoe "Versions $VersIdem \tInstalled $InstII \t${Plugin} \c" "Versiones $VersIdem \tInstalado $InstII \t${Plugin} \c"
@@ -799,7 +806,7 @@ done
 # 3-Instalar openmediavault-kernel
 Analiza openmediavault-kernel
 if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
-  InstalaPlugin openmediavault-kernel
+  Instala openmediavault-kernel
   # Instalar Kernel proxmox si no se ha deshabilitado la opción y estaba instalado
   if [ $OpKern ]; then
     KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
@@ -837,7 +844,7 @@ fi
 Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
   echoe "Mounting filesystems..." "Montando sistemas de archivos..."
-  InstalaPlugin openmediavault-sharerootfs
+  Instala openmediavault-sharerootfs
   Regenera "${Fstab[@]}"
   # Cambia UUID disco de sistema si es nuevo
   echoe "Configuring openmediavault-sharerootfs..." "Configurando openmediavault-sharerootfs..."
@@ -851,7 +858,7 @@ fi
 # 5-Instalar openmediavault-zfs. Importar pools. (Sistemas de archivos ZFS)
 Analiza openmediavault-zfs
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
-  InstalaPlugin openmediavault-zfs
+  Instala openmediavault-zfs
   for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
     zpool import -f "$i"
   done
@@ -861,14 +868,14 @@ fi
 # 6-Instalar mergerfs
 Analiza openmediavault-mergerfs
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
-  InstalaPlugin openmediavault-mergerfs
+  Instala openmediavault-mergerfs
   Regenera "${Mergerfs[@]}"
 fi
 
 # 7-Instalar remotemount
 Analiza openmediavault-remotemount
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
-  InstalaPlugin openmediavault-remotemount
+  Instala openmediavault-remotemount
   Regenera "${Remotemount[@]}"
 fi
 
@@ -927,11 +934,31 @@ fi
 # 10-Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do
   Analiza "$i"
-  if [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
-    InstalaPlugin "$i"
+  if [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
+    Instala "$i"
     case $i in
+      openmediavault-apttool)
+        Regenera "${Apttool[@]}"
+        LeeValor package packagename
+        if [ ! "${NumVal}" ]; then
+          echoe "There are no packages installed in the original database." "No hay paquetes instalados en la base de datos original."
+        else
+          i=0
+          while [ $i -lt ${NumVal} ]; do
+            ((i++))
+            Pack=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+            Analiza "${Pack}"
+            if [ "${VersionOR}" ] && [ "${InstII}" = "NO" ]; then
+              Instala "${Pack}"
+            fi
+          done
+        fi
+        ;;
       openmediavault-compose)
         Regenera "${Compose[@]}"
+        ;;
+      openmediavault-fail2ban)
+        Regenera "${Fail2ban[@]}"
         ;;
       openmediavault-resetperms)
         Regenera "${Resetperms[@]}"
@@ -939,16 +966,20 @@ for i in "${ListaInstalar[@]}"; do
       openmediavault-symlinks)
         Regenera "${Symlinks[@]}"
         LeeValor symlink source
-        Nsym=$(echo "${ValorAC}" | awk '{print NR}' | sed -n '$p')
-        i=0
-        while [ $i -lt ${Nsym} ]; do
-          ((i++))
-          LeeValor symlink source
-          SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-          LeeValor symlink destination
-          SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-          ln -s "${SymFU}" "${SymDE}"
-        done
+        if [ ! "${NumVal}" ]; then
+          echoe "No symlinks created in original database." "No hay symlinks creados en la base de datos original."
+        else
+          i=0
+          while [ $i -lt ${NumVal} ]; do
+            ((i++))
+            LeeValor symlink source
+            SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+            LeeValor symlink destination
+            SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+            echoe "Creating symlink ${SymFU} ${SymDE}" "Creando symlink ${SymFU} ${SymDE}"
+            ln -s "${SymFU}" "${SymDE}"
+          done
+        fi
         ;;
       openmediavault-wetty)
         Regenera "${Wetty[@]}"
@@ -959,8 +990,6 @@ for i in "${ListaInstalar[@]}"; do
     esac
   fi
 done
-
-# Instalar paquetes de apttools
 
 # Reconfigurar
 echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."

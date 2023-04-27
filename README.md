@@ -1,6 +1,6 @@
 # omv-regen
 
-Estado: Inacabado
+Estado: En funcionamiento. Algunos complementos solo se instalarán, no se regenerarán. Esta parte está en desarrollo.
 
 Funciones del programa:
 
@@ -30,7 +30,7 @@ Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no sería posible.
 
 _____________________________________________________________________________________________________________________
 
-Status: Unfinished
+Status: Working. Some plugins will only install, not regenerate. This part is under development.
 
 Program features:
 

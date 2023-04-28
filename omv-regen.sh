@@ -85,16 +85,24 @@ Webadmin=("config" "webadmin" "monit" "nginx")
 
 # Complementos
 Omvextras=("system" "omvextras" "omvextras")
+Anacron=("services" "anacron" "anacron")
 Apttool=("services" "apttool")
+Autoshutdown=("services" "autoshutdown" "autoshutdown")
 Backup=("system" "backup" "cron")
+Clamav=("services" "clamav" "clamav")
 Compose=("services" "compose" "compose")
 Fail2ban=("services" "fail2ban" "fail2ban")
+Forkeddaapd=("services" "daap" "forked-daapd" "monit")
+Ftp=("services" "ftp" "avahi" "monit" "proftpd")
 Kvm=("services" "kvm")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
+Minidlna=("services" "minidlna" "minidlna")
 Nut=("services" "nut" "collectd" "monit" "nut")
 Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
 Resetperms=("services" "resetperms")
+Rsnapshot=("services" "rsnapshot" "rsnapshot")
 Symlinks=("services" "symlinks")
+Tftp=("services" "tftp" "avahi" "tftpd-hpa")
 Wetty=("services" "wetty" "avahi" "wetty")
 Wireguard=("services" "wireguard" "wireguard")
 Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota" "nfs" "samba" "sharedfolders" "systemd" "tftpd-hpa")
@@ -264,7 +272,7 @@ Regenera () {
     omv_config_delete "${Subnodo}"
     LeeNodo "${Nodo}" "${Subnodo}"
     if [ "${NodoOR}" = "${NodoAC}" ]; then
-      echoe "${Nodo} ${Subnodo} are the same in original and current database. The database is not modified. No changes are applied to salt." "${Nodo} ${Subnodo} coinciden en la base de datos original y la actual. No se modifica la base de datos. No se aplican cambios en salt."
+      echoe "${Nodo} ${Subnodo} matches the original and current databases --> The database is not modified --> No changes are applied to salt." "${Nodo} ${Subnodo} coincide en la base de datos original y la actual --> No se modifica la base de datos --> No se aplican cambios en salt."
       Salt=""
     else
       echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
@@ -993,8 +1001,17 @@ for i in "${ListaInstalar[@]}"; do
   if [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
     Instala "$i"
     case $i in
+      openmediavault-anacron)
+        Regenera "${Anacron[@]}"
+        ;;
+      openmediavault-autoshutdown)
+        Regenera "${Autoshutdown[@]}"
+        ;;
       openmediavault-backup)
         Regenera "${Backup[@]}"
+        ;;
+      openmediavault-clamav)
+        Regenera "${Clamav[@]}"
         ;;
       openmediavault-compose)
         Regenera "${Compose[@]}"
@@ -1002,17 +1019,33 @@ for i in "${ListaInstalar[@]}"; do
       openmediavault-fail2ban)
         Regenera "${Fail2ban[@]}"
         ;;
+      openmediavault-forkeddaapd)
+        Regenera "${Forkeddaapd[@]}"
+        ;;
+      #openmediavault-ftp)
+      #  Regenera "${Ftp[@]}"
+      #  ;;
+      # ROMPE CONFIG - REVISAR
       openmediavault-kvm)
         Regenera "${Kvm[@]}"
 
         #CONFIGURAR AUTOMATICAMENTE qemu.conf
         
         ;;
+      openmediavault-minidlna)
+        Regenera "${Minidlna[@]}"
+        ;;
       openmediavault-nut)
         Regenera "${Nut[@]}"
         ;;
       openmediavault-resetperms)
         Regenera "${Resetperms[@]}"
+        ;;
+      openmediavault-rsnapshot)
+        Regenera "${Rsnapshot[@]}"
+        ;;
+      openmediavault-tftp)
+        Regenera "${Tftp[@]}"
         ;;
       openmediavault-wetty)
         Regenera "${Wetty[@]}"
@@ -1038,10 +1071,10 @@ omv-salt stage run deploy --quiet
 IpAC=$(hostname -I | awk '{print $1}')
 IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
 if [ ! "${IpOR}" = "${IpAC}" ]; then
-  echoe 10 "It will regenerate the network interface and restart the server.\n\e[32m After restart you will be able to access from IP ${IpOR}\e[0m \n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\n\e[32m Después de reiniciar podrás acceder desde la IP ${IpOR}\e[0m \n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
+  echoe 10 "It will regenerate the network interface and restart the server.\n\n\e[32m After restart you will be able to access from IP ${IpOR}\e[0m \n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\n\n\e[32m Después de reiniciar podrás acceder desde la IP ${IpOR}\e[0m \n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
   if [ "${Tecla}" ]; then
     Tecla=""
-    echoe "\nNetwork configuration aborted.\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will remain ${IpAC}\e[0m Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar seguirá siendo ${IpAC}\e[0m Reiniciando...\n"
+    echoe "\nNetwork configuration aborted.\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will remain ${IpAC}\e[0m If you still need to regenerate the network you can run omv-regen regenerate again after the reboot. Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar seguirá siendo ${IpAC}\e[0m \n\n Si aún necesitas regenerar la red puedes ejecutar de nuevo omv-regen regenera después del reinicio. Reiniciando...\n"
     reboot
     echoe 3 "" ""
     exit

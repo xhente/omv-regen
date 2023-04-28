@@ -86,6 +86,7 @@ Webadmin=("config" "webadmin" "monit" "nginx")
 # Complementos
 Omvextras=("system" "omvextras" "omvextras")
 Apttool=("services" "apttool")
+Backup=("system" "backup" "cron")
 Compose=("services" "compose" "compose")
 Fail2ban=("services" "fail2ban" "fail2ban")
 Kvm=("services" "kvm")
@@ -884,6 +885,9 @@ Analiza openmediavault-remotemount
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-remotemount
   Regenera "${Remotemount[@]}"
+
+  #PRECONFIGURAR PAQUETE davfs. Provisionalmente contestar si.
+
 fi
 
 # REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
@@ -989,6 +993,9 @@ for i in "${ListaInstalar[@]}"; do
   if [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
     Instala "$i"
     case $i in
+      openmediavault-backup)
+        Regenera "${Backup[@]}"
+        ;;
       openmediavault-compose)
         Regenera "${Compose[@]}"
         ;;
@@ -997,6 +1004,9 @@ for i in "${ListaInstalar[@]}"; do
         ;;
       openmediavault-kvm)
         Regenera "${Kvm[@]}"
+
+        #CONFIGURAR AUTOMATICAMENTE qemu.conf
+        
         ;;
       openmediavault-nut)
         Regenera "${Nut[@]}"

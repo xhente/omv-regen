@@ -27,8 +27,8 @@ Group="/etc/group"
 Subuid="/etc/subuid"
 Subgid="/etc/subgid"
 Passdb="/var/lib/samba/private/passdb.tdb"
-declare -a Archivos=( "$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" )
-declare -a Directorios=( "/home" "/etc/libvirt" )
+declare -a Archivos=("$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb")
+declare -a Directorios=("/home" "/etc/libvirt")
 ConfTmp="/etc/openmediavault/config.rg"
 Fecha=$(date +%y%m%d_%H%M)
 VersionOR=""
@@ -88,7 +88,9 @@ Omvextras=("system" "omvextras" "omvextras")
 Apttool=("services" "apttool")
 Compose=("services" "compose" "compose")
 Fail2ban=("services" "fail2ban" "fail2ban")
+Kvm=("services" "kvm")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
+Nut=("services" "nut" "collectd" "monit" "nut")
 Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
 Resetperms=("services" "resetperms")
 Symlinks=("services" "symlinks")
@@ -120,7 +122,7 @@ echoe () {
 }
 
 help () {
-  echo -e "\033[0;32m                                                                     "
+  echo -e "\e[32m                                                                         "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
   echo -e "              HELP FOR USING OMV-REGEN    (BACKUP AND REGENERATE)              "
@@ -164,7 +166,7 @@ help () {
   echo -e "                                                                               "
   echo -e "    -r     Enable automatic [-r]eboot if needed (create reboot service).       "
   echo -e "_______________________________________________________________________________"
-  echo -e "                                                                        \033[0m"
+  echo -e "                                                                          \e[0m"
   exit
 }
 
@@ -248,6 +250,7 @@ Regenera () {
   NodoAC=""
   NodoTM=""
   Gen=""
+  Salt="aplicar"
   Nodo=$1
   Subnodo=$2
   shift 2
@@ -260,7 +263,8 @@ Regenera () {
     omv_config_delete "${Subnodo}"
     LeeNodo "${Nodo}" "${Subnodo}"
     if [ "${NodoOR}" = "${NodoAC}" ]; then
-      echoe "${Nodo} ${Subnodo} are the same in original and current database. It is not modified." "${Nodo} ${Subnodo} coinciden en la base de datos original y la actual. No se modifica."
+      echoe "${Nodo} ${Subnodo} are the same in original and current database. The database is not modified. No changes are applied to salt." "${Nodo} ${Subnodo} coinciden en la base de datos original y la actual. No se modifica la base de datos. No se aplican cambios en salt."
+      Salt=""
     else
       echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
       NmInOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
@@ -334,33 +338,36 @@ Regenera () {
       done
       if [ ! "${Gen}" ]; then
         echoe "Failed to regenerate ${Nodo} ${Subnodo} node in the current database. Exiting..." "No se ha podido regenerar el nodo ${Nodo} ${Subnodo} en la base de datos actual. Saliendo..."
-        rm "${Config}"
+        rm -f "${Config}"
         cp -a "${ConfTmp}ori" "${Config}"
         exit
       else
         echoe "Regenerating ${Nodo} ${Subnodo} node in database ..." "Regenerando nodo ${Nodo} ${Subnodo} en base de datos ..."
         cp -a "${Config}" "${ConfTmp}ps"
-        rm "${Config}"
+        rm -f "${Config}"
         cp -a "${ConfTmp}" "${Config}"
         echoe "${Nodo} ${Subnodo} node regenerated in the database." "Nodo ${Nodo} ${Subnodo} regenerado en la base de datos."
       fi
     fi
   fi
   # Aplica cambios a los modulos seleccionados
-  echoe "Applying configuration changes to salt modules..." "Aplicando cambios de configuración en los módulos salt..."
-  if [ ! $1 ]; then
-    echoe "There are no configuration changes to apply to salt modules." "No hay cambios de configuración para aplicar en los módulos salt."
-  else
-    for i in $@; do
-      echoe "Configuring salt $i..." "Configurando salt $i..."
-      omv-salt deploy run --quiet "$i"
-      echoe 1 "$i salt configured." "Salt $i configurado."
-    done
-    Resto="$(cat "${Sucio}")"
-    if [[ ! "${Resto}" == "[]" ]]; then
-      omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
+  if [ "${Salt}" ]; then
+    echoe "Applying configuration changes to salt modules..." "Aplicando cambios de configuración en los módulos salt..."
+    if [ ! $1 ]; then
+      echoe "There are no configuration changes to apply to salt modules." "No hay cambios de configuración para aplicar en los módulos salt."
+    else
+      for i in $@; do
+        
+        echoe "Configuring salt $i..." "Configurando salt $i..."
+        omv-salt deploy run --quiet "$i"
+        echoe 1 "$i salt configured." "Salt $i configurado."
+      done
+      Resto="$(cat "${Sucio}")"
+      if [[ ! "${Resto}" == "[]" ]]; then
+        omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
+      fi
+      echoe "The configuration of salt modules for the regeneration of the current node is complete..." "La configuración de módulos salt para la regeneración del nodo actual ha finalizado."
     fi
-    echoe "The configuration of salt modules for the regeneration of the current node is complete..." "La configuración de módulos salt para la regeneración del nodo actual ha finalizado."
   fi
 }
 
@@ -912,7 +919,29 @@ if [ "${Dif}" ]; then
   omv-salt stage run deploy --quiet
 fi
 
-# 9-Instalar docker en la ubicacion original si estaba instalado y no está instalado
+# 9-Instalar symlinks (antes de docker)
+Analiza openmediavault-symlinks
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  Instala openmediavault-symlinks
+  Regenera "${Symlinks[@]}"
+  LeeValor symlink source
+  if [ ! "${NumVal}" ]; then
+    echoe "No symlinks created in original database." "No hay symlinks creados en la base de datos original."
+  else
+    i=0
+    while [ $i -lt ${NumVal} ]; do
+      ((i++))
+      LeeValor symlink source
+      SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+      LeeValor symlink destination
+      SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+      echoe "Creating symlink ${SymFU} ${SymDE}" "Creando symlink ${SymFU} ${SymDE}"
+      ln -s "${SymFU}" "${SymDE}"
+    done
+  fi
+fi
+
+# 10-Instalar docker en la ubicacion original si estaba instalado y no está instalado
 DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
@@ -931,55 +960,49 @@ if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   fi
 fi
 
-# 10-Instalar resto de complementos
+# 11-Instalar resto de complementos por orden
+
+# Instalar apttools (Antes que el resto)
+Analiza openmediavault-remotemount
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  Instala openmediavault-remotemount
+  Regenera "${Apttool[@]}"
+  LeeValor package packagename
+  if [ ! "${NumVal}" ]; then
+    echoe "There are no packages installed in the original database." "No hay paquetes instalados en la base de datos original."
+  else
+    i=0
+    while [ $i -lt ${NumVal} ]; do
+      ((i++))
+      Pack=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+      Analiza "${Pack}"
+      if [ "${VersionOR}" ] && [ "${InstII}" = "NO" ]; then
+        Instala "${Pack}"
+      fi
+    done
+  fi
+fi
+
+# Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do
   Analiza "$i"
   if [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
     Instala "$i"
     case $i in
-      openmediavault-apttool)
-        Regenera "${Apttool[@]}"
-        LeeValor package packagename
-        if [ ! "${NumVal}" ]; then
-          echoe "There are no packages installed in the original database." "No hay paquetes instalados en la base de datos original."
-        else
-          i=0
-          while [ $i -lt ${NumVal} ]; do
-            ((i++))
-            Pack=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-            Analiza "${Pack}"
-            if [ "${VersionOR}" ] && [ "${InstII}" = "NO" ]; then
-              Instala "${Pack}"
-            fi
-          done
-        fi
-        ;;
       openmediavault-compose)
         Regenera "${Compose[@]}"
         ;;
       openmediavault-fail2ban)
         Regenera "${Fail2ban[@]}"
         ;;
+      openmediavault-kvm)
+        Regenera "${Kvm[@]}"
+        ;;
+      openmediavault-nut)
+        Regenera "${Nut[@]}"
+        ;;
       openmediavault-resetperms)
         Regenera "${Resetperms[@]}"
-        ;;
-      openmediavault-symlinks)
-        Regenera "${Symlinks[@]}"
-        LeeValor symlink source
-        if [ ! "${NumVal}" ]; then
-          echoe "No symlinks created in original database." "No hay symlinks creados en la base de datos original."
-        else
-          i=0
-          while [ $i -lt ${NumVal} ]; do
-            ((i++))
-            LeeValor symlink source
-            SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-            LeeValor symlink destination
-            SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-            echoe "Creating symlink ${SymFU} ${SymDE}" "Creando symlink ${SymFU} ${SymDE}"
-            ln -s "${SymFU}" "${SymDE}"
-          done
-        fi
         ;;
       openmediavault-wetty)
         Regenera "${Wetty[@]}"
@@ -992,9 +1015,9 @@ for i in "${ListaInstalar[@]}"; do
 done
 
 # Reconfigurar
-echoe "Preparing database configurations (may take time)..." "Preparando configuraciones de la base de datos (puede tardar)..."
+echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
 omv-salt stage run prepare --quiet
-echoe "Updating database configurations (may take time)..." "Actualizando configuraciones de la base de datos (puede tardar)..."
+echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
 omv-salt stage run deploy --quiet
 
 # Elimina archivos temporales
@@ -1005,10 +1028,10 @@ omv-salt stage run deploy --quiet
 IpAC=$(hostname -I | awk '{print $1}')
 IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
 if [ ! "${IpOR}" = "${IpAC}" ]; then
-  echoe 10 "It will regenerate the network interface and restart the server.\nAfter restart you will be able to access from IP ${IpOR}\n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\nDespués de reiniciar podrás acceder desde la IP ${IpOR}\n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
+  echoe 10 "It will regenerate the network interface and restart the server.\n\e[32m After restart you will be able to access from IP ${IpOR}\e[0m \n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\n\e[32m Después de reiniciar podrás acceder desde la IP ${IpOR}\e[0m \n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
   if [ "${Tecla}" ]; then
     Tecla=""
-    echoe "\nNetwork configuration aborted.\n\nSystem regeneration finished!!\n\nIP after reboot will remain ${IpAC} Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar seguirá siendo ${IpAC} Reiniciando...\n"
+    echoe "\nNetwork configuration aborted.\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will remain ${IpAC}\e[0m Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar seguirá siendo ${IpAC}\e[0m Reiniciando...\n"
     reboot
     echoe 3 "" ""
     exit
@@ -1017,7 +1040,7 @@ fi
 
 echoe "Configuring network..." "Configurando red..."
 Regenera "${Interfaces[@]}"
-echoe "\n\nSystem regeneration finished!!\n\nIP after reboot will be ${IpOR} Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\nLa IP después de reiniciar será ${IpOR} Reiniciando..."
+echoe "\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will be ${IpOR}\e[0m Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar será ${IpOR}\e[0m Reiniciando..."
 reboot
 echoe 3 "" ""
 exit

@@ -839,7 +839,8 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
       *"snapraid" ) ;;
       *"remotemount" ) ;;
       *"symlinks" ) ;;
-      *"apttools" ) ;;
+      *"apttool" ) ;;
+      *"kvm" ) ;;
       * )
         (( cont++ ))
         ListaInstalar[cont]="${Plugin}"
@@ -1023,7 +1024,7 @@ fi
 
 # 6-INSTALAR RESTO DE COMPLEMENTOS
 
-# Instalar apttools (antes que el resto)
+# Instalar apttool (antes que el resto)
 Analiza openmediavault-apttool
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-apttool
@@ -1042,6 +1043,22 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
       fi
     done
   fi
+fi
+
+# Instalar openmediavault-kvm (requiere opción especial de instalación)
+Analiza openmediavault-kvm
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  echoe "\nInstall openmediavault-kvm \n" "\nInstalando openmediavault-kvm\n"
+  if ! apt-get --yes --option DPkg::Options::="--force-confold" install openmediavault-kvm; then
+    apt-get --yes --fix-broken install
+    apt-get update
+    if ! apt-get --yes --option DPkg::Options::="--force-confold" install openmediavault-kvm; then
+      apt-get --yes --fix-broken install
+      echoe "Failed to install openmediavault-kvm. Exiting..." "openmediavault-kvm no se pudo instalar. Saliendo..."
+      exit
+    fi
+  fi
+  Regenera "${Kvm[@]}"
 fi
 
 # Instalar resto de complementos
@@ -1082,10 +1099,6 @@ for i in "${ListaInstalar[@]}"; do
         ;;
       openmediavault-ftp)
         Regenera "${Ftp[@]}"
-        ;;
-      openmediavault-kvm)
-        Regenera "${Kvm[@]}"
-        #CONFIGURAR AUTOMATICAMENTE qemu.conf
         ;;
       openmediavault-luksencryption)
         Regenera "${Luksencryption[@]}"

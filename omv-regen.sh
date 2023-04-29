@@ -89,22 +89,39 @@ Anacron=("services" "anacron" "anacron")
 Apttool=("services" "apttool")
 Autoshutdown=("services" "autoshutdown" "autoshutdown")
 Backup=("system" "backup" "cron")
+Borgbackup=("services" "borgbackup" "borgbackup")
 Clamav=("services" "clamav" "clamav")
 Compose=("services" "compose" "compose")
+Downloader=("services" "downloader")
 Fail2ban=("services" "fail2ban" "fail2ban")
+Filebrowser=("services" "filebrowser" "avahi" "filebrowser")
 Forkeddaapd=("services" "daap" "forked-daapd" "monit")
 Ftp=("services" "ftp" "avahi" "monit" "proftpd")
 Kvm=("services" "kvm")
+Luksencryption=("nulo" "nulo" "luks")
+Lvm2=("nulo" "nulo" "collectd" "fstab" "monit" "quota")
 Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
 Minidlna=("services" "minidlna" "minidlna")
 Nut=("services" "nut" "collectd" "monit" "nut")
+Onedrive=("services" "onedrive" "onedrive")
+Owntone=("services" "owntone" "owntone")
+Photoprism=("services" "photoprism" "avahi" "photoprism")
 Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
 Resetperms=("services" "resetperms")
 Rsnapshot=("services" "rsnapshot" "rsnapshot")
+S3=("services" "minio" "avahi" "minio")
+Sftp=("services" "sftp" "sftp")
+Shairport=("services" "shairport" "monit" "shairport-sync")
+Snapraid=("services" "snapraid" "snapraid")
 Symlinks=("services" "symlinks")
+Snmp=("services" "snmp" "snmpd")
 Tftp=("services" "tftp" "avahi" "tftpd-hpa")
+Tgt=("services" "tgt" "tgt")
+Usbbackup=("services" "usbbackup" "usbbackup")
+Wakealarm=("system" "wakealarm" "wakealarm")
 Wetty=("services" "wetty" "avahi" "wetty")
 Wireguard=("services" "wireguard" "wireguard")
+Wol=("services" "wol")
 Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota" "nfs" "samba" "sharedfolders" "systemd" "tftpd-hpa")
 
 # FUNCIONES
@@ -233,18 +250,18 @@ LeeNodo () {
   NodoAC=""
   NodoTM=""
   LinNodoOR=""
+  echoe "Reading original node $1 $2 ..." "Leyendo nodo original $1 $2 ..."
   NodoOR="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Ruta}${Config})"
-#  echoe "The original node of $1 $2 is ${NodoOR}" "El nodo original de $1 $2 es ${NodoOR}"
-  NodoAC="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Config})"
-#  echoe "The current node of $1 $2 is ${NodoAC}" "El nodo actual de $1 $2 es ${NodoAC}"
-  if [ -f "${ConfTmp}" ]; then
-    NodoTM="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${ConfTmp})"
-#    echoe "The temporary node of $1 $2 is ${NodoTM}" "El nodo temporal de $1 $2 es ${NodoTM}"
-  else
-#    echoe "The temporary node of $1 $2 is null." "El nodo temporal de $1 $2 es nulo."
-  fi
   LinNodoOR="$(echo "${NodoOR}" | awk 'END {print NR}')"
-#  echoe "The original node $1 $2 has ${LinNodoOR} lines." "El nodo original $1 $2 tiene ${LinNodoOR} líneas."
+  echoe "The original node $1 $2 has ${LinNodoOR} lines." "El nodo original $1 $2 tiene ${LinNodoOR} líneas."
+  echoe "Reading actual node $1 $2 ..." "Leyendo nodo actual $1 $2 ..."
+  NodoAC="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Config})"
+  if [ -f "${ConfTmp}" ]; then
+    echoe "Reading temporary node $1 $2 ..." "Leyendo nodo temporal $1 $2 ..."
+    NodoTM="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${ConfTmp})"
+  else
+    echoe "The temporary node of $1 $2 is empty." "El nodo temporal de $1 $2 está vacío."
+  fi
 }
 
 # Sustituye nodo de la base de datos actual por el existente en la base de datos original y aplica cambios en módulos salt
@@ -741,7 +758,7 @@ if [ "${VersIdem}" = "NO" ]; then
   help
 fi
 
-# 1-Regenerar sección Sistema.
+# 1-Regenerar configuraciones básicas.
 Dif=""
 Dif="$(diff "${Ruta}${Passwd}" ${Passwd})"
 if [ "${Dif}" ]; then
@@ -760,7 +777,7 @@ if [ "${Dif}" ]; then
   omv-salt stage run deploy --quiet
 fi
 
-# 2-Instalar omv-extras si estaba y no está instalado.
+# 2-Instalar omv-extras.
 Analiza "openmediavault-omvextrasorg"
 if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
   echoe "Installing omv-extras..." "Instalando omv-extras..."
@@ -799,7 +816,7 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
   fi
 fi
 
-# Analizar versiones y complementos especiales
+# 3-Analizar versiones y complementos especiales.
 cont=0
 for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
   Plugin=$(awk -v i="$i" 'NR==i{print $2}' "${Ruta}${ORB[DpkgOMV]}")
@@ -808,10 +825,14 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
     echoe "Versions $VersIdem \tInstalled $InstII \t${Plugin} \c" "Versiones $VersIdem \tInstalado $InstII \t${Plugin} \c"
     case "${Plugin}" in
       *"kernel" ) ;;
-      *"zfs" ) ;;
-      *"mergerfs" ) ;;
-      *"remotemount" ) ;;
       *"sharerootfs" ) ;;
+      *"zfs" ) ;;
+      *"lvm2" ) ;;
+      *"mergerfs" ) ;;
+      *"snapraid" ) ;;
+      *"remotemount" ) ;;
+      *"symlinks" ) ;;
+      *"apttools" ) ;;
       * )
         (( cont++ ))
         ListaInstalar[cont]="${Plugin}"
@@ -826,12 +847,13 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
   fi
 done
 
-# 3-Instalar openmediavault-kernel
+# 4-Instalar kernel proxmox
 Analiza openmediavault-kernel
 if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-kernel
-  # Instalar Kernel proxmox si no se ha deshabilitado la opción y estaba instalado
-  if [ $OpKern ]; then
+  if [ ! $OpKern ]; then
+    echoe "Skip proxmox kernel option enabled. Kernel will not be installed." "Opción saltar kernel proxmox habilitada. No se instalará kernel."
+  else
     KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
     KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2}')
     if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
@@ -861,9 +883,9 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; the
   fi
 fi
 
-# MONTAR SISTEMAS DE ARCHIVOS.
+# 4-MONTAR SISTEMAS DE ARCHIVOS.
 
-# 4-Instala sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS mdadm)
+# Instala openmediavault-sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS mdadm)
 Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
   echoe "Mounting filesystems..." "Montando sistemas de archivos..."
@@ -878,7 +900,7 @@ if [ "${InstII}" = "NO" ]; then
   apt-get install --reinstall openmediavault-sharerootfs
 fi
 
-# 5-Instalar openmediavault-zfs. Importar pools. (Sistemas de archivos ZFS)
+# Instalar openmediavault-zfs. Importar pools.
 Analiza openmediavault-zfs
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-zfs
@@ -888,26 +910,60 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Regenera "${Zfs[@]}"
 fi
 
-# 6-Instalar mergerfs
+# Instalar openmediavault-lvm2
+Analiza openmediavault-lvm2
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  Instala openmediavault-lvm2
+  Regenera "${Lvm2[@]}"
+fi
+
+# Instalar openmediavault-mergerfs
 Analiza openmediavault-mergerfs
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-mergerfs
   Regenera "${Mergerfs[@]}"
 fi
 
-# 7-Instalar remotemount
+# Instalar openmediavault-snapraid
+Analiza openmediavault-snapraid
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  Instala openmediavault-snapraid
+  Regenera "${Snapraid[@]}"
+fi
+
+# Instalar openmediavault-remotemount
 Analiza openmediavault-remotemount
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-remotemount
   Regenera "${Remotemount[@]}"
-
   #PRECONFIGURAR PAQUETE davfs. Provisionalmente contestar si.
-
 fi
 
-# REGENERAR RESTO DE GUI. INSTALAR DOCKER Y COMPLEMENTOS
+# Instalar openmediavault-symlinks
+Analiza openmediavault-symlinks
+if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
+  Instala openmediavault-symlinks
+  Regenera "${Symlinks[@]}"
+  LeeValor symlink source
+  if [ ! "${NumVal}" ]; then
+    echoe "No symlinks created in original database." "No hay symlinks creados en la base de datos original."
+  else
+    i=0
+    while [ $i -lt ${NumVal} ]; do
+      ((i++))
+      LeeValor symlink source
+      SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+      LeeValor symlink destination
+      SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
+      echoe "Creating symlink ${SymFU} ${SymDE}" "Creando symlink ${SymFU} ${SymDE}"
+      ln -s "${SymFU}" "${SymDE}"
+    done
+  fi
+fi
 
-# 8-Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
+# 5-REGENERAR RESTO DE GUI. INSTALAR DOCKER
+
+# Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
 Dif=$(diff "${Ruta}${Shadow}" "${Shadow}")
 if [ "${Dif}" ]; then
   echoe "Restoring files..." "Restaurando archivos..."
@@ -938,29 +994,7 @@ if [ "${Dif}" ]; then
   omv-salt stage run deploy --quiet
 fi
 
-# 9-Instalar symlinks (antes de docker)
-Analiza openmediavault-symlinks
-if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
-  Instala openmediavault-symlinks
-  Regenera "${Symlinks[@]}"
-  LeeValor symlink source
-  if [ ! "${NumVal}" ]; then
-    echoe "No symlinks created in original database." "No hay symlinks creados en la base de datos original."
-  else
-    i=0
-    while [ $i -lt ${NumVal} ]; do
-      ((i++))
-      LeeValor symlink source
-      SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-      LeeValor symlink destination
-      SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-      echoe "Creating symlink ${SymFU} ${SymDE}" "Creando symlink ${SymFU} ${SymDE}"
-      ln -s "${SymFU}" "${SymDE}"
-    done
-  fi
-fi
-
-# 10-Instalar docker en la ubicacion original si estaba instalado y no está instalado
+# Instalar docker
 DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
@@ -979,9 +1013,9 @@ if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   fi
 fi
 
-# 11-Instalar resto de complementos por orden
+# 6-INSTALAR RESTO DE COMPLEMENTOS
 
-# Instalar apttools (Antes que el resto)
+# Instalar apttools (antes que el resto)
 Analiza openmediavault-remotemount
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-remotemount
@@ -1017,14 +1051,23 @@ for i in "${ListaInstalar[@]}"; do
       openmediavault-backup)
         Regenera "${Backup[@]}"
         ;;
+      openmediavault-borgbackup)
+        Regenera "${Borgbackup[@]}"
+        ;;
       openmediavault-clamav)
         Regenera "${Clamav[@]}"
         ;;
       openmediavault-compose)
         Regenera "${Compose[@]}"
         ;;
+      openmediavault-downloader)
+        Regenera "${Downloader[@]}"
+        ;;
       openmediavault-fail2ban)
         Regenera "${Fail2ban[@]}"
+        ;;
+      openmediavault-filebrowser)
+        Regenera "${Filebrowser[@]}"
         ;;
       openmediavault-forkeddaapd)
         Regenera "${Forkeddaapd[@]}"
@@ -1034,9 +1077,10 @@ for i in "${ListaInstalar[@]}"; do
         ;;
       openmediavault-kvm)
         Regenera "${Kvm[@]}"
-
         #CONFIGURAR AUTOMATICAMENTE qemu.conf
-        
+        ;;
+      openmediavault-luksencryption)
+        Regenera "${Luksencryption[@]}"
         ;;
       openmediavault-minidlna)
         Regenera "${Minidlna[@]}"
@@ -1044,14 +1088,44 @@ for i in "${ListaInstalar[@]}"; do
       openmediavault-nut)
         Regenera "${Nut[@]}"
         ;;
+      openmediavault-onedrive)
+        Regenera "${Onedrive[@]}"
+        ;;
+      openmediavault-owntone)
+        Regenera "${Owntone[@]}"
+        ;;
+      openmediavault-photoprism)
+        Regenera "${Photoprism[@]}"
+        ;;
       openmediavault-resetperms)
         Regenera "${Resetperms[@]}"
         ;;
       openmediavault-rsnapshot)
         Regenera "${Rsnapshot[@]}"
         ;;
+      openmediavault-s3)
+        Regenera "${S3[@]}"
+        ;;
+      openmediavault-sftp)
+        Regenera "${Sftp[@]}"
+        ;;
+      openmediavault-shairport)
+        Regenera "${Shairport[@]}"
+        ;;
+      openmediavault-snmp)
+        Regenera "${Snmp[@]}"
+        ;;
       openmediavault-tftp)
         Regenera "${Tftp[@]}"
+        ;;
+      openmediavault-tgt)
+        Regenera "${Tgt[@]}"
+        ;;
+      openmediavault-usbbackup)
+        Regenera "${Usbbackup[@]}"
+        ;;
+      openmediavault-wakealarm)
+        Regenera "${Wakealarm[@]}"
         ;;
       openmediavault-wetty)
         Regenera "${Wetty[@]}"
@@ -1059,21 +1133,28 @@ for i in "${ListaInstalar[@]}"; do
       openmediavault-wireguard)
         Regenera "${Wireguard[@]}"
         ;;
+      openmediavault-wol)
+        Regenera "${Wol[@]}"
+        ;;
     esac
   fi
 done
 
-# Reconfigurar
+# 7-RECONFIGURAR, ACTUALIZAR, LIMPIAR, CONFIGURAR RED, REINICIAR
+
+# Reconfigurar y actualizar
 echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
 omv-salt stage run prepare --quiet
 echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
 omv-salt stage run deploy --quiet
+omv-upgrade
 
-# Elimina archivos temporales
+# Elimina archivos temporales, configura red y reinicia
 [ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
 [ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
 [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
-
+[ -f "/tmp/installproxmox" ] && rm /tmp/installproxmox
+[ -f "/tmp/installdocker" ] && rm /tmp/installdocker
 IpAC=$(hostname -I | awk '{print $1}')
 IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
 if [ ! "${IpOR}" = "${IpAC}" ]; then

@@ -232,16 +232,19 @@ LeeNodo () {
   NodoOR=""
   NodoAC=""
   NodoTM=""
+  LinNodoOR=""
   NodoOR="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Ruta}${Config})"
-  echoe "The original node of $1 $2 is ${NodoOR}" "El nodo original de $1 $2 es ${NodoOR}"
+#  echoe "The original node of $1 $2 is ${NodoOR}" "El nodo original de $1 $2 es ${NodoOR}"
   NodoAC="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Config})"
-  echoe "The current node of $1 $2 is ${NodoAC}" "El nodo actual de $1 $2 es ${NodoAC}"
+#  echoe "The current node of $1 $2 is ${NodoAC}" "El nodo actual de $1 $2 es ${NodoAC}"
   if [ -f "${ConfTmp}" ]; then
     NodoTM="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${ConfTmp})"
-    echoe "The temporary node of $1 $2 is ${NodoTM}" "El nodo temporal de $1 $2 es ${NodoTM}"
+#    echoe "The temporary node of $1 $2 is ${NodoTM}" "El nodo temporal de $1 $2 es ${NodoTM}"
   else
-    echoe "The temporary node of $1 $2 is null" "El nodo temporal de $1 $2 es nulo"
+#    echoe "The temporary node of $1 $2 is null." "El nodo temporal de $1 $2 es nulo."
   fi
+  LinNodoOR="$(echo "${NodoOR}" | awk 'END {print NR}')"
+#  echoe "The original node $1 $2 has ${LinNodoOR} lines." "El nodo original $1 $2 tiene ${LinNodoOR} líneas."
 }
 
 # Sustituye nodo de la base de datos actual por el existente en la base de datos original y aplica cambios en módulos salt
@@ -258,6 +261,8 @@ Regenera () {
   NodoOR=""
   NodoAC=""
   NodoTM=""
+  NodoGen=""
+  LinNodoGen=""
   Gen=""
   Salt="aplicar"
   Nodo=$1
@@ -266,21 +271,21 @@ Regenera () {
   if [ "${Nodo}" = "nulo" ]; then
     echoe "No node to regenerate has been defined in the database." "No se ha definido nodo para regenerar en la base de datos."
   else
-    [ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
+    [ -f "${ConfTmp}ori" ] && rm -f "${ConfTmp}ori"
     cp -a "${Config}" "${ConfTmp}ori"
     echoe "Regenerating node ${Nodo} ${Subnodo} of the database" "Regenerando nodo ${Nodo} ${Subnodo} de la base de datos"
     omv_config_delete "${Subnodo}"
     LeeNodo "${Nodo}" "${Subnodo}"
     if [ "${NodoOR}" = "${NodoAC}" ]; then
-      echoe "${Nodo} ${Subnodo} matches the original and current databases --> The database is not modified --> No changes are applied to salt." "${Nodo} ${Subnodo} coincide en la base de datos original y la actual --> No se modifica la base de datos --> No se aplican cambios en salt."
+      echoe "${Nodo} ${Subnodo} node matches original and current databases --> The database is not modified --> No changes are applied to salt." "El nodo ${Nodo} ${Subnodo} coincide en la base de datos original y la actual --> No se modifica la base de datos --> No se aplican cambios en salt."
       Salt=""
     else
       echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
       NmInOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmInOR} possible starts in original database" "${Subnodo} tiene ${NmInOR} posibles inicios en la base de datos original"
+      echoe "${Subnodo} has ${NmInOR} possible starts in original database." "${Subnodo} tiene ${NmInOR} posibles inicios en la base de datos original."
       NmFiOR="$(awk "/<\/${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmFiOR} possible endings in original database" "${Subnodo} tiene ${NmFiOR} posibles finales en la base de datos original"
-      NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+      echoe "${Subnodo} has ${NmFiOR} possible endings in original database." "${Subnodo} tiene ${NmFiOR} posibles finales en la base de datos original."
+      NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
       if [ "${NmInAC}" = "" ]; then
         NmInAC="$(awk "/<${Subnodo}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
         if [ "${NmInAC}" = "" ]; then
@@ -294,9 +299,9 @@ Regenera () {
       fi
       echoe "${Subnodo} has ${NmInAC} possible starts in current database." "${Subnodo} tiene ${NmInAC} posibles inicios en la base de datos actual."
       NmFiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmFiAC} possible endings in current database" "${Subnodo} tiene ${NmFiAC} posibles finales en la base de datos actual"
+      echoe "${Subnodo} has ${NmFiAC} possible endings in current database." "${Subnodo} tiene ${NmFiAC} posibles finales en la base de datos actual."
       LoAC="$(awk 'END {print NR}' "${Config}")"
-      echoe "Current database has ${LoAC} lines in total" "La base de datos actual tiene ${LoAC} líneas en total"
+      echoe "Current database has ${LoAC} lines in total." "La base de datos actual tiene ${LoAC} líneas en total."
       IO=0
       Gen=""
       while [ $IO -lt ${NmInOR} ]; do
@@ -322,24 +327,27 @@ Regenera () {
               FiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
               echoe "Checking end of ${Subnodo} in current database in line ${FiAC}..." "Comprobando final de ${Subnodo} en la base de datos actual en línea ${FiAC}..."
               echoe "Creating temporary database..." "Creando base de datos temporal..."
-              [ -f "${ConfTmp}" ] && rm "${ConfTmp}"
+              [ -f "${ConfTmp}" ] && rm -f "${ConfTmp}"
               cp -a "${Config}" "${ConfTmp}"
               sed -i '1,$d' "${ConfTmp}"
               awk -v IA="${InAC}" 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
               if [ "${InOR}" -eq "${FiOR}" ]; then
-                awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+                NodoGen="$(awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}")"
               else
-                awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}" >> "${ConfTmp}"
+                NodoGen="$(awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}")"
               fi
-                awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
+              LinNodoGen="$(echo "${NodoGen}" | awk 'END {print NR}')"
+              echo "${NodoGen}" >> "${ConfTmp}"
+              awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
+              echoe "Generated ${Nodo} ${Subnodo} node from line ${InOR} to line ${FiOR} has ${LinNodoGen} lines." "El nodo ${Nodo} ${Subnodo} generado desde línea ${InOR} hasta línea ${FiOR} tiene ${LinNodoGen} líneas."
               echoe "Comparing ${Nodo} ${Subnodo} of temporary database with the original database..." "Comparando ${Nodo} ${Subnodo} de base de datos temporal con la base de datos original..."
               LeeNodo "${Nodo}" "${Subnodo}"
-              if [ "${NodoOR}" = "${NodoTM}" ]; then
+              if [ "${NodoOR}" = "${NodoTM}" ] && [ "${LinNodoOR}" = "${LinNodoGen}" ]; then
                 Gen="OK"
                 echoe "The ${Nodo} ${Subnodo} node in temporary and original database are the same." "El nodo ${Nodo} ${Subnodo} coincide en la base de datos temporal y la original."
                 break
               else
-                echoe "Generating new temporary database for ${Nodo} ${Subnodo} node ..." "Generando nueva base de datos temporal para el nodo ${Nodo} ${Subnodo} ..."
+                echoe "\nGenerating new temporary database for ${Nodo} ${Subnodo} node ..." "\nGenerando nueva base de datos temporal para el nodo ${Nodo} ${Subnodo} ..."
               fi
             done
           done
@@ -366,10 +374,9 @@ Regenera () {
       echoe "There are no configuration changes to apply to salt modules." "No hay cambios de configuración para aplicar en los módulos salt."
     else
       for i in $@; do
-        
         echoe "Configuring salt $i..." "Configurando salt $i..."
         omv-salt deploy run --quiet "$i"
-        echoe 1 "$i salt configured." "Salt $i configurado."
+        echoe "$i salt configured." "Salt $i configurado."
       done
       Resto="$(cat "${Sucio}")"
       if [[ ! "${Resto}" == "[]" ]]; then
@@ -1022,10 +1029,9 @@ for i in "${ListaInstalar[@]}"; do
       openmediavault-forkeddaapd)
         Regenera "${Forkeddaapd[@]}"
         ;;
-      #openmediavault-ftp)
-      #  Regenera "${Ftp[@]}"
-      #  ;;
-      # ROMPE CONFIG - REVISAR
+      openmediavault-ftp)
+        Regenera "${Ftp[@]}"
+        ;;
       openmediavault-kvm)
         Regenera "${Kvm[@]}"
 

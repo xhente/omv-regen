@@ -62,7 +62,7 @@ PROGRAM FUNCTIONS:
 
 1 - omv-regen backup - Makes a backup of essential data to regenerate the configurations of an OMV system.
 
-2 - omv-regen regenerate - Regenerates a complete OMV system with its original configurations from a fresh installation of OMV and the previous backup.
+2 - omv-regen regenera - Regenerates a complete OMV system with its original configurations from a fresh installation of OMV and the previous backup.
 
 PROCEDURE:
 - Install omv-regen

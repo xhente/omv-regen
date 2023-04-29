@@ -52,6 +52,12 @@ IpOR=""
 IpAC=""
 . /etc/default/openmediavault
 
+export DEBIAN_FRONTEND=noninteractive
+export APT_LISTCHANGES_FRONTEND=none
+export LANG=C.UTF-8
+export LANGUAGE=C
+export LC_ALL=C.UTF-8
+
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
 # Nodos de config.xml

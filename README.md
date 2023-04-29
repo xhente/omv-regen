@@ -1,60 +1,97 @@
 # omv-regen
 
-Estado: En funcionamiento. Algunos complementos solo se instalarán, no se regenerarán. Esta parte está en desarrollo.
+(English version below)
 
-Funciones del programa:
+ESTADO: Estable.
 
-1 - omv-regen backup - Realiza un backup de datos esenciales para regenerar las configuraciones de un sistema OMV. Almacena la base datos,
-versiones de paquetes instalados, información de usuarios, y estado general del sistema en muy poco espacio.
+INSTALACIÓN: Copia y pega la siguiente linea en una terminal y ejecútala. Alternativamente puedes copiar el script y ejecutar omv-regen install.
+
+wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
+
+AGRADECIMIENTOS: Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no sería posible.
+
+FUNCIONES DEL PROGRAMA:
+
+1 - omv-regen backup - Realiza un backup de datos esenciales para regenerar las configuraciones de un sistema OMV.
 
 2 - omv-regen regenera - Regenera un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup anterior.
 
-Características:
+PROCEDIMIENTO:
+- Instala omv-regen
+- Haz un backup con omv-regen backup.
+- Haz una instalación limpia de OMV, no configures nada. Puedes utilizar otro disco. Recuerda conectar los discos de datos.
+- Monta un pendrive con el backup o copialo directamente a una carpeta en root.
+- Ejecuta omv-regen regenera
+- Cuando termine el proceso tendrás el sistema con una instalado limpia y configurado como el original.
 
-- Se puede utilizar una unidad de disco diferente para hacer la nueva instalación de OMV.
+CARACTERÍSTICAS BACKUP:
+- Almacena la base de datos del sistema y algunos archivos de configuración neesarios para la regeneración. Ocupa muy poco espacio y se hace en cuestión de segundos.
+- Los backups se conservan durante 7 días por defecto. Esto es configurable.
+- Puedes programar un backup en la GUI de OMV en tareas programadas simplemente escibiendo el comando adecuado para tu caso.
+- Por defecto se copian las carpetas /home y /etc/libvirt (si existe).
+- Puedes añadir carpetas personalizadas al backup.
+- Si quieres conservar una versión de backup permanentemente edita el prefijo ORB_ de la subcarpeta. Esa versión no se eliminará.
+- Ejecuta omv-regen help para ver la ayuda disponible.
 
-- Admite kernel proxmox y todos los sistemas de archivos soportados por OMV.
-
-- El backup debe estar actualizado. Las versiones de paquetes instalados deben coincidir en el sistema original y el sistema
-nuevo que se va a regenerar. Si una versión de un paquete ya no está disponible para su descarga no se podrá regenerar.
-
-Instalación: 
-
-Copia y pega la siguiente linea en una terminal y ejecútala.
-
-wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
-
-Agradecimientos:
-
-Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no sería posible.
+CARACTERÍSTICAS REGENERA:
+- Regenera un sistema completo desde cero como si lo hicieras en la GUI manualmente, siguiendo el orden establecido en el sistema original.
+- Se puede utilizar una unidad de disco diferente para hacer la nueva instalación de OMV. De hecho es aconsejable hacerlo para poder volver al sistema original en caso de necesidad.
+- Se instalará el kernel proxmox si existía en el sistema original.
+- Opcionalmente puedes saltar la instalación del kernel proxmox.
+- Opcionalmente puedes activar el reinicio automático después de instalar el kernel y la regeneración continuará en segundo plano.
+- Se reconocerán y montarán automáticamente todos tus discos y sistemas de archivos que existían en el sistema original compatibles con OMV.
+- Se regenerarán todas las configuraciones establecidas en la GUI de OMV y las configurará en el sistema automáticamente.
+- El backup debe estar actualizado. Idealmente realizar el backup e inmediatamente después realizar la regeneración. Las versiones de paquetes respaldadas deben coincidir con las disponibles para su descarga.
+- Se instalarán omv-extras y docker si existían en el sistema original.
+- Todos los complementos que existían en el sistema original serán instalados y regenerados. En los complementos basados en podman se regenerarán las configuraciones de la GUI. Las configuraciones del propio contenedor, al igual que los contenedores docker, deben ser respaldadas por otros medios.
+- Si quieres evitar la instalación y regeneración de algún complemento que tenías instalado puedes editar el archivo ORB_DpkgOMV y eliminar la linea correspondiente. El complemento no se instalará.
+- Todas las configuraciones manuales realizadas en CLI y paquetes instalados manualmente serán omitidas durante la regeneración. Utiliza openmediavault-apttool y openmediavault-symlinks en el sistema original si los necesitas para conservar ciertas configuraciones especiales, después haz el backup.
+- El último paso de la regeneración es la configuración de red y el sistema se reiniciará. Después de eso perderás la conexión si tu IP es distinta. En pantalla tendrás la nueva IP. Si quieres evitar perder laconexión establece la misma IP del sistema original antes de lanzar la regeneración.
 
 _____________________________________________________________________________________________________________________
 
-Status: Working. Some plugins will only install, not regenerate. This part is under development.
+STATE: Stable.
 
-Program features:
-
-1 - omv-regen backup - Make a backup of essential data to regenerate the configurations of an OMV system. It stores the database, installed
-package versions, user information, and general system status in very little space.
-
-2 - omv-regen regenera - Regenerates a complete OMV system with its original configurations from a new installation of OMV and the previous backup.
-
-Characteristics:
-
-- A different drive can be used to do the new OMV installation.
-
-- Supports proxmox kernel and all OMV supported file systems.
-
-- The backup must be updated. The versions of installed packages must match on the original system and the
-new that is going to regenerate. If a version of a package is no longer available for download, it cannot be regenerated.
-
-Install: 
-
-Copy and paste the following line into a terminal and run it.
+INSTALLATION: Copy and paste the following line in a terminal and run it. Alternatively you can copy the script and run omv-regen install.
 
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
 
-Thanks:
+ACKNOWLEDGMENTS: Thanks to Aaron Murray (Ryecoaaron). Without your support this would not be possible.
 
-Thanks to Aaron Murray (Ryecoaaron). Without your support this would not be possible.
+PROGRAM FUNCTIONS:
 
+1 - omv-regen backup - Makes a backup of essential data to regenerate the configurations of an OMV system.
+
+2 - omv-regen regenerate - Regenerates a complete OMV system with its original configurations from a fresh installation of OMV and the previous backup.
+
+PROCEDURE:
+- Install omv-regen
+- Make a backup with omv-regen backup.
+- Do a clean install of OMV, don't configure anything. You can use another disk. Remember to connect the data disks.
+- Mount a flash drive with the backup or copy it directly to a root folder.
+- Run omv-regen regenerate
+- When the process is finished you will have the system with a clean installation and configured as the original.
+
+BACKUP FEATURES:
+- Stores the system database and some configuration files needed for regeneration. It takes up very little space and is done in a matter of seconds.
+- Backups are kept for 7 days by default. This is configurable.
+- You can schedule a backup in the OMV GUI in scheduled tasks simply by typing the appropriate command for your case.
+- By default, the folders /home and /etc/libvirt (if it exists) are copied.
+- You can add custom folders to the backup.
+- If you want to keep a backup version permanently edit the ORB_ prefix of the subfolder. That version will not be removed.
+- Run omv-regen help to see the available help.
+
+REGENERATE FEATURES:
+- Regenerate a complete system from scratch as if you did it in the GUI manually, following the order set in the original system.
+- A different drive can be used to do the new OMV installation. In fact, it is advisable to do so to be able to return to the original system in case of need.
+- The proxmox kernel will be installed if it existed on the original system.
+- Optionally you can skip the proxmox kernel installation.
+- Optionally you can activate automatic reboot after installing the kernel and the regeneration will continue in the background.
+- All your disks and file systems that existed in the original OMV compatible system will be automatically recognized and mounted.
+- All the configurations established in the OMV GUI will be regenerated and it will configure them in the system automatically.
+- The backup must be updated. Ideally make the backup and immediately after make the regeneration. Supported package versions must match those available for download.
+- omv-extras and docker will be installed if they existed on the original system.
+- All plugins that existed in the original system will be installed and regenerated. In podman based plugins the GUI settings will be regenerated. The configurations of the container itself, just like docker containers, must be backed up by other means.
+- If you want to avoid the installation and regeneration of a plugin that you had installed, you can edit the ORB_DpkgOMV file and delete the corresponding line. The plugin will not install.
+- All manual configurations done in CLI and manually installed packages will be skipped during regeneration. Use openmediavault-apttool and openmediavault-symlinks on the original system if you need them to preserve certain special settings, then make the backup.
+- The last step of the regeneration is the network configuration and the system will reboot. After that you will lose the connection if your IP is different. On the screen you will have the new IP. If you want to avoid losing the connection, set the same IP of the original system before launching the regeneration.

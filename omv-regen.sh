@@ -236,10 +236,10 @@ LeeValor () {
   ValorOR=""
   ValorAC=""
   NumVal=""
+  echoe "Reading the value of $1 $2 in original database..." "Leyendo el valor de $1 $2 en la base de datos original..."
   ValorOR="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Ruta}${Config})"
-  echoe "The value of $1 $2 in Original Config is ${ValorOR}" "El valor de $1 $2 en Config Original es ${ValorOR}"
+  echoe "Reading the value of $1 $2 in actual database..." "Leyendo el valor de $1 $2 en la base de datos actual..."
   ValorAC="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Config})"
-  echoe "The value of $1 $2 in Current Config is ${ValorAC}" "El valor de $1 $2 en Config Actual es ${ValorAC}"
   NumVal="$(echo "${ValorAC}" | awk '{print NR}' | sed -n '$p')"
   echoe "The number of values ​​is ${NumVal}" "El número de valores es ${NumVal}"
 }
@@ -290,11 +290,11 @@ Regenera () {
   else
     [ -f "${ConfTmp}ori" ] && rm -f "${ConfTmp}ori"
     cp -a "${Config}" "${ConfTmp}ori"
-    echoe "Regenerating node ${Nodo} ${Subnodo} of the database" "Regenerando nodo ${Nodo} ${Subnodo} de la base de datos"
+    echoe "\nRegenerating node ${Nodo} ${Subnodo} of the database\n" "\nRegenerando nodo ${Nodo} ${Subnodo} de la base de datos\n"
     omv_config_delete "${Subnodo}"
     LeeNodo "${Nodo}" "${Subnodo}"
     if [ "${NodoOR}" = "${NodoAC}" ]; then
-      echoe "${Nodo} ${Subnodo} node matches original and current databases --> The database is not modified --> No changes are applied to salt." "El nodo ${Nodo} ${Subnodo} coincide en la base de datos original y la actual --> No se modifica la base de datos --> No se aplican cambios en salt."
+      echoe "${Nodo} ${Subnodo} node matches original and current databases --> The database is not modified and no changes are applied to salt." "El nodo ${Nodo} ${Subnodo} coincide en la base de datos original y la actual --> No se modifica la base de datos ni se aplican cambios en salt."
       Salt=""
     else
       echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
@@ -763,7 +763,7 @@ Dif=""
 Dif="$(diff "${Ruta}${Passwd}" ${Passwd})"
 if [ "${Dif}" ]; then
   cp -apv "${Ruta}${Passwd}" "${Passwd}"
-  echoe "Regenerating basic System settings..." "Regenerando ajustes básicos de Sistema..."
+  echoe "\nRegenerating basic system settings...\n" "\nRegenerando configuraciones básicas del sistema...\n"
   Regenera "${Time[@]}"
   Regenera "${Certificates[@]}"
   Regenera "${Webadmin[@]}"
@@ -780,7 +780,7 @@ fi
 # 2-Instalar omv-extras.
 Analiza "openmediavault-omvextrasorg"
 if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
-  echoe "Installing omv-extras..." "Instalando omv-extras..."
+  echoe "\nInstalling omv-extras...\n" "\nInstalando omv-extras...\n"
   echoe "Downloading omv-extras.org plugin for openmediavault 6.x ..." "Descargando el complemento omv-extras.org para openmediavault 6.x ..."
   File="openmediavault-omvextrasorg_latest_all6.deb"
   if [ -f "${File}" ]; then
@@ -817,6 +817,7 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
 fi
 
 # 3-Analizar versiones y complementos especiales.
+echoe "\nAnalyzing original system plugins...\n" "\nAnalizando complementos del sistema original...\n"
 cont=0
 for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
   Plugin=$(awk -v i="$i" 'NR==i{print $2}' "${Ruta}${ORB[DpkgOMV]}")
@@ -857,7 +858,7 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; the
     KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
     KernelIN=$(uname -r | awk -F "." '/pve$/ {print $1"."$2}')
     if [ "${KernelOR}" ] && [ ! "${KernelOR}" = "${KernelIN}" ]; then
-      echoe "Installing proxmox kernel ${KernelOR}" "Instalando kernel proxmox ${KernelOR}"
+      echoe "\nInstalling proxmox kernel ${KernelOR}\n" "\nInstalando kernel proxmox ${KernelOR}\n"
       cp -a /usr/sbin/omv-installproxmox /tmp/installproxmox
       sed -i 's/^exit 0.*$/echo "Completado"/' /tmp/installproxmox
       . /tmp/installproxmox "${KernelOR}"
@@ -883,12 +884,12 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; the
   fi
 fi
 
-# 4-MONTAR SISTEMAS DE ARCHIVOS.
+# 5-MONTAR SISTEMAS DE ARCHIVOS.
 
 # Instala openmediavault-sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS mdadm)
 Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
-  echoe "Mounting filesystems..." "Montando sistemas de archivos..."
+  echoe "\nMounting filesystems...\n" "\nMontando sistemas de archivos...\n"
   Instala openmediavault-sharerootfs
   Regenera "${Fstab[@]}"
   # Cambia UUID disco de sistema si es nuevo
@@ -961,11 +962,12 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   fi
 fi
 
-# 5-REGENERAR RESTO DE GUI. INSTALAR DOCKER
+# 6-REGENERAR RESTO DE GUI. INSTALAR DOCKER
 
 # Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
 Dif=$(diff "${Ruta}${Shadow}" "${Shadow}")
 if [ "${Dif}" ]; then
+  echoe "\nRegenerating the rest of the system...\n" "\nRegenerando el resto del sistema...\n"
   echoe "Restoring files..." "Restaurando archivos..."
   rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "Regenerating users..." "Regenerando usuarios..."
@@ -998,7 +1000,7 @@ fi
 DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
 DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
-  echoe "Installing docker..." "Instalando docker..."
+  echoe "\nInstalling docker...\n" "\nInstalando docker...\n"
   echoe "Regenerating omvextras..." "Regenerando omvextras..."
   Regenera "${Omvextras[@]}"
   DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
@@ -1016,9 +1018,9 @@ fi
 # 6-INSTALAR RESTO DE COMPLEMENTOS
 
 # Instalar apttools (antes que el resto)
-Analiza openmediavault-remotemount
+Analiza openmediavault-apttool
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
-  Instala openmediavault-remotemount
+  Instala openmediavault-apttool
   Regenera "${Apttool[@]}"
   LeeValor package packagename
   if [ ! "${NumVal}" ]; then
@@ -1150,6 +1152,7 @@ omv-salt stage run deploy --quiet
 omv-upgrade
 
 # Elimina archivos temporales, configura red y reinicia
+echoe "Deleting temporary files..." "Eliminando archivos temporales..."
 [ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
 [ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
 [ -f "${ConfTmp}" ] && rm "${ConfTmp}"

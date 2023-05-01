@@ -31,104 +31,100 @@ declare -a Archivos=("$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" 
 declare -a Directorios=("/home" "/etc/libvirt")
 ConfTmp="/etc/openmediavault/config.rg"
 Fecha=$(date +%y%m%d_%H%M)
-VersionOR=""
-VersionDI=""
-InstII=""
-VersIdem=""
 cont=0
 declare -a ListaInstalar
 KernelOR=""
 KernelIN=""
 Inst="/usr/sbin/omv-regen"
-Tecla=""
-ValorOR=""
-ValorAC=""
-NumVal=""
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 Sucio="/var/lib/openmediavault/dirtymodules.json"
 IpOR=""
 IpAC=""
+Comando=""
+Habilit=""
 . /etc/default/openmediavault
+
+[ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
+
+# NODOS DE LA BASE DE DATOS
+# La primera variables esla ruta del nodo. (nulo -> no hay nodo en la base de datos)
+# Las siguientes variables son los módulos a actualizar con salt
+
+# Interfaz GUI
+declare -A Config
+Config[webadmin]="/config/webadmin monit nginx"
+Config[time]="/config/system/time chrony cron timezone"
+Config[email]="/config/system/email cronapt mdadm monit postfix smartmontools"
+Config[notification]="/config/system/notification cronapt mdadm monit smartmontools"
+Config[powermanagement]="/config/system/powermanagement cpufrequtils cron systemd-logind"
+Config[monitoring]="/config/system/monitoring collectd monit rrdcached"
+Config[crontab]="/config/system/crontab cron"
+Config[certificates]="/config/system/certificates certificates"
+Config[dns]="/config/system/network/dns avahi hostname hosts postfix systemd-networkd"
+Config[interfaces]="/config/system/network/interfaces avahi halt hosts issue systemd-networkd"
+Config[proxy]="/config/system/network/proxy apt profile"
+Config[iptables]="/config/system/network/iptables iptables"
+Config[hdparm]="/config/system/storage/hdparm hdparm"
+Config[smart]="/config/services/smart smartmontools"
+Config[fstab]="/config/system/fstab initramfs mdadm collectd fstab monit quota"
+Config[shares]="/config/system/shares systemd"
+Config[nfs]="/config/services/nfs avahi collectd fstab monit nfs quota"
+Config[rsync]="/config/services/rsync rsync avahi rsyncd"
+Config[smb]="/config/services/smb avahi samba"
+Config[ssh]="/config/services/ssh ssh avahi samba"
+Config[homedirectory]="/config/system/usermanagement/homedirectory samba"
+Config[users]="/config/system/usermanagement/users postfix rsync samba systemd ssh"
+Config[groups]="/config/system/usermanagement/groups rsync samba systemd"
+Config[syslog]="/config/system/syslog rsyslog"
+
+# Complementos
+Config[openmediavault-omvextras]="/config/system/omvextras omvextras"
+Config[openmediavault-anacron]="/config/services/anacron anacron"
+Config[openmediavault-apttool]="/config/services/apttool"
+Config[openmediavault-autoshutdown]="/config/services/autoshutdown autoshutdown"
+Config[openmediavault-backup]="/config/system/backup cron"
+Config[openmediavault-borgbackup]="/config/services/borgbackup borgbackup"
+Config[openmediavault-clamav]="/config/services/clamav clamav"
+Config[openmediavault-compose]="/config/services/compose compose"
+Config[openmediavault-downloader]="/config/services/downloader"
+Config[openmediavault-fail2ban]="/config/services/fail2ban fail2ban"
+Config[openmediavault-filebrowser]="/config/services/filebrowser avahi filebrowser"
+Config[openmediavault-forkeddaapd]="/config/services/daap forked-daapd monit"
+Config[openmediavault-ftp]="/config/services/ftp avahi monit proftpd"
+Config[openmediavault-kvm]="/config/services/kvm"
+Config[openmediavault-luksencryption]="nulo luks"
+Config[openmediavault-lvm2]="nulo collectd fstab monit quota"
+Config[openmediavault-mergerfs]="/config/services/mergerfs collectd fstab mergerfs monit quota"
+Config[openmediavault-minidlna]="/config/services/minidlna minidlna"
+Config[openmediavault-nut]="/config/services/nut collectd monit nut"
+Config[openmediavault-onedrive]="/config/services/onedrive onedrive"
+Config[openmediavault-owntone]="/config/services/owntone owntone"
+Config[openmediavault-photoprism]="/config/services/photoprism avahi photoprism"
+Config[openmediavault-remotemount]="/config/services/remotemount collectd fstab monit quota remotemount"
+Config[openmediavault-resetperms]="/config/services/resetperms"
+Config[openmediavault-rsnapshot]="/config/services/rsnapshot rsnapshot"
+Config[openmediavault-s3]="/config/services/minio avahi minio"
+Config[openmediavault-sftp]="/config/services/sftp sftp"
+Config[openmediavault-shairport]="/config/services/shairport monit shairport-sync"
+Config[openmediavault-snapraid]="/config/services/snapraid snapraid"
+Config[openmediavault-symlinks]="/config/services/symlinks"
+Config[openmediavault-snmp]="/config/services/snmp snmpd"
+Config[openmediavault-tftp]="/config/services/tftp avahi tftpd-hpa"
+Config[openmediavault-tgt]="/config/services/tgt tgt"
+Config[openmediavault-usbbackup]="/config/services/usbbackup usbbackup"
+Config[openmediavault-wakealarm]="/config/system/wakealarm wakealarm"
+Config[openmediavault-wetty]="/config/services/wetty avahi wetty"
+Config[openmediavault-wireguard]="/config/services/wireguard wireguard"
+Config[openmediavault-wol]="/config/services/wol"
+Config[openmediavault-zfs]="nulo zfszed collectd fstab monit quota nfs samba sharedfolders systemd tftpd-hpa"
 
 export DEBIAN_FRONTEND=noninteractive
 export APT_LISTCHANGES_FRONTEND=none
 export LANG=C.UTF-8
 export LANGUAGE=C
 export LC_ALL=C.UTF-8
-
-[ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
-
-# Nodos de config.xml
-# Las dos primeras variables son nodo y subnodo. (nulo -> no hay nodo en la base de datos)
-# Las siguientes variables son los módulos a actualizar)
-
-# Interfaz GUI
-Certificates=("system" "certificates" "certificates")
-Crontab=("system" "crontab" "cron")
-Dns=("network" "dns" "avahi" "hostname" "hosts" "postfix" "systemd-networkd")
-Email=("system" "email" "cronapt" "mdadm" "monit" "postfix" "smartmontools")
-Fstab=("system" "fstab" "hdparm" "collectd" "fstab" "monit" "quota" "initramfs" "mdadm")
-Groups=("usermanagement" "groups" "rsync" "samba" "systemd")
-Homedirectory=("usermanagement" "homedirectory" "samba")
-Interfaces=("network" "interfaces" "avahi" "halt" "hosts" "issue" "systemd-networkd")
-Iptables=("network" "iptables" "iptables" "hdparm")
-Monitoring=("system" "monitoring" "collectd" "monit" "rrdcached")
-Nfs=("services" "nfs" "avahi" "collectd" "fstab" "monit" "nfs" "quota")
-Notification=("system" "notification" "cronapt" "mdadm" "monit" "smartmontools")
-Powermanagement=("system" "powermanagement" "cpufrequtils" "cron" "systemd-logind")
-Proxy=("network" "proxy" "apt" "profile")
-Rsync=("services" "rsync" "rsync" "avahi" "rsyncd")
-Shares=("system" "shares" "systemd")
-Smart=("services" "smart" "smartmontools")
-Smb=("services" "smb" "avahi" "samba")
-Ssh=("services" "ssh" "avahi" "samba")
-Syslog=("system" "syslog" "rsyslog")
-Time=("system" "time" "chrony" "cron" "timezone")
-Users=("usermanagement" "users" "postfix" "rsync" "samba" "systemd" "ssh")
-Webadmin=("config" "webadmin" "monit" "nginx")
-
-# Complementos
-Omvextras=("system" "omvextras" "omvextras")
-Anacron=("services" "anacron" "anacron")
-Apttool=("services" "apttool")
-Autoshutdown=("services" "autoshutdown" "autoshutdown")
-Backup=("system" "backup" "cron")
-Borgbackup=("services" "borgbackup" "borgbackup")
-Clamav=("services" "clamav" "clamav")
-Compose=("services" "compose" "compose")
-Downloader=("services" "downloader")
-Fail2ban=("services" "fail2ban" "fail2ban")
-Filebrowser=("services" "filebrowser" "avahi" "filebrowser")
-Forkeddaapd=("services" "daap" "forked-daapd" "monit")
-Ftp=("services" "ftp" "avahi" "monit" "proftpd")
-Kvm=("services" "kvm")
-Luksencryption=("nulo" "nulo" "luks")
-Lvm2=("nulo" "nulo" "collectd" "fstab" "monit" "quota")
-Mergerfs=("services" "mergerfs" "collectd" "fstab" "mergerfs" "monit" "quota")
-Minidlna=("services" "minidlna" "minidlna")
-Nut=("services" "nut" "collectd" "monit" "nut")
-Onedrive=("services" "onedrive" "onedrive")
-Owntone=("services" "owntone" "owntone")
-Photoprism=("services" "photoprism" "avahi" "photoprism")
-Remotemount=("services" "remotemount" "collectd" "fstab" "monit" "quota" "remotemount")
-Resetperms=("services" "resetperms")
-Rsnapshot=("services" "rsnapshot" "rsnapshot")
-S3=("services" "minio" "avahi" "minio")
-Sftp=("services" "sftp" "sftp")
-Shairport=("services" "shairport" "monit" "shairport-sync")
-Snapraid=("services" "snapraid" "snapraid")
-Symlinks=("services" "symlinks")
-Snmp=("services" "snmp" "snmpd")
-Tftp=("services" "tftp" "avahi" "tftpd-hpa")
-Tgt=("services" "tgt" "tgt")
-Usbbackup=("services" "usbbackup" "usbbackup")
-Wakealarm=("system" "wakealarm" "wakealarm")
-Wetty=("services" "wetty" "avahi" "wetty")
-Wireguard=("services" "wireguard" "wireguard")
-Wol=("services" "wol")
-Zfs=("nulo" "nulo" "zfszed" "collectd" "fstab" "monit" "quota" "nfs" "samba" "sharedfolders" "systemd" "tftpd-hpa")
 
 # FUNCIONES
 
@@ -165,12 +161,12 @@ help () {
   echo -e "    OMV on an empty disk without configuring anything.  Mount a backup, install"
   echo -e "    omv-regen and then regenerate. The version available on the internet of the"
   echo -e "    plugins and OMV must match.                                                "
-  echo -e "  - Use omv-regen install     to enable omv-regen on your system.              "
+  echo -e "  - Use omv-regen             to enable omv-regen on your system.              "
   echo -e "  - Use omv-regen backup      to store the necessary information to regenerate."
   echo -e "  - Use omv-regen regenerate  to run a system regeneration from a clean OMV.   "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
-  echo -e "   omv-regen install     -->       Enable the command on the system.           "
+  echo -e "   omv-regen       -->       Install and enable the command on the system.     "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                               "
   echo -e "   omv-regen backup   [OPTIONS]   [/folder_one \"/folder two\" /folder ... ]   "
@@ -199,6 +195,9 @@ help () {
   echo -e "    -r     Enable automatic [-r]eboot if needed (create reboot service).       "
   echo -e "_______________________________________________________________________________"
   echo -e "                                                                          \e[0m"
+  echo ""
+  [ ! "$Sp" ] && echo -e "$1" || echo -e "$2"
+  echo ""
   exit
 }
 
@@ -242,10 +241,10 @@ LeeValor () {
   ValorOR=""
   ValorAC=""
   NumVal=""
-  echoe "Reading the value of $1 $2 in original database..." "Leyendo el valor de $1 $2 en la base de datos original..."
-  ValorOR="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Ruta}${Config})"
-  echoe "Reading the value of $1 $2 in actual database..." "Leyendo el valor de $1 $2 en la base de datos actual..."
-  ValorAC="$(xmlstarlet select --template --value-of //"$1"/"$2" --nl ${Config})"
+  echoe "Reading the value of $1 in original database..." "Leyendo el valor de $1 en la base de datos original..."
+  ValorOR="$(xmlstarlet select --template --value-of "$1" --nl ${Ruta}${Config})"
+  echoe "Reading the value of $1 in actual database..." "Leyendo el valor de $1 en la base de datos actual..."
+  ValorAC="$(xmlstarlet select --template --value-of "$1" --nl ${Config})"
   NumVal="$(echo "${ValorAC}" | awk '{print NR}' | sed -n '$p')"
   echoe "The number of values ​​is ${NumVal}" "El número de valores es ${NumVal}"
 }
@@ -256,17 +255,17 @@ LeeNodo () {
   NodoAC=""
   NodoTM=""
   LinNodoOR=""
-  echoe "Reading original node $1 $2 ..." "Leyendo nodo original $1 $2 ..."
-  NodoOR="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Ruta}${Config})"
+  echoe "Reading original node $1 ..." "Leyendo nodo original $1 ..."
+  NodoOR="$(xmlstarlet select --template --copy-of "$1" --nl ${Ruta}${Config})"
   LinNodoOR="$(echo "${NodoOR}" | awk 'END {print NR}')"
-  echoe "The original node $1 $2 has ${LinNodoOR} lines." "El nodo original $1 $2 tiene ${LinNodoOR} líneas."
-  echoe "Reading actual node $1 $2 ..." "Leyendo nodo actual $1 $2 ..."
-  NodoAC="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${Config})"
+  echoe "The original node $1 has ${LinNodoOR} lines." "El nodo original $1 tiene ${LinNodoOR} líneas."
+  echoe "Reading actual node $1 ..." "Leyendo nodo actual $1 ..."
+  NodoAC="$(xmlstarlet select --template --copy-of "$1" --nl ${Config})"
   if [ -f "${ConfTmp}" ]; then
-    echoe "Reading temporary node $1 $2 ..." "Leyendo nodo temporal $1 $2 ..."
-    NodoTM="$(xmlstarlet select --template --copy-of //"$1"/"$2" --nl ${ConfTmp})"
+    echoe "Reading temporary node $1 ..." "Leyendo nodo temporal $1 ..."
+    NodoTM="$(xmlstarlet select --template --copy-of "$1" --nl ${ConfTmp})"
   else
-    echoe "The temporary node of $1 $2 is empty." "El nodo temporal de $1 $2 está vacío."
+    echoe "The temporary node of $1 is empty." "El nodo temporal de $1 está vacío."
   fi
 }
 
@@ -288,41 +287,44 @@ Regenera () {
   LinNodoGen=""
   Gen=""
   Salt="aplicar"
-  Nodo=$1
-  Subnodo=$2
-  shift 2
+  Nodo="$(echo "$1" | awk '{print $1}')"
+  Padre="$(echo "${Nodo}" | awk -F "/" '{print $(NF-1)}')"
+  Etiqueta="$(echo "${Nodo}" | awk -F "/" '{print $NF}')"
   if [ "${Nodo}" = "nulo" ]; then
     echoe "No node to regenerate has been defined in the database." "No se ha definido nodo para regenerar en la base de datos."
   else
     [ -f "${ConfTmp}ori" ] && rm -f "${ConfTmp}ori"
     cp -a "${Config}" "${ConfTmp}ori"
-    echoe "\nRegenerating node ${Nodo} ${Subnodo} of the database\n" "\nRegenerando nodo ${Nodo} ${Subnodo} de la base de datos\n"
-    omv_config_delete "${Subnodo}"
-    LeeNodo "${Nodo}" "${Subnodo}"
-    if [ "${NodoOR}" = "${NodoAC}" ]; then
-      echoe "${Nodo} ${Subnodo} node matches original and current databases --> The database is not modified and no changes are applied to salt." "El nodo ${Nodo} ${Subnodo} coincide en la base de datos original y la actual --> No se modifica la base de datos ni se aplican cambios en salt."
+    echoe "\nRegenerating node ${Nodo} of the database\n" "\nRegenerando nodo ${Nodo} de la base de datos\n"
+    omv_config_delete "${Etiqueta}"
+    LeeNodo "${Nodo}"
+    if [ "${NodoOR}" = "" ]; then
+      echoe "The ${Nodo} node does not exist in the original database --> The database is not modified and no changes are applied to salt." "El nodo ${Nodo} no existe en la base de datos original --> No se modifica la base de datos ni se aplican cambios en salt."
+      Salt=""
+    elif [ "${NodoOR}" = "${NodoAC}" ]; then
+      echoe "${Nodo} node matches original and current databases --> The database is not modified and no changes are applied to salt." "El nodo ${Nodo} coincide en la base de datos original y la actual --> No se modifica la base de datos ni se aplican cambios en salt."
       Salt=""
     else
-      echoe "Regenerating ${Nodo} ${Subnodo}..." "Regenerando ${Nodo} ${Subnodo}..."
-      NmInOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmInOR} possible starts in original database." "${Subnodo} tiene ${NmInOR} posibles inicios en la base de datos original."
-      NmFiOR="$(awk "/<\/${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmFiOR} possible endings in original database." "${Subnodo} tiene ${NmFiOR} posibles finales en la base de datos original."
-      NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
+      echoe "Regenerating ${Nodo}..." "Regenerando ${Nodo}..."
+      NmInOR="$(awk "/<${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
+      echoe "${Etiqueta} has ${NmInOR} possible starts in original database." "${Etiqueta} tiene ${NmInOR} posibles inicios en la base de datos original."
+      NmFiOR="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
+      echoe "${Etiqueta} has ${NmFiOR} possible endings in original database." "${Etiqueta} tiene ${NmFiOR} posibles finales en la base de datos original."
+      NmInAC="$(awk "/<${Etiqueta}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
       if [ "${NmInAC}" = "" ]; then
-        NmInAC="$(awk "/<${Subnodo}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+        NmInAC="$(awk "/<${Etiqueta}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
         if [ "${NmInAC}" = "" ]; then
-          echoe "${Subnodo} does not exist in the current database. Generating ${Subnodo} ..." "${Subnodo} no existe en la base de datos actual. Generando ${Subnodo} ..."
-          sed -i "s/<\/${Nodo}>/<${Subnodo}>\n<\/${Subnodo}>\n<\/${Nodo}>/g" "${Config}"
-          NmInAC="$(awk "/<${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
+          echoe "${Etiqueta} does not exist in the current database. Generating ${Etiqueta} ..." "${Etiqueta} no existe en la base de datos actual. Generando ${Etiqueta} ..."
+          sed -i "s/<\/${Padre}>/<${Etiqueta}>\n<\/${Etiqueta}>\n<\/${Padre}>/g" "${Config}"
+          NmInAC="$(awk "/<${Etiqueta}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
         else
-          echoe "${Subnodo} starts and ends on the same line in current database. Inserting line..." "${Subnodo} inicia y finaliza en la misma línea en la base de datos actual. Insertando línea..."
-          sed -i "s/<${Subnodo}\/>/<${Subnodo}>\n<\/${Subnodo}>/g" "${Config}"
+          echoe "${Etiqueta} starts and ends on the same line in current database. Inserting line..." "${Etiqueta} inicia y finaliza en la misma línea en la base de datos actual. Insertando línea..."
+          sed -i "s/<${Etiqueta}\/>/<${Etiqueta}>\n<\/${Etiqueta}>/g" "${Config}"
         fi
       fi
-      echoe "${Subnodo} has ${NmInAC} possible starts in current database." "${Subnodo} tiene ${NmInAC} posibles inicios en la base de datos actual."
-      NmFiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Subnodo} has ${NmFiAC} possible endings in current database." "${Subnodo} tiene ${NmFiAC} posibles finales en la base de datos actual."
+      echoe "${Etiqueta} has ${NmInAC} possible starts in current database." "${Etiqueta} tiene ${NmInAC} posibles inicios en la base de datos actual."
+      NmFiAC="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
+      echoe "${Etiqueta} has ${NmFiAC} possible endings in current database." "${Etiqueta} tiene ${NmFiAC} posibles finales en la base de datos actual."
       LoAC="$(awk 'END {print NR}' "${Config}")"
       echoe "Current database has ${LoAC} lines in total." "La base de datos actual tiene ${LoAC} líneas en total."
       IO=0
@@ -330,25 +332,25 @@ Regenera () {
       while [ $IO -lt ${NmInOR} ]; do
         [ "${Gen}" ] && break
         ((IO++))
-        InOR="$(awk "/<${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$IO 'NR==i {print $1}')"
-        echoe "Checking start of ${Subnodo} in original database in line ${InOR}..." "Comprobando inicio de ${Subnodo} en la base de datos original en linea ${InOR}..."
+        InOR="$(awk "/<${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$IO 'NR==i {print $1}')"
+        echoe "Checking start of ${Etiqueta} in original database in line ${InOR}..." "Comprobando inicio de ${Etiqueta} en la base de datos original en linea ${InOR}..."
         FO=0
         while [ $FO -lt ${NmFiOR} ]; do
           [ "${Gen}" ] && break
           ((FO++))
-          FiOR="$(awk "/<\/${Subnodo}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
-          echoe "Checking end of ${Subnodo} in original database in line ${FiOR}..." "Comprobando final de ${Subnodo} en la base de datos original en linea ${FiOR}..."
+          FiOR="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
+          echoe "Checking end of ${Etiqueta} in original database in line ${FiOR}..." "Comprobando final de ${Etiqueta} en la base de datos original en linea ${FiOR}..."
           IA=0
           while [ $IA -lt ${NmInAC} ]; do
             [ "${Gen}" ] && break
             ((IA++))
-            InAC="$(awk "/<${Subnodo}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
-            echoe "Checking start of ${Subnodo} in current database in line ${InAC}..." "Comprobando inicio de ${Subnodo} en la base de datos actual en línea ${InAC}..."
+            InAC="$(awk "/<${Etiqueta}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
+            echoe "Checking start of ${Etiqueta} in current database in line ${InAC}..." "Comprobando inicio de ${Etiqueta} en la base de datos actual en línea ${InAC}..."
             FA=0
             while [ $FA -lt ${NmFiAC} ]; do
               ((FA++))
-              FiAC="$(awk "/<\/${Subnodo}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
-              echoe "Checking end of ${Subnodo} in current database in line ${FiAC}..." "Comprobando final de ${Subnodo} en la base de datos actual en línea ${FiAC}..."
+              FiAC="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
+              echoe "Checking end of ${Etiqueta} in current database in line ${FiAC}..." "Comprobando final de ${Etiqueta} en la base de datos actual en línea ${FiAC}..."
               echoe "Creating temporary database..." "Creando base de datos temporal..."
               [ -f "${ConfTmp}" ] && rm -f "${ConfTmp}"
               cp -a "${Config}" "${ConfTmp}"
@@ -362,44 +364,48 @@ Regenera () {
               LinNodoGen="$(echo "${NodoGen}" | awk 'END {print NR}')"
               echo "${NodoGen}" >> "${ConfTmp}"
               awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
-              echoe "Generated ${Nodo} ${Subnodo} node from line ${InOR} to line ${FiOR} has ${LinNodoGen} lines." "El nodo ${Nodo} ${Subnodo} generado desde línea ${InOR} hasta línea ${FiOR} tiene ${LinNodoGen} líneas."
-              echoe "Comparing ${Nodo} ${Subnodo} of temporary database with the original database..." "Comparando ${Nodo} ${Subnodo} de base de datos temporal con la base de datos original..."
-              LeeNodo "${Nodo}" "${Subnodo}"
+              echoe "Generated ${Nodo} node from line ${InOR} to line ${FiOR} has ${LinNodoGen} lines." "El nodo ${Nodo} generado desde línea ${InOR} hasta línea ${FiOR} tiene ${LinNodoGen} líneas."
+              echoe "Comparing ${Nodo} of temporary database with the original database..." "Comparando ${Nodo} de base de datos temporal con la base de datos original..."
+              LeeNodo "${Nodo}"
               if [ "${NodoOR}" = "${NodoTM}" ] && [ "${LinNodoOR}" = "${LinNodoGen}" ]; then
                 Gen="OK"
-                echoe "The ${Nodo} ${Subnodo} node in temporary and original database are the same." "El nodo ${Nodo} ${Subnodo} coincide en la base de datos temporal y la original."
+                echoe "The ${Nodo} node in temporary and original database are the same." "El nodo ${Nodo} coincide en la base de datos temporal y la original."
                 break
               else
-                echoe "\nGenerating new temporary database for ${Nodo} ${Subnodo} node ..." "\nGenerando nueva base de datos temporal para el nodo ${Nodo} ${Subnodo} ..."
+                echoe "\nGenerating new temporary database for ${Nodo} node ..." "\nGenerando nueva base de datos temporal para el nodo ${Nodo} ..."
               fi
             done
           done
         done
       done
       if [ ! "${Gen}" ]; then
-        echoe "Failed to regenerate ${Nodo} ${Subnodo} node in the current database. Exiting..." "No se ha podido regenerar el nodo ${Nodo} ${Subnodo} en la base de datos actual. Saliendo..."
+        echoe "Failed to regenerate ${Nodo} node in the current database. Exiting..." "No se ha podido regenerar el nodo ${Nodo} en la base de datos actual. Saliendo..."
         rm -f "${Config}"
         cp -a "${ConfTmp}ori" "${Config}"
         exit
       else
-        echoe "Regenerating ${Nodo} ${Subnodo} node in database ..." "Regenerando nodo ${Nodo} ${Subnodo} en base de datos ..."
+        echoe "Regenerating ${Nodo} node in database ..." "Regenerando nodo ${Nodo} en base de datos ..."
         cp -a "${Config}" "${ConfTmp}ps"
         rm -f "${Config}"
         cp -a "${ConfTmp}" "${Config}"
-        echoe "${Nodo} ${Subnodo} node regenerated in the database." "Nodo ${Nodo} ${Subnodo} regenerado en la base de datos."
+        echoe "${Nodo} node regenerated in the database." "Nodo ${Nodo} regenerado en la base de datos."
       fi
     fi
   fi
   # Aplica cambios a los modulos seleccionados
   if [ "${Salt}" ]; then
     echoe "Applying configuration changes to salt modules..." "Aplicando cambios de configuración en los módulos salt..."
-    if [ ! $1 ]; then
+    Num="$(echo "$1" | awk '{print NF}')"
+    if [ "${Num}" = "1" ]; then
       echoe "There are no configuration changes to apply to salt modules." "No hay cambios de configuración para aplicar en los módulos salt."
     else
-      for i in $@; do
-        echoe "Configuring salt $i..." "Configurando salt $i..."
-        omv-salt deploy run --quiet "$i"
-        echoe "$i salt configured." "Salt $i configurado."
+      c=1
+      while [ ${c} -lt ${Num} ]; do
+   	    ((c++))
+        Modulo="$(echo "$1" | awk -v c=${c} '{print $c}')"
+        echoe "Configuring salt ${Modulo}..." "Configurando salt ${Modulo}..."
+        omv-salt deploy run --quiet "${Modulo}"
+        echoe "${Modulo} salt configured." "Salt ${Modulo} configurado."
       done
       Resto="$(cat "${Sucio}")"
       if [[ ! "${Resto}" == "[]" ]]; then
@@ -424,12 +430,10 @@ InstalarOR (){
       echo "${Archivo}" > "${Inst}"
     fi
     chmod +x "${Inst}"
-    echoe "\n  omv-regen has been installed.\n" "\n  omv-regen se ha instalado.\n"
+    help "\n  omv-regen has been installed.\n" "\n  Se ha instalado omv-regen\n"
   else
-    echoe "\n  omv-regen was already installed.\n" "\n  omv-regen ya estaba instalado.\n"
+    help "\n  omv-regen was already installed.\n" "\n  omv-regen estaba ya instalado.\n"
   fi
-  echoe "Showing the usage:\n" "Mostrando el uso:\n"
-  help
 }
 
 # Crear servicio reboot
@@ -456,8 +460,7 @@ WantedBy=multi-user.target" > "${Sysreboot}"
 
 # Root
 if [[ $(id -u) -ne 0 ]]; then
-  echoe "Run omv-regen with sudo or as root.  Exiting..." "Ejecuta omv-regen con sudo o como root.  Saliendo..."
-  help
+  help "Run omv-regen with sudo or as root.  Exiting..." "Ejecuta omv-regen con sudo o como root.  Saliendo..."
 fi
 
 # Deshabilitar reboot.
@@ -471,17 +474,15 @@ fi
 
 # Release 6.x.
 if [ ! "$(lsb_release --codename --short)" = "bullseye" ]; then
-  echoe "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
-  help
+  help "Unsupported version.  Only OMV 6.x. are supported.  Exiting..." "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..."
 fi
 
 # Comprobar si omv-regen está instalado
 if [ ! "$0" = "${Inst}" ]; then
-  if [ "$1" = "install" ] || [ "$1" = "" ]; then
-    InstalarOR
+  if [ "$1" ]; then
+    help "omv-regen is not installed.\nTo install it run omv-regen with no arguments\n" "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen sin argumentos\n"
   else
-    echoe "omv-regen is not installed.\nTo install it run omv-regen install\nExiting..." "omv-regen no está instalado.\nPara instalarlo ejecuta omv-regen install\nSaliendo..."
-    help
+    InstalarOR
   fi
 fi
 
@@ -503,14 +504,11 @@ case "$1" in
     Rege=1
     echoe  "\n       <<< Regenerating OMV system >>>\n" "\n       <<< Regenerando sistema OMV >>>\n"
     ;;
-  install)
-    InstalarOR
-    ;;
   help)
     help
     ;;
   *)
-    InstalarOR
+    help "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
     ;;
 esac
 shift
@@ -524,8 +522,7 @@ if [ $Back ]; then
           Ruta="${OPTARG}"
           echoe "The backup will be stored in ${Ruta}" "El backup se almacenará en ${Ruta}"
         else
-          echoe "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
-          help
+          help "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
         fi
         ;;
       d)
@@ -533,8 +530,7 @@ if [ $Back ]; then
           OpDias=$OPTARG
           echoe "Backups older than $OpDias days will be deleted." "Se eliminarán los backups de mas de $OpDias días de antigüedad."
         else
-          echoe "The -d option must be a number. Coming out..." "La opción -d debe ser un número. Saliendo..."
-          help
+          help "The -d option must be a number. Coming out..." "La opción -d debe ser un número. Saliendo..."
         fi
         ;;
       h)
@@ -545,8 +541,7 @@ if [ $Back ]; then
           OpFold="${OPTARG}"
           echoe "The folder ${OpFold} is to be copied." "La carpeta ${OpFold} se va a copiar."
         else
-          echoe "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
-          help
+          help "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
         fi
         ;;
       u)
@@ -554,8 +549,7 @@ if [ $Back ]; then
         echoe "The system will be updated before making the backup." "Se va a actualizar el sistema antes de hacer el backup."
         ;;
       *)
-        echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
-        help
+        help "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
         ;;
     esac
   done
@@ -570,8 +564,7 @@ if [ $Rege ]; then
           Ruta="${OPTARG}"
           echoe "${Ruta} has been set as data source." "Se ha establecido ${Ruta} como origen de datos."
         else
-          echoe "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
-          help
+          help "The folder ${OPTARG} does not exist. Exiting..." "La carpeta ${OPTARG} no existe. Saliendo..."
         fi
         ;;
       h)
@@ -586,8 +579,7 @@ if [ $Rege ]; then
         echoe 3 "It will automatically reboot the system after installing a kernel." "Se reiniciará automáticamente el sistema después de instalar un kernel."
         ;;
       *)
-        echoe "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
-        help
+        help "Invalid argument. Exiting..." "Argumento inválido. Saliendo..."
         ;;
     esac
   done
@@ -601,13 +593,11 @@ if [ "$Back" ] && [ "$1" ]; then
       if [ -d "$i" ]; then
         echoe "The folder $i is to be copied." "La carpeta $i se va a copiar."
       else
-        echoe "The folder $i does not exist. Coming out..." "La carpeta $i no existe. Saliendo..."
-        help
+        help "The folder $i does not exist. Coming out..." "La carpeta $i no existe. Saliendo..."
       fi
     done
   else
-  echoe "Invalid argument. Coming out..." "Argumento inválido. Saliendo..."
-  help
+  help "Invalid argument. Coming out..." "Argumento inválido. Saliendo..."
   fi
 fi
 
@@ -621,26 +611,22 @@ fi
 
 if [ "$Rege" ]; then
   if [ "$2" ]; then
-    echoe "Invalid argument $2 Exiting..." "Argumento inválido $2 Saliendo..."
-    help
+    help "Invalid argument $2 Exiting..." "Argumento inválido $2 Saliendo..."
   else
     if [ "$1" ]; then
       if [ "${Ruta}" ]; then
-        echoe "Invalid argument $1 Exiting..." "Argumento inválido $1 Saliendo..."
-        help
+        help "Invalid argument $1 Exiting..." "Argumento inválido $1 Saliendo..."
       else
         if [ -d "$1" ]; then
           Ruta="$1"
           echoe "${Ruta} has been set as data source." "Se ha establecido ${Ruta} como origen de datos."
         else
-          echoe "The folder $1 does not exist. Exiting..." "La carpeta $1 no existe. Saliendo..."
-          help
+          help "The folder $1 does not exist. Exiting..." "La carpeta $1 no existe. Saliendo..."
         fi
       fi
     else
       if [ ! "${Ruta}" ]; then
-        echoe "The source path of the backup to rebuild is missing. Exiting..." "Falta la ruta de origen del backup para regenerar. Saliendo..."
-        help
+        help "The source path of the backup to rebuild is missing. Exiting..." "Falta la ruta de origen del backup para regenerar. Saliendo..."
       fi
     fi
   fi
@@ -660,10 +646,9 @@ if [ $Back ]; then
 
   # Crea carpeta Destino
   Destino="${Ruta}/ORB_${Fecha}"
-  echoe 3 "A backup is going to be made in ${Destino} \nPress any key within 3 seconds to  ABORT" "Se va a realizar un backup en ${Destino} \nPulsa cualquier tecla antes de 3 segundos para  ABORTAR"
+  echoe 5 "A backup is going to be made in ${Destino} \nPress any key within 5 seconds to  ABORT" "Se va a realizar un backup en ${Destino} \nPulsa cualquier tecla antes de 5 segundos para  ABORTAR"
   if [ "${Tecla}" ]; then
-    echoe "Exiting..." "Saliendo..."
-    help
+    help "Exiting..." "Saliendo..."
   else
     if [ -d "${Destino}" ]; then
       rm "${Destino}"
@@ -737,17 +722,15 @@ fi
 
 # EJECUTA REGENERACION DE SISTEMA
 
-echoe 5 "\n\nThe REGENERATION OF THE CURRENT SYSTEM will be executed from ${Ruta} \nPress any key within 5 seconds to  ABORT....." "\n\nSe va a ejecutar la  REGENERACION DEL SISTEMA ACTUAL  desde ${Ruta} \nPulsa cualquier tecla antes de 5 segundos para  ABORTAR....."
+echoe 10 "\n\nThe REGENERATION OF THE CURRENT SYSTEM will be executed from ${Ruta} \nPress any key within 10 seconds to  ABORT....." "\n\nSe va a ejecutar la  REGENERACION DEL SISTEMA ACTUAL  desde ${Ruta} \nPulsa cualquier tecla antes de 10 segundos para  ABORTAR....."
 if [ "${Tecla}" ]; then
-  echoe "Exiting..." "Saliendo..."
-  help
+  help "Aborted regeneration. Exiting..." "Regeneración abortada. Saliendo..."
 fi
 
 # Comprobar backup
 for i in "${ORB[@]}"; do
   if [ ! -f "${Ruta}$i" ]; then
-    echoe "Missing file $i in ${Ruta}. Coming out..." "Falta el archivo $i en ${Ruta}.  Saliendo..."
-    help
+    help "Missing file $i in ${Ruta}. Coming out..." "Falta el archivo $i en ${Ruta}.  Saliendo..."
   fi
 done
 
@@ -760,8 +743,7 @@ fi
 # Versión de OMV original
 Analiza "openmediavault"
 if [ "${VersIdem}" = "NO" ]; then
-  echoe "The OMV version of the original server does not match.  Exiting..." "La versión de OMV del servidor original no coincide.  Saliendo..."
-  help
+  help "The OMV version of the original server does not match.  Exiting..." "La versión de OMV del servidor original no coincide.  Saliendo..."
 fi
 
 # 1-Regenerar configuraciones básicas.
@@ -770,13 +752,13 @@ Dif="$(diff "${Ruta}${Passwd}" ${Passwd})"
 if [ "${Dif}" ]; then
   cp -apv "${Ruta}${Passwd}" "${Passwd}"
   echoe "\nRegenerating basic system settings...\n" "\nRegenerando configuraciones básicas del sistema...\n"
-  Regenera "${Time[@]}"
-  Regenera "${Certificates[@]}"
-  Regenera "${Webadmin[@]}"
-  Regenera "${Powermanagement[@]}"
-  Regenera "${Monitoring[@]}"
-  Regenera "${Crontab[@]}"
-  Regenera "${Syslog[@]}"
+  Regenera "${Config[time]}"
+  Regenera "${Config[certificates]}"
+  Regenera "${Config[webadmin]}"
+  Regenera "${Config[powermanagement]}"
+  Regenera "${Config[monitoring]}"
+  Regenera "${Config[crontab]}"
+  Regenera "${Config[syslog]}"
   echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
   omv-salt stage run prepare --quiet
   echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
@@ -848,7 +830,7 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
     esac
     if [ "${VersIdem}" = "NO" ]; then
       echoe "\t************\n********** ERROR: Available version $VersionDI The original system version $VersionOR does not match. Exiting..." "\t**********\n********** ERROR:  Versión disponible $VersionDI La versión del sistema original $VersionOR no coincide. Saliendo..."
-      help
+      exit
     else
       echoe "--> It will install..." "  -->  Se va a instalar..."
     fi
@@ -872,7 +854,7 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; the
       rm /tmp/installproxmox
       echoe "Kernel proxmox ${KernelOR} installed." "Kernel proxmox ${KernelOR} instalado."
       if [ "${OpRebo}" ]; then
-        echoe "\nAuto reboot option enabled.\nTo use the new kernel the system will be rebooted.\nThe regeneration will continue in the background.\nDo not shut down the server." "\nOpción reinicio automático activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor."
+        echoe "\nAuto reboot option enabled.\nTo use the new kernel the system will be rebooted.\nThe regeneration will continue in the background.\nDo not shut down the server until it is rebooted a second time." "\nOpción reinicio automático activada.\nPara utilizar el nuevo kernel se va a reiniciar el sistema.\nLa regeneración continuará en segundo plano.\nNo apagues el servidor hasta que se reinicie por segunda vez."
         echoe 10 "\nTo   ABORT RESET   press a key within 10 seconds..." "\nPara   ABORTAR REINICIO   presiona una tecla antes de 10 segundos..."
         if [ "${Tecla}" ]; then
           echoe "Reboot aborted.\n" "Reinicio abortado.\n"
@@ -898,7 +880,8 @@ Analiza openmediavault-sharerootfs
 if [ "${InstII}" = "NO" ]; then
   echoe "\nMounting filesystems...\n" "\nMontando sistemas de archivos...\n"
   Instala openmediavault-sharerootfs
-  Regenera "${Fstab[@]}"
+  Regenera "${Config[hdparm]}"
+  Regenera "${Config[fstab]}"
   # Cambia UUID disco de sistema si es nuevo
   echoe "Configuring openmediavault-sharerootfs..." "Configurando openmediavault-sharerootfs..."
   uuid="79684322-3eac-11ea-a974-63a080abab18"
@@ -915,53 +898,52 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   for i in $(awk 'NR>1{print $1}' "${Ruta}${ORB[Zpoollist]}"); do
     zpool import -f "$i"
   done
-  Regenera "${Zfs[@]}"
+  Regenera "${Config[openmediavault-zfs]}"
 fi
 
 # Instalar openmediavault-lvm2
 Analiza openmediavault-lvm2
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-lvm2
-  Regenera "${Lvm2[@]}"
+  Regenera "${Config[openmediavault-lvm2]}"
 fi
 
 # Instalar openmediavault-mergerfs
 Analiza openmediavault-mergerfs
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-mergerfs
-  Regenera "${Mergerfs[@]}"
+  Regenera "${Config[openmediavault-mergerfs]}"
 fi
 
 # Instalar openmediavault-snapraid
 Analiza openmediavault-snapraid
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-snapraid
-  Regenera "${Snapraid[@]}"
+  Regenera "${Config[openmediavault-snapraid]}"
 fi
 
 # Instalar openmediavault-remotemount
 Analiza openmediavault-remotemount
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-remotemount
-  Regenera "${Remotemount[@]}"
-  #PRECONFIGURAR PAQUETE davfs. Provisionalmente contestar si.
+  Regenera "${Config[openmediavault-remotemount]}"
 fi
 
 # Instalar openmediavault-symlinks
 Analiza openmediavault-symlinks
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-symlinks
-  Regenera "${Symlinks[@]}"
-  LeeValor symlink source
+  Regenera "${Config[openmediavault-symlinks]}"
+  LeeValor /config/services/symlinks/symlinks/symlink/source
   if [ ! "${NumVal}" ]; then
     echoe "No symlinks created in original database." "No hay symlinks creados en la base de datos original."
   else
     i=0
     while [ $i -lt ${NumVal} ]; do
       ((i++))
-      LeeValor symlink source
+      LeeValor /config/services/symlinks/symlinks/symlink/source
       SymFU=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
-      LeeValor symlink destination
+      LeeValor /config/services/symlinks/symlinks/symlink/destination
       SymDE=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
       echoe "Creating symlink ${SymFU} ${SymDE}" "Creando symlink ${SymFU} ${SymDE}"
       ln -s "${SymFU}" "${SymDE}"
@@ -978,25 +960,25 @@ if [ "${Dif}" ]; then
   echoe "Restoring files..." "Restaurando archivos..."
   rsync -av "${Ruta}"/ / --exclude "${Config}" --exclude /ORB_*
   echoe "Regenerating users..." "Regenerando usuarios..."
-  Regenera "${Homedirectory[@]}"
-  Regenera "${Users[@]}"
-  Regenera "${Groups[@]}"
+  Regenera "${Config[homedirectory]}"
+  Regenera "${Config[users]}"
+  Regenera "${Config[groups]}"
   echoe "Regenerating shared folders..." "Regenerando carpetas compartidas..."
-  Regenera "${Shares[@]}"
+  Regenera "${Config[shares]}"
   echoe "Regenerating SMART..." "Regenerando SMART..."
-  Regenera "${Smart[@]}"
+  Regenera "${Config[smart]}"
   echoe "Regenerating Services..." "Regenerando Servicios..."
-  Regenera "${Nfs[@]}"
-  Regenera "${Rsync[@]}"
-  Regenera "${Smb[@]}"
-  Regenera "${Ssh[@]}"
-  Regenera "${Email[@]}"
-  Regenera "${Notification[@]}"
-  Regenera "${Syslog[@]}"
+  Regenera "${Config[nfs]}"
+  Regenera "${Config[rsync]}"
+  Regenera "${Config[smb]}"
+  Regenera "${Config[ssh]}"
+  Regenera "${Config[email]}"
+  Regenera "${Config[notification]}"
+  Regenera "${Config[syslog]}"
   echoe "Regenerating Network..." "Regenerando Red..."
-  Regenera "${Dns[@]}"
-  Regenera "${Proxy[@]}"
-  Regenera "${Iptables[@]}"
+  Regenera "${Config[dns]}"
+  Regenera "${Config[proxy]}"
+  Regenera "${Config[iptables]}"
   echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
   omv-salt stage run prepare --quiet
   echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
@@ -1009,17 +991,15 @@ DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
 if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "\nInstalling docker...\n" "\nInstalando docker...\n"
   echoe "Regenerating omvextras..." "Regenerando omvextras..."
-  Regenera "${Omvextras[@]}"
+  Regenera "${Config[openmediavault-omvextras]}"
   DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
   if [ ! "${DockerII}" ]; then
-    LeeValor omvextras dockerStorage
-    dockerStorage="${ValorOR}"
     cp -a /usr/sbin/omv-installdocker /tmp/installdocker
     sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
-    . /tmp/installdocker "${dockerStorage}"
+    . /tmp/installdocker
     rm /tmp/installdocker
-    echoe "Docker installed." "Docker instalado."
   fi
+  echoe "Docker installed." "Docker instalado."
 fi
 
 # 6-INSTALAR RESTO DE COMPLEMENTOS
@@ -1028,8 +1008,8 @@ fi
 Analiza openmediavault-apttool
 if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-apttool
-  Regenera "${Apttool[@]}"
-  LeeValor package packagename
+  Regenera "${Config[openmediavault-apttool]}"
+  LeeValor /config/services/apttools/packages/package/packagename
   if [ ! "${NumVal}" ]; then
     echoe "There are no packages installed in the original database." "No hay paquetes instalados en la base de datos original."
   else
@@ -1058,106 +1038,19 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
       exit
     fi
   fi
-  Regenera "${Kvm[@]}"
+  Regenera "${Config[openmediavault-kvm]}"
 fi
 
 # Instalar resto de complementos
 for i in "${ListaInstalar[@]}"; do
   Analiza "$i"
   if [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
-    Instala "$i"
-    case $i in
-      openmediavault-anacron)
-        Regenera "${Anacron[@]}"
-        ;;
-      openmediavault-autoshutdown)
-        Regenera "${Autoshutdown[@]}"
-        ;;
-      openmediavault-backup)
-        Regenera "${Backup[@]}"
-        ;;
-      openmediavault-borgbackup)
-        Regenera "${Borgbackup[@]}"
-        ;;
-      openmediavault-clamav)
-        Regenera "${Clamav[@]}"
-        ;;
-      openmediavault-compose)
-        Regenera "${Compose[@]}"
-        ;;
-      openmediavault-downloader)
-        Regenera "${Downloader[@]}"
-        ;;
-      openmediavault-fail2ban)
-        Regenera "${Fail2ban[@]}"
-        ;;
-      openmediavault-filebrowser)
-        Regenera "${Filebrowser[@]}"
-        ;;
-      openmediavault-forkeddaapd)
-        Regenera "${Forkeddaapd[@]}"
-        ;;
-      openmediavault-ftp)
-        Regenera "${Ftp[@]}"
-        ;;
-      openmediavault-luksencryption)
-        Regenera "${Luksencryption[@]}"
-        ;;
-      openmediavault-minidlna)
-        Regenera "${Minidlna[@]}"
-        ;;
-      openmediavault-nut)
-        Regenera "${Nut[@]}"
-        ;;
-      openmediavault-onedrive)
-        Regenera "${Onedrive[@]}"
-        ;;
-      openmediavault-owntone)
-        Regenera "${Owntone[@]}"
-        ;;
-      openmediavault-photoprism)
-        Regenera "${Photoprism[@]}"
-        ;;
-      openmediavault-resetperms)
-        Regenera "${Resetperms[@]}"
-        ;;
-      openmediavault-rsnapshot)
-        Regenera "${Rsnapshot[@]}"
-        ;;
-      openmediavault-s3)
-        Regenera "${S3[@]}"
-        ;;
-      openmediavault-sftp)
-        Regenera "${Sftp[@]}"
-        ;;
-      openmediavault-shairport)
-        Regenera "${Shairport[@]}"
-        ;;
-      openmediavault-snmp)
-        Regenera "${Snmp[@]}"
-        ;;
-      openmediavault-tftp)
-        Regenera "${Tftp[@]}"
-        ;;
-      openmediavault-tgt)
-        Regenera "${Tgt[@]}"
-        ;;
-      openmediavault-usbbackup)
-        Regenera "${Usbbackup[@]}"
-        ;;
-      openmediavault-wakealarm)
-        Regenera "${Wakealarm[@]}"
-        ;;
-      openmediavault-wetty)
-        Regenera "${Wetty[@]}"
-        ;;
-      openmediavault-wireguard)
-        Regenera "${Wireguard[@]}"
-        ;;
-      openmediavault-wol)
-        Regenera "${Wol[@]}"
-        ;;
-    esac
+    Instala "$i" 
+    if [ "${Config[$i]}" = "" ]; then
+      echoe "\nERROR >>> There is no setting in omv-regen to regenerate the plugin $i\n" "\nERROR >>> No existe la configuración en omv-regen para regenerar el complemento $i\n"
+    else
+      Regenera "${Config[$i]}"
+    fi
   fi
 done
 
@@ -1191,7 +1084,7 @@ if [ ! "${IpOR}" = "${IpAC}" ]; then
 fi
 
 echoe "Configuring network..." "Configurando red..."
-Regenera "${Interfaces[@]}"
+Regenera "${Config[interfaces]}"
 echoe "\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will be ${IpOR}\e[0m Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar será ${IpOR}\e[0m Reiniciando..."
 reboot
 echoe 3 "" ""

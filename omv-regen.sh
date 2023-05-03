@@ -62,6 +62,7 @@ Config[powermanagement]="/config/system/powermanagement cpufrequtils cron system
 Config[monitoring]="/config/system/monitoring collectd monit rrdcached"
 Config[crontab]="/config/system/crontab cron"
 Config[certificates]="/config/system/certificates certificates"
+Config[apt]="/config/system/apt"
 Config[dns]="/config/system/network/dns avahi hostname hosts postfix systemd-networkd"
 Config[interfaces]="/config/system/network/interfaces avahi halt hosts issue systemd-networkd"
 Config[proxy]="/config/system/network/proxy apt profile"
@@ -728,6 +729,8 @@ fi
 
 # EJECUTA REGENERACION DE SISTEMA
 
+# FASE 0 - COMPROBACIONES
+
 echoe 10 "\n\nThe REGENERATION OF THE CURRENT SYSTEM will be executed from ${Ruta} \nPress any key within 10 seconds to  ABORT....." "\n\nSe va a ejecutar la  REGENERACION DEL SISTEMA ACTUAL  desde ${Ruta} \nPulsa cualquier tecla antes de 10 segundos para  ABORTAR....."
 if [ "${Tecla}" ]; then
   help "Aborted regeneration. Exiting..." "Regeneración abortada. Saliendo..."
@@ -752,7 +755,7 @@ if [ "${VersIdem}" = "NO" ]; then
   help "The OMV version of the original server does not match.  Exiting..." "La versión de OMV del servidor original no coincide.  Saliendo..."
 fi
 
-# 1-Regenerar configuraciones básicas.
+# FASE 1 - Regenerar configuraciones básicas.
 Dif=""
 Dif="$(diff "${Ruta}${Passwd}" ${Passwd})"
 if [ "${Dif}" ]; then
@@ -764,6 +767,7 @@ if [ "${Dif}" ]; then
   Regenera "${Config[powermanagement]}"
   Regenera "${Config[monitoring]}"
   Regenera "${Config[crontab]}"
+  Regenera "${Config[apt]}"
   Regenera "${Config[syslog]}"
   echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
   omv-salt stage run prepare --quiet
@@ -771,7 +775,7 @@ if [ "${Dif}" ]; then
   omv-salt stage run deploy --quiet
 fi
 
-# 2-Instalar omv-extras.
+# FASE 2 - Instalar omv-extras.
 Analiza "openmediavault-omvextrasorg"
 if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
   echoe "\nInstalling omv-extras...\n" "\nInstalando omv-extras...\n"
@@ -810,7 +814,7 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
   fi
 fi
 
-# 3-Analizar versiones y complementos especiales.
+# FASE 3 - Analizar versiones y complementos especiales.
 echoe "\nAnalyzing original system plugins...\n" "\nAnalizando complementos del sistema original...\n"
 cont=0
 for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
@@ -843,7 +847,7 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
   fi
 done
 
-# 4-Instalar kernel proxmox
+# FASE 4 - Instalar kernel proxmox
 Analiza openmediavault-kernel
 if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-kernel
@@ -879,7 +883,7 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; the
   fi
 fi
 
-# 5-MONTAR SISTEMAS DE ARCHIVOS.
+# FASE 5 - MONTAR SISTEMAS DE ARCHIVOS.
 
 # Instala openmediavault-sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS mdadm)
 Analiza openmediavault-sharerootfs
@@ -957,7 +961,7 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   fi
 fi
 
-# 6-REGENERAR RESTO DE GUI. INSTALAR DOCKER
+# FASE 6 - REGENERAR RESTO DE GUI. INSTALAR DOCKER
 
 # Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
 Dif=$(diff "${Ruta}${Shadow}" "${Shadow}")
@@ -980,7 +984,6 @@ if [ "${Dif}" ]; then
   Regenera "${Config[ssh]}"
   Regenera "${Config[email]}"
   Regenera "${Config[notification]}"
-  Regenera "${Config[syslog]}"
   echoe "Regenerating Network..." "Regenerando Red..."
   Regenera "${Config[dns]}"
   Regenera "${Config[proxy]}"
@@ -1008,7 +1011,7 @@ if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
   echoe "Docker installed." "Docker instalado."
 fi
 
-# 6-INSTALAR RESTO DE COMPLEMENTOS
+# FASE 7 - INSTALAR RESTO DE COMPLEMENTOS
 
 # Instalar apttool (antes que el resto)
 Analiza openmediavault-apttool
@@ -1060,7 +1063,7 @@ for i in "${ListaInstalar[@]}"; do
   fi
 done
 
-# 7-RECONFIGURAR, ACTUALIZAR, LIMPIAR, CONFIGURAR RED, REINICIAR
+# FASE 8 - RECONFIGURAR, ACTUALIZAR, LIMPIAR, CONFIGURAR RED, REINICIAR
 
 # Reconfigurar y actualizar
 echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."

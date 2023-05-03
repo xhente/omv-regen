@@ -46,8 +46,9 @@ CARACTERÍSTICAS REGENERA:
 - Todos los complementos que existían en el sistema original serán instalados y regenerados. En los complementos basados en podman se regenerarán las configuraciones de la GUI. Las configuraciones del propio contenedor, al igual que los contenedores docker, deben ser respaldadas por otros medios.
 - Si quieres evitar la instalación y regeneración de algún complemento que tenías instalado puedes editar el archivo ORB_DpkgOMV y eliminar la linea correspondiente. El complemento no se instalará.
 - Todas las configuraciones manuales realizadas en CLI y paquetes instalados manualmente serán omitidas durante la regeneración. Utiliza openmediavault-apttool y openmediavault-symlinks en el sistema original si los necesitas para conservar ciertas configuraciones especiales, después haz el backup.
-- El último paso de la regeneración es la configuración de red y el sistema se reiniciará. Después de eso perderás la conexión si tu IP es distinta. En pantalla tendrás la nueva IP. Si quieres evitar perder laconexión establece la misma IP del sistema original antes de lanzar la regeneración.
+- El último paso de la regeneración es la configuración de red y el sistema se reiniciará. Después de eso perderás la conexión si tu IP es distinta. En pantalla tendrás la nueva IP. Si quieres evitar perder la conexión establece la misma IP del sistema original antes de lanzar la regeneración.
 
+Nota: Ver mas abajo un esquema de la configuración de ejecución
 _____________________________________________________________________________________________________________________
 
 STATE: Stable.
@@ -95,3 +96,16 @@ REGENERATE FEATURES:
 - If you want to avoid the installation and regeneration of a plugin that you had installed, you can edit the ORB_DpkgOMV file and delete the corresponding line. The plugin will not install.
 - All manual configurations done in CLI and manually installed packages will be skipped during regeneration. Use openmediavault-apttool and openmediavault-symlinks on the original system if you need them to preserve certain special settings, then make the backup.
 - The last step of the regeneration is the network configuration and the system will reboot. After that you will lose the connection if your IP is different. On the screen you will have the new IP. If you want to avoid losing the connection, set the same IP of the original system before launching the regeneration.
+
+______________________________________________________________________________________________________________________
+
+
+![CONFIGURACION OMV-REGEN_Página_1](https://user-images.githubusercontent.com/110301854/235881940-e20fefe6-471e-44fb-a0a5-e0ff85c68e6c.jpg)
+
+![CONFIGURACION OMV-REGEN_Página_2](https://user-images.githubusercontent.com/110301854/235882073-edef0daa-653f-496b-92de-e1883e401416.jpg)
+
+![CONFIGURACION OMV-REGEN_Página_3](https://user-images.githubusercontent.com/110301854/235882138-5c189117-1840-4f04-88b4-59f9f67e48e1.jpg)
+
+[CONFIGURACION OMV-REGEN.pdf](https://github.com/xhente/omv-regen/files/11381266/CONFIGURACION.OMV-REGEN.pdf)
+
+[CONFIGURACION OMV-REGEN.ods](https://github.com/xhente/omv-regen/files/11381321/CONFIGURACION.OMV-REGEN.ods)

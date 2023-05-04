@@ -4,7 +4,7 @@
 
 ESTADO: Estable.
 
-INSTALACIÓN: Copia y pega la siguiente linea en una terminal y ejecútala. Alternativamente puedes copiar el script y ejecutar omv-regen install.
+INSTALACIÓN: Copia y pega la siguiente linea en una terminal y ejecútala.
 
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
 
@@ -52,7 +52,7 @@ ________________________________________________________________________________
 
 STATE: Stable.
 
-INSTALLATION: Copy and paste the following line in a terminal and run it. Alternatively you can copy the script and run omv-regen install.
+INSTALLATION: Copy and paste the following line in a terminal and run it.
 
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
 

@@ -17,11 +17,10 @@ FUNCIONES DEL PROGRAMA:
 2 - omv-regen regenera - Regenera un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup anterior.
 
 PROCEDIMIENTO:
-- Instala omv-regen
-- Haz un backup con omv-regen backup.
+- Instala omv-regen en el sistema original y haz un backup con omv-regen backup.
 - Haz una instalación limpia de OMV, no configures nada. Puedes utilizar otro disco. Recuerda conectar los discos de datos.
 - Monta un pendrive con el backup o copialo directamente a una carpeta en root.
-- Ejecuta omv-regen regenera
+- Instala omv-regen en el sistema nuevo y ejecuta omv-regen regenera.
 - Cuando termine el proceso tendrás el sistema con una instalado limpia y configurado como el original.
 
 CARACTERÍSTICAS BACKUP:
@@ -66,11 +65,10 @@ PROGRAM FUNCTIONS:
 2 - omv-regen regenera - Regenerates a complete OMV system with its original configurations from a fresh installation of OMV and the previous backup.
 
 PROCEDURE:
-- Install omv-regen
-- Make a backup with omv-regen backup.
+- Install omv-regen on the original system and make a backup with omv-regen backup.
 - Do a clean install of OMV, don't configure anything. You can use another disk. Remember to connect the data disks.
 - Mount a flash drive with the backup or copy it directly to a root folder.
-- Run omv-regen regenerate
+- Install omv-regen on the new system and run omv-regen regenera.
 - When the process is finished you will have the system with a clean installation and configured as the original.
 
 BACKUP FEATURES:

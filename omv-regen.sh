@@ -439,7 +439,7 @@ InstalarOR (){
     chmod +x "${Inst}"
     help "\n  omv-regen has been installed.\n" "\n  Se ha instalado omv-regen\n"
   else
-    help "\n  omv-regen was already installed.\n" "\n  omv-regen estaba ya instalado.\n"
+    help "\n  omv-regen was already installed.\nTo update run -->   wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash" "\n  omv-regen estaba ya instalado.\nPara actualizar ejecuta  -->   wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash"
   fi
 }
 

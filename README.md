@@ -40,6 +40,7 @@ CARACTERÍSTICAS REGENERA:
 - Opcionalmente puedes activar el reinicio automático después de instalar el kernel y la regeneración continuará en segundo plano.
 - Se reconocerán y montarán automáticamente todos tus discos y sistemas de archivos que existían en el sistema original compatibles con OMV.
 - Se regenerarán todas las configuraciones establecidas en la GUI de OMV y las configurará en el sistema automáticamente.
+- Las variables de entorno personalizadas en OMV desde CLI se recuperarán del backup y se regenerarán en el sistema actual.
 - El backup debe estar actualizado. Idealmente realizar el backup e inmediatamente después realizar la regeneración. Las versiones de paquetes respaldadas deben coincidir con las disponibles para su descarga.
 - Se instalarán omv-extras y docker si existían en el sistema original.
 - Todos los complementos que existían en el sistema original serán instalados y regenerados. En los complementos basados en podman se regenerarán las configuraciones de la GUI. Las configuraciones del propio contenedor, al igual que los contenedores docker, deben ser respaldadas por otros medios.
@@ -88,6 +89,7 @@ REGENERATE FEATURES:
 - Optionally you can activate automatic reboot after installing the kernel and the regeneration will continue in the background.
 - All your disks and file systems that existed in the original OMV compatible system will be automatically recognized and mounted.
 - All the configurations established in the OMV GUI will be regenerated and it will configure them in the system automatically.
+- Custom environment variables in OMV from CLI will be retrieved from the backup and regenerated on the current system.
 - The backup must be updated. Ideally make the backup and immediately after make the regeneration. Supported package versions must match those available for download.
 - omv-extras and docker will be installed if they existed on the original system.
 - All plugins that existed in the original system will be installed and regenerated. In podman based plugins the GUI settings will be regenerated. The configurations of the container itself, just like docker containers, must be backed up by other means.

@@ -27,7 +27,8 @@ Group="/etc/group"
 Subuid="/etc/subuid"
 Subgid="/etc/subgid"
 Passdb="/var/lib/samba/private/passdb.tdb"
-declare -a Archivos=("$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb")
+Default="/etc/default/openmediavault"
+declare -a Archivos=("$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" "$Default")
 declare -a Directorios=("/home" "/etc/libvirt")
 ConfTmp="/etc/openmediavault/config.rg"
 Fecha=$(date +%y%m%d_%H%M)
@@ -760,6 +761,7 @@ Dif=""
 Dif="$(diff "${Ruta}${Passwd}" ${Passwd})"
 if [ "${Dif}" ]; then
   cp -apv "${Ruta}${Passwd}" "${Passwd}"
+  cp -apv "${Ruta}${Default}" "${Default}"
   echoe "\nRegenerating basic system settings...\n" "\nRegenerando configuraciones básicas del sistema...\n"
   Regenera "${Config[time]}"
   Regenera "${Config[certificates]}"
@@ -769,6 +771,8 @@ if [ "${Dif}" ]; then
   Regenera "${Config[crontab]}"
   Regenera "${Config[apt]}"
   Regenera "${Config[syslog]}"
+  echoe "Applying changes to custom environment variables..." "Aplicando cambios en variables de entorno personalizadas..."
+  monit restart omv-engined
   echoe "Preparing database configurations ... ... ..." "Preparando configuraciones de la base de datos ... ... ..."
   omv-salt stage run prepare --quiet
   echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
@@ -812,6 +816,7 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
   fi
+  omv-upgrade
 fi
 
 # FASE 3 - Analizar versiones y complementos especiales.

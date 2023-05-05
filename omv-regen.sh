@@ -5,6 +5,7 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
+. /etc/default/openmediavault
 Back=""
 Rege=""
 Ruta=""
@@ -20,7 +21,7 @@ ORB[Unamea]='/ORB_Unamea'
 ORB[Zpoollist]='/ORB_Zpoollist'
 ORB[Systemctl]='/ORB_Systemctl'
 ORB[HostnameI]='/ORB_HostnameI'
-Config="/etc/openmediavault/config.xml"
+Config="${OMV_CONFIG_FILE}"
 Passwd="/etc/passwd"
 Shadow="/etc/shadow"
 Group="/etc/group"
@@ -34,19 +35,20 @@ ConfTmp="/etc/openmediavault/config.rg"
 Fecha=$(date +%y%m%d_%H%M)
 cont=0
 declare -a ListaInstalar
+Plugin=""
 KernelOR=""
 KernelIN=""
 Inst="/usr/sbin/omv-regen"
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
-URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
-Sucio="/var/lib/openmediavault/dirtymodules.json"
+URLextras="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
+Sucio="${OMV_ENGINED_DIRTY_MODULES_FILE}"
 IpOR=""
 IpAC=""
 Comando=""
 Habilit=""
-. /etc/default/openmediavault
-
+URLomvregen="https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh"
+Sp=""
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
 # NODOS DE LA BASE DE DATOS
@@ -215,6 +217,7 @@ Analiza () {
   VersionDI=""
   InstII=""
   VersIdem=""
+
   VersionOR=$(awk -v i="$1" '$2 == i {print $3}' "${Ruta}${ORB[DpkgOMV]}")
   VersionDI=$(apt-cache madison "$1" | awk 'NR==1{print $3}')
   InstII=$(dpkg -l | awk -v i="$1" '$2 == i {print $1}')
@@ -249,6 +252,7 @@ LeeValor () {
   ValorOR=""
   ValorAC=""
   NumVal=""
+
   echoe "Reading the value of $1 in original database..." "Leyendo el valor de $1 en la base de datos original..."
   ValorOR="$(xmlstarlet select --template --value-of "$1" --nl ${Ruta}${Config})"
   echoe "Reading the value of $1 in actual database..." "Leyendo el valor de $1 en la base de datos actual..."
@@ -257,55 +261,31 @@ LeeValor () {
   echoe "The number of values ​​is ${NumVal}" "El número de valores es ${NumVal}"
 }
 
-# Lee campos completos entre todas las etiquetas del nodo $1/$2
-LeeNodo () {
-  NodoOR=""
-  NodoAC=""
-  NodoTM=""
-  LinNodoOR=""
-  echoe "Reading original node $1 ..." "Leyendo nodo original $1 ..."
-  NodoOR="$(xmlstarlet select --template --copy-of "$1" --nl ${Ruta}${Config})"
-  LinNodoOR="$(echo "${NodoOR}" | awk 'END {print NR}')"
-  echoe "The original node $1 has ${LinNodoOR} lines." "El nodo original $1 tiene ${LinNodoOR} líneas."
-  echoe "Reading actual node $1 ..." "Leyendo nodo actual $1 ..."
-  NodoAC="$(xmlstarlet select --template --copy-of "$1" --nl ${Config})"
-  if [ -f "${ConfTmp}" ]; then
-    echoe "Reading temporary node $1 ..." "Leyendo nodo temporal $1 ..."
-    NodoTM="$(xmlstarlet select --template --copy-of "$1" --nl ${ConfTmp})"
-  else
-    echoe "The temporary node of $1 is empty." "El nodo temporal de $1 está vacío."
-  fi
-}
-
 # Sustituye nodo de la base de datos actual por el existente en la base de datos original y aplica cambios en módulos salt
 Regenera () {
-  InOR=""
-  FiOR=""
-  InAC=""
-  FiAC=""
-  LoAC=""
-  NmInOR=""
-  NmFiOR=""
-  NmInAC=""
-  NmFiAC=""
+  local Nodo Padre Etiqueta Salt NodoOR NodoAC Modulo Resto
+  
+  Nodo="$(echo "$1" | awk '{print $1}')"
+  Padre="$(printf ${Nodo%/*})"
+  Etiqueta="$(printf ${Nodo##*/})"
+  Salt="$(echo "$1" | awk '{print NF}')"
   NodoOR=""
   NodoAC=""
-  NodoTM=""
-  NodoGen=""
-  LinNodoGen=""
-  Gen=""
-  Salt="aplicar"
-  Nodo="$(echo "$1" | awk '{print $1}')"
-  Padre="$(echo "${Nodo}" | awk -F "/" '{print $(NF-1)}')"
-  Etiqueta="$(echo "${Nodo}" | awk -F "/" '{print $NF}')"
+  Modulo=""
+  Resto=""
+
   if [ "${Nodo}" = "nulo" ]; then
     echoe "No node to regenerate has been defined in the database." "No se ha definido nodo para regenerar en la base de datos."
   else
-    [ -f "${ConfTmp}ori" ] && rm -f "${ConfTmp}ori"
-    cp -a "${Config}" "${ConfTmp}ori"
     echoe "\nRegenerating node ${Nodo} of the database\n" "\nRegenerando nodo ${Nodo} de la base de datos\n"
-    omv_config_delete "${Etiqueta}"
-    LeeNodo "${Nodo}"
+    [ ! -f "${ConfTmp}ori" ] && cp -a "${Config}" "${ConfTmp}ori"
+    cat "${Config}" >"${ConfTmp}ori"
+    echoe "Formatting database" "Formateando base de datos"
+    xmlstarlet fo "${ConfTmp}ori" | tee "${Config}" >/dev/null
+    echoe "Reading the value of ${Nodo} in original database..." "Leyendo el valor de ${Nodo} en la base de datos original..."
+    NodoOR="$(xmlstarlet select --template --copy-of "${Nodo}" --nl ${Ruta}${Config})"
+    echoe "Reading the value of ${Nodo} in actual database..." "Leyendo el valor de ${Nodo} en la base de datos actual..."
+    NodoAC="$(xmlstarlet select --template --copy-of "${Nodo}" --nl ${Config})"
     if [ "${NodoOR}" = "" ]; then
       echoe "The ${Nodo} node does not exist in the original database --> The database is not modified and no changes are applied to salt." "El nodo ${Nodo} no existe en la base de datos original --> No se modifica la base de datos ni se aplican cambios en salt."
       Salt=""
@@ -314,103 +294,34 @@ Regenera () {
       Salt=""
     else
       echoe "Regenerating ${Nodo}..." "Regenerando ${Nodo}..."
-      NmInOR="$(awk "/<${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Etiqueta} has ${NmInOR} possible starts in original database." "${Etiqueta} tiene ${NmInOR} posibles inicios en la base de datos original."
-      NmFiOR="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Etiqueta} has ${NmFiOR} possible endings in original database." "${Etiqueta} tiene ${NmFiOR} posibles finales en la base de datos original."
-      NmInAC="$(awk "/<${Etiqueta}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
-      if [ "${NmInAC}" = "" ]; then
-        NmInAC="$(awk "/<${Etiqueta}\/>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
-        if [ "${NmInAC}" = "" ]; then
-          echoe "${Etiqueta} does not exist in the current database. Generating ${Etiqueta} ..." "${Etiqueta} no existe en la base de datos actual. Generando ${Etiqueta} ..."
-          sed -i "s/<\/${Padre}>/<${Etiqueta}>\n<\/${Etiqueta}>\n<\/${Padre}>/g" "${Config}"
-          NmInAC="$(awk "/<${Etiqueta}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '1p')"
-        else
-          echoe "${Etiqueta} starts and ends on the same line in current database. Inserting line..." "${Etiqueta} inicia y finaliza en la misma línea en la base de datos actual. Insertando línea..."
-          sed -i "s/<${Etiqueta}\/>/<${Etiqueta}>\n<\/${Etiqueta}>/g" "${Config}"
-        fi
-      fi
-      echoe "${Etiqueta} has ${NmInAC} possible starts in current database." "${Etiqueta} tiene ${NmInAC} posibles inicios en la base de datos actual."
-      NmFiAC="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Config}" | awk '{print NR}' | sed -n '$p')"
-      echoe "${Etiqueta} has ${NmFiAC} possible endings in current database." "${Etiqueta} tiene ${NmFiAC} posibles finales en la base de datos actual."
-      LoAC="$(awk 'END {print NR}' "${Config}")"
-      echoe "Current database has ${LoAC} lines in total." "La base de datos actual tiene ${LoAC} líneas en total."
-      IO=0
-      Gen=""
-      while [ $IO -lt ${NmInOR} ]; do
-        [ "${Gen}" ] && break
-        ((IO++))
-        InOR="$(awk "/<${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$IO 'NR==i {print $1}')"
-        echoe "Checking start of ${Etiqueta} in original database in line ${InOR}..." "Comprobando inicio de ${Etiqueta} en la base de datos original en linea ${InOR}..."
-        FO=0
-        while [ $FO -lt ${NmFiOR} ]; do
-          [ "${Gen}" ] && break
-          ((FO++))
-          FiOR="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Ruta}${Config}" | awk -v i=$FO 'NR==i {print $1}')"
-          echoe "Checking end of ${Etiqueta} in original database in line ${FiOR}..." "Comprobando final de ${Etiqueta} en la base de datos original en linea ${FiOR}..."
-          IA=0
-          while [ $IA -lt ${NmInAC} ]; do
-            [ "${Gen}" ] && break
-            ((IA++))
-            InAC="$(awk "/<${Etiqueta}>/ {print NR}" ${Config} | awk -v i=$IA 'NR==i {print $1}')"
-            echoe "Checking start of ${Etiqueta} in current database in line ${InAC}..." "Comprobando inicio de ${Etiqueta} en la base de datos actual en línea ${InAC}..."
-            FA=0
-            while [ $FA -lt ${NmFiAC} ]; do
-              ((FA++))
-              FiAC="$(awk "/<\/${Etiqueta}>/ {print NR}" "${Config}" | awk -v i=$FA 'NR==i {print $1}')"
-              echoe "Checking end of ${Etiqueta} in current database in line ${FiAC}..." "Comprobando final de ${Etiqueta} en la base de datos actual en línea ${FiAC}..."
-              echoe "Creating temporary database..." "Creando base de datos temporal..."
-              [ -f "${ConfTmp}" ] && rm -f "${ConfTmp}"
-              cp -a "${Config}" "${ConfTmp}"
-              sed -i '1,$d' "${ConfTmp}"
-              awk -v IA="${InAC}" 'NR==1, NR==IA-1 {print $0}' "${Config}" > "${ConfTmp}"
-              if [ "${InOR}" -eq "${FiOR}" ]; then
-                NodoGen="$(awk -v IO="${InOR}" 'NR==IO {print $0}' "${Ruta}${Config}")"
-              else
-                NodoGen="$(awk -v IO="${InOR}" -v FO="${FiOR}" 'NR==IO, NR==FO {print $0}' "${Ruta}${Config}")"
-              fi
-              LinNodoGen="$(echo "${NodoGen}" | awk 'END {print NR}')"
-              echo "${NodoGen}" >> "${ConfTmp}"
-              awk -v FA="${FiAC}" -v LA="${LoAC}" 'NR==FA+1, NR==LA {print $0}' "${Config}" >> "${ConfTmp}"
-              echoe "Generated ${Nodo} node from line ${InOR} to line ${FiOR} has ${LinNodoGen} lines." "El nodo ${Nodo} generado desde línea ${InOR} hasta línea ${FiOR} tiene ${LinNodoGen} líneas."
-              echoe "Comparing ${Nodo} of temporary database with the original database..." "Comparando ${Nodo} de base de datos temporal con la base de datos original..."
-              LeeNodo "${Nodo}"
-              if [ "${NodoOR}" = "${NodoTM}" ] && [ "${LinNodoOR}" = "${LinNodoGen}" ]; then
-                Gen="OK"
-                echoe "The ${Nodo} node in temporary and original database are the same." "El nodo ${Nodo} coincide en la base de datos temporal y la original."
-                break
-              else
-                echoe "\nGenerating new temporary database for ${Nodo} node ..." "\nGenerando nueva base de datos temporal para el nodo ${Nodo} ..."
-              fi
-            done
-          done
-        done
-      done
-      if [ ! "${Gen}" ]; then
+      echoe "Creating temporary database..." "Creando base de datos temporal..."
+      [ ! -f "${ConfTmp}" ] && cp -a "${Config}" "${ConfTmp}"
+      cat "${Config}" >"${ConfTmp}"
+      echoe "Deleting current ${Nodo} node..." "Eliminando nodo ${Nodo} actual..."
+      xmlstarlet edit -d "${Nodo}" "${Config}" | tee "${ConfTmp}" >/dev/null
+      echoe "Copying original ${Etiqueta} tag..." "Copiando etiqueta ${Etiqueta} original..."
+      sed -i '/<\/config>/d' "${ConfTmp}"
+      echo "${NodoOR}" >> "${ConfTmp}"
+      echo "</config>" >> "${ConfTmp}"
+      echoe "Moving ${Etiqueta} to ${Padre}..." "Moviendo ${Etiqueta} a ${Padre}..."
+      xmlstarlet edit -m "/config/${Etiqueta}" "${Padre}" "${ConfTmp}" | tee "${Config}" >/dev/null
+      if [ $(xmlstarlet val "${Config}" | awk '{print $3}') = "invalid" ]; then
         echoe "Failed to regenerate ${Nodo} node in the current database. Exiting..." "No se ha podido regenerar el nodo ${Nodo} en la base de datos actual. Saliendo..."
-        rm -f "${Config}"
-        cp -a "${ConfTmp}ori" "${Config}"
-        exit
+        cat "${ConfTmp}ori" >"${Config}"
       else
-        echoe "Regenerating ${Nodo} node in database ..." "Regenerando nodo ${Nodo} en base de datos ..."
-        cp -a "${Config}" "${ConfTmp}ps"
-        rm -f "${Config}"
-        cp -a "${ConfTmp}" "${Config}"
         echoe "${Nodo} node regenerated in the database." "Nodo ${Nodo} regenerado en la base de datos."
       fi
     fi
   fi
-  # Aplica cambios a los modulos seleccionados
   if [ "${Salt}" ]; then
     echoe "Applying configuration changes to salt modules..." "Aplicando cambios de configuración en los módulos salt..."
-    Num="$(echo "$1" | awk '{print NF}')"
-    if [ "${Num}" = "1" ]; then
+    if [ "${Salt}" = "1" ]; then
       echoe "There are no configuration changes to apply to salt modules." "No hay cambios de configuración para aplicar en los módulos salt."
     else
-      c=1
-      while [ ${c} -lt ${Num} ]; do
-   	    ((c++))
-        Modulo="$(echo "$1" | awk -v c=${c} '{print $c}')"
+      cont=1
+      while [ ${cont} -lt ${Salt} ]; do
+   	    ((cont++))
+        Modulo="$(echo "$1" | awk -v c=${cont} '{print $c}')"
         echoe "Configuring salt ${Modulo}..." "Configurando salt ${Modulo}..."
         omv-salt deploy run --quiet "${Modulo}"
         echoe "${Modulo} salt configured." "Salt ${Modulo} configurado."
@@ -434,13 +345,13 @@ InstalarOR (){
     if [ -f "$0" ]; then
       cp -a "$0" "${Inst}"
     else
-      Archivo=$(wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh)
-      echo "${Archivo}" > "${Inst}"
+      Descarga="$(wget -O - ${URLomvregen})"
+      echo "${Descarga}" > "${Inst}"
     fi
     chmod +x "${Inst}"
     help "\n  omv-regen has been installed.\n" "\n  Se ha instalado omv-regen\n"
   else
-    help "\n  omv-regen was already installed.\nTo update run -->   wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash" "\n  omv-regen estaba ya instalado.\nPara actualizar ejecuta  -->   wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash"
+    help "\n  omv-regen was already installed.\nTo update run -->   wget -O - ${URLomvregen} | bash" "\n  omv-regen estaba ya instalado.\nPara actualizar ejecuta  -->   wget -O - ${URLomvregen} | bash"
   fi
 }
 
@@ -696,7 +607,8 @@ if [ $Back ]; then
     fi
     cp -apv "$i" "${Destino}$i"
   done
-
+  xmlstarlet fo "${Config}" | tee "${Destino}${Config}" >/dev/null
+  
   # Crea registro dpkg
   echoe ">>>    Extracting version list (dpkg)..." ">>>    Extrayendo lista de versiones (dpkg)..."
   dpkg -l | grep openmediavault > "${Destino}${ORB[DpkgOMV]}"
@@ -739,6 +651,11 @@ fi
 
 # Comprobar backup
 for i in "${ORB[@]}"; do
+  if [ ! -f "${Ruta}$i" ]; then
+    help "Missing file $i in ${Ruta}. Coming out..." "Falta el archivo $i en ${Ruta}.  Saliendo..."
+  fi
+done
+for i in "${Archivos[@]}"; do
   if [ ! -f "${Ruta}$i" ]; then
     help "Missing file $i in ${Ruta}. Coming out..." "Falta el archivo $i en ${Ruta}.  Saliendo..."
   fi
@@ -788,7 +705,7 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
   if [ -f "${File}" ]; then
     rm ${File}
   fi
-  wget "${URL}/${File}"
+  wget "${URLextras}/${File}"
   if [ -f "${File}" ]; then
     if ! dpkg --install ${File}; then
       echoe "Installing other dependencies ..." "Instalando otras dependencias ..."
@@ -844,7 +761,7 @@ for i in $(awk '{print NR}' "${Ruta}${ORB[DpkgOMV]}"); do
         ;;
     esac
     if [ "${VersIdem}" = "NO" ]; then
-      echoe "\t************\n********** ERROR: Available version $VersionDI The original system version $VersionOR does not match. Exiting..." "\t**********\n********** ERROR:  Versión disponible $VersionDI La versión del sistema original $VersionOR no coincide. Saliendo..."
+      echoe "\t************\n********** ERROR: Available version ${VersionDI} The original system version ${VersionOR} does not match. Exiting..." "\t**********\n********** ERROR:  Versión disponible ${VersionDI} La versión del sistema original ${VersionOR} no coincide. Saliendo..."
       exit
     else
       echoe "--> It will install..." "  -->  Se va a instalar..."
@@ -954,6 +871,8 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
     echoe "No symlinks created in original database." "No hay symlinks creados en la base de datos original."
   else
     i=0
+    SymFU=""
+    SymDE=""
     while [ $i -lt ${NumVal} ]; do
       ((i++))
       LeeValor /config/services/symlinks/symlinks/symlink/source
@@ -1028,6 +947,7 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
     echoe "There are no packages installed in the original database." "No hay paquetes instalados en la base de datos original."
   else
     i=0
+    Pack=""
     while [ $i -lt ${NumVal} ]; do
       ((i++))
       Pack=$(echo "${ValorAC}" | awk -v i=$i 'NR==i {print $1}')
@@ -1079,11 +999,10 @@ omv-upgrade
 
 # Elimina archivos temporales, configura red y reinicia
 echoe "Deleting temporary files..." "Eliminando archivos temporales..."
-[ -f "${ConfTmp}ps" ] && rm "${ConfTmp}ps"
-[ -f "${ConfTmp}ori" ] && rm "${ConfTmp}ori"
-[ -f "${ConfTmp}" ] && rm "${ConfTmp}"
-[ -f "/tmp/installproxmox" ] && rm /tmp/installproxmox
-[ -f "/tmp/installdocker" ] && rm /tmp/installdocker
+[ -f "${ConfTmp}ori" ] && rm -f "${ConfTmp}ori"
+[ -f "${ConfTmp}" ] && rm -f "${ConfTmp}"
+[ -f "/tmp/installproxmox" ] && rm -f /tmp/installproxmox
+[ -f "/tmp/installdocker" ] && rm -f /tmp/installdocker
 IpAC=$(hostname -I | awk '{print $1}')
 IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
 if [ ! "${IpOR}" = "${IpAC}" ]; then

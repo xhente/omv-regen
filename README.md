@@ -1,6 +1,10 @@
 # omv-regen
 
+--------- TEMPORARILY OUT OF OPERATION DUE TO RECENT UPDATES IN OMV ---------
+
 (English version below)
+
+¿NECESITAS HACER UN RESPALDO O RESTAURAR LA CONFIGURACIÓN DE OMV? ESTA ES LA SOLUCIÓN.
 
 ESTADO: Estable.
 
@@ -50,6 +54,10 @@ CARACTERÍSTICAS REGENERA:
 
 Nota: Ver mas abajo un esquema de la configuración de ejecución
 _____________________________________________________________________________________________________________________
+
+
+DO YOU NEED TO BACKUP OR RESTORE THE OMV CONFIGURATION? THIS IS THE SOLUTION.
+
 
 STATE: Stable.
 

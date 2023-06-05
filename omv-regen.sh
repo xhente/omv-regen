@@ -30,7 +30,7 @@ Subgid="/etc/subgid"
 Passdb="/var/lib/samba/private/passdb.tdb"
 Default="/etc/default/openmediavault"
 declare -a Archivos=("$Config" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" "$Default")
-declare -a Directorios=("/home" "/etc/libvirt")
+declare -a Directorios=("/home" "/etc/libvirt" "/var/lib/libvirt")
 ConfTmp="/etc/openmediavault/config.rg"
 Fecha=$(date +%y%m%d_%H%M)
 cont=0
@@ -42,7 +42,7 @@ Inst="/usr/sbin/omv-regen"
 Sysreboot="/etc/systemd/system/omv-regen-reboot.service"
 ORBackup="/ORBackup"
 URLextras="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
-Sucio="${OMV_ENGINED_DIRTY_MODULES_FILE}"
+Listasucia="${OMV_ENGINED_DIRTY_MODULES_FILE}"
 IpOR=""
 IpAC=""
 Comando=""
@@ -52,7 +52,7 @@ Sp=""
 [ "$(cut -b 7,8 /etc/default/locale)" = es ] && Sp=1
 
 # NODOS DE LA BASE DE DATOS
-# La primera variables esla ruta del nodo. (nulo -> no hay nodo en la base de datos)
+# La primera variable es la ruta del nodo. (nulo -> no hay nodo en la base de datos)
 # Las siguientes variables son los módulos a actualizar con salt
 
 # Interfaz GUI
@@ -84,7 +84,7 @@ Config[groups]="/config/system/usermanagement/groups rsync samba systemd"
 Config[syslog]="/config/system/syslog rsyslog"
 
 # Complementos
-Config[openmediavault-omvextras]="/config/system/omvextras omvextras"
+Config[openmediavault-omvextras]="/config/system/omvextras"
 Config[openmediavault-anacron]="/config/services/anacron anacron"
 Config[openmediavault-apttool]="/config/services/apttool"
 Config[openmediavault-autoshutdown]="/config/services/autoshutdown autoshutdown"
@@ -115,7 +115,7 @@ Config[openmediavault-remotemount]="/config/services/remotemount collectd fstab 
 Config[openmediavault-resetperms]="/config/services/resetperms"
 Config[openmediavault-rsnapshot]="/config/services/rsnapshot rsnapshot"
 Config[openmediavault-s3]="/config/services/minio avahi minio"
-Config[openmediavault-sftp]="/config/services/sftp sftp"
+Config[openmediavault-sftp]="/config/services/sftp sftp fstab"
 Config[openmediavault-shairport]="/config/services/shairport monit shairport-sync"
 Config[openmediavault-sharerootfs]="nulo"
 Config[openmediavault-snapraid]="/config/services/snapraid snapraid"
@@ -326,12 +326,16 @@ Regenera () {
         omv-salt deploy run --quiet "${Modulo}"
         echoe "${Modulo} salt configured." "Salt ${Modulo} configurado."
       done
-      Resto="$(cat "${Sucio}")"
-      if [[ ! "${Resto}" == "[]" ]]; then
-        omv-salt deploy run "$(jq -r .[] ${Sucio} | tr '\n' ' ')"
-      fi
+      Limpia
       echoe "The configuration of salt modules for the regeneration of the current node is complete..." "La configuración de módulos salt para la regeneración del nodo actual ha finalizado."
     fi
+  fi
+}
+
+Limpia (){
+  Resto="$(jq -r .[] ${Listasucia} | tr '\n' ' ')"
+  if [ "${Resto}" ]; then
+    omv-salt deploy run "${Resto}"
   fi
 }
 
@@ -558,6 +562,8 @@ if [ "$OpUpda" ]; then
   if ! omv-upgrade; then
     echoe "Failed updating system. Exiting..." "Error actualizando el sistema.  Saliendo..."
     exit
+  else
+    Limpia
   fi
 fi
 
@@ -575,7 +581,7 @@ if [ $Back ]; then
     mkdir -p "${Destino}"
   fi
 
-# Copia directorios opcionales
+  # Copia directorios opcionales
   if [ "${OpFold}" ]; then
     echoe ">>>    Copying optional $OpFold directory..." ">>>    Copiando directorio opcional $OpFold..."
     mkdir -p "${Destino}$OpFold"
@@ -665,6 +671,8 @@ done
 if ! omv-upgrade; then
   echoe "Failed updating system.  Exiting..." "Error actualizando el sistema.  Saliendo..."
   exit
+else
+  Limpia
 fi
 
 # Versión de OMV original
@@ -712,12 +720,9 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
       apt-get --yes --fix-broken install
       Analiza "openmediavault-omvextrasorg"
       if [[ "${InstII}" = "NO" ]]; then
-        echoe "omv-extras failed to install correctly.  Trying to fix with omv-salt deploy run ..." "omv-extras no se pudo instalar correctamente. Intentando corregir con omv-salt deploy run ..."
-        if omv-salt deploy run --quiet omvextras; then
-          echoe "Trying to fix apt ..." "Tratando de corregir apt..."
-          apt-get --yes --fix-broken install
-        else
-          echoe "omv-salt deploy run failed and openmediavault-omvextrasorg is in a bad state. Exiting..." "omv-salt deploy run falló y openmediavault-omvextrasorg está en mal estado. Saliendo..."
+        echoe "omv-extras failed to install correctly.  Trying to fix apt ..." "omv-extras no se pudo instalar correctamente. Intentando corregir apt ..."
+        if ! apt-get --yes --fix-broken install; then
+          echoe "apt-get fix failed and openmediavault-omvextrasorg is in a bad state. Exiting..." "apt-get fix falló y openmediavault-omvextrasorg está en mal estado. Saliendo..."
           exit 3
         fi
       fi
@@ -727,13 +732,14 @@ if [ "${VersionOR}" ] &&  [ "${InstII}" = "NO" ]; then
         exit 3
       fi
     fi
+    echoe "Regenerating omv-extras ..." "Regenerando omv-extras..."
+    Regenera "${Config[openmediavault-omvextras]}"
     echoe "Updating repos ..." "Actualizando repositorios..."
-    omv-salt deploy run --quiet omvextras
+    /usr/sbin/omv-aptclean repos
   else
     echoe "There was a problem downloading the package. Exiting..." "Hubo un problema al descargar el paquete. Saliendo..."
     exit
   fi
-  omv-upgrade
 fi
 
 # FASE 3 - Analizar versiones y complementos especiales.
@@ -885,9 +891,9 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
   fi
 fi
 
-# FASE 6 - REGENERAR RESTO DE GUI. INSTALAR DOCKER
+# FASE 6 - REGENERAR RESTO DE GUI.
 
-# Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red. omv-extras (docker).
+# Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios. Red.
 Dif=$(diff "${Ruta}${Shadow}" "${Shadow}")
 if [ "${Dif}" ]; then
   echoe "\nRegenerating the rest of the system...\n" "\nRegenerando el resto del sistema...\n"
@@ -916,23 +922,6 @@ if [ "${Dif}" ]; then
   omv-salt stage run prepare --quiet
   echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
   omv-salt stage run deploy --quiet
-fi
-
-# Instalar docker
-DockerOR=$(awk '/docker.service/ {print $2}' "${Ruta}${ORB[Systemctl]}")
-DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
-if [ "${DockerOR}" ] && [ ! "${DockerII}" ]; then
-  echoe "\nInstalling docker...\n" "\nInstalando docker...\n"
-  echoe "Regenerating omvextras..." "Regenerando omvextras..."
-  Regenera "${Config[openmediavault-omvextras]}"
-  DockerII=$(systemctl list-unit-files | grep docker.service | awk '{print $2}')
-  if [ ! "${DockerII}" ]; then
-    cp -a /usr/sbin/omv-installdocker /tmp/installdocker
-    sed -i 's/^exit 0.*$/echo "Salida installdocker"/' /tmp/installdocker
-    . /tmp/installdocker
-    rm /tmp/installdocker
-  fi
-  echoe "Docker installed." "Docker instalado."
 fi
 
 # FASE 7 - INSTALAR RESTO DE COMPLEMENTOS
@@ -968,7 +957,7 @@ if [ "${VersionOR}" ] && [ "${VersIdem}" = OK ] && [ "${InstII}" = "NO" ]; then
     apt-get update
     if ! apt-get --yes --option DPkg::Options::="--force-confold" install openmediavault-kvm; then
       apt-get --yes --fix-broken install
-      echoe "Failed to install openmediavault-kvm. Exiting..." "openmediavault-kvm no se pudo instalar. Saliendo..."
+      echoe "openmediavault-kvm could not be installed. You probably need to enable backports, then run omv-regen again. Exiting..." "openmediavault-kvm no se pudo instalar. Probablemente necesitas activar backports, después ejecuta de nuevo omv-regen. Saliendo..."
       exit
     fi
   fi
@@ -996,6 +985,7 @@ omv-salt stage run prepare --quiet
 echoe "Updating database configurations ... ... ..." "Actualizando configuraciones de la base de datos ... ... ..."
 omv-salt stage run deploy --quiet
 omv-upgrade
+Limpia
 
 # Elimina archivos temporales, configura red y reinicia
 echoe "Deleting temporary files..." "Eliminando archivos temporales..."

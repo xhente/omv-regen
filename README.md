@@ -105,13 +105,14 @@ REGENERATE FEATURES:
 
 ______________________________________________________________________________________________________________________
 
+![CONFIGURACION OMV-REGEN_Página_1](https://github.com/xhente/omv-regen/assets/110301854/8c22cdb1-3db2-43e8-ab68-2a81e44af6fe)
 
-![CONFIGURACION OMV-REGEN_Página_1](https://user-images.githubusercontent.com/110301854/235881940-e20fefe6-471e-44fb-a0a5-e0ff85c68e6c.jpg)
+![CONFIGURACION OMV-REGEN_Página_2](https://github.com/xhente/omv-regen/assets/110301854/086908c1-24f1-42bb-9017-3b7b1d2daca1)
 
-![CONFIGURACION OMV-REGEN_Página_2](https://user-images.githubusercontent.com/110301854/235882073-edef0daa-653f-496b-92de-e1883e401416.jpg)
+![CONFIGURACION OMV-REGEN_Página_3](https://github.com/xhente/omv-regen/assets/110301854/4a70d777-3af5-44e5-ba65-d4b110b72280)
 
-![CONFIGURACION OMV-REGEN_Página_3](https://user-images.githubusercontent.com/110301854/235882138-5c189117-1840-4f04-88b4-59f9f67e48e1.jpg)
+[CONFIGURACION OMV-REGEN.pdf](https://github.com/xhente/omv-regen/files/11675149/CONFIGURACION.OMV-REGEN.pdf)
 
-[CONFIGURACION OMV-REGEN.pdf](https://github.com/xhente/omv-regen/files/11381266/CONFIGURACION.OMV-REGEN.pdf)
+[CONFIGURACION OMV-REGEN.ods](https://github.com/xhente/omv-regen/files/11675172/CONFIGURACION.OMV-REGEN.ods)
 
-[CONFIGURACION OMV-REGEN.ods](https://github.com/xhente/omv-regen/files/11381321/CONFIGURACION.OMV-REGEN.ods)
+

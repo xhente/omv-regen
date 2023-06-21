@@ -1,12 +1,14 @@
-# omv-regen
-
 (English version below)
+
+# omv-regen
 
 ¿NECESITAS HACER UN RESPALDO O RESTAURAR LA CONFIGURACIÓN DE OMV? ESTA ES LA SOLUCIÓN.
 
 ESTADO: Estable.
 
-INSTALACIÓN: Copia y pega la siguiente linea en una terminal y ejecútala.
+## INSTALACIÓN:
+
+Copia y pega la siguiente linea en una terminal y ejecútala.
 
 ```
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
@@ -14,20 +16,20 @@ wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh
 
 AGRADECIMIENTOS: Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no sería posible.
 
-FUNCIONES DEL PROGRAMA:
+## FUNCIONES DEL PROGRAMA:
 
 1 - `omv-regen backup` - Realiza un backup de datos esenciales para regenerar las configuraciones de un sistema OMV.
 
 2 - `omv-regen regenera` - Regenera un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup anterior.
 
-PROCEDIMIENTO:
+## PROCEDIMIENTO:
 - Instala omv-regen en el sistema original y haz un backup con omv-regen backup.
 - Haz una instalación limpia de OMV, no configures nada. Puedes utilizar otro disco. Recuerda conectar los discos de datos.
 - Monta un pendrive con el backup o copialo directamente a una carpeta en root.
 - Instala omv-regen en el sistema nuevo y ejecuta omv-regen regenera.
 - Cuando termine el proceso tendrás el sistema con una instalado limpia y configurado como el original.
 
-CARACTERÍSTICAS BACKUP:
+## CARACTERÍSTICAS BACKUP:
 - Almacena la base de datos del sistema y algunos archivos de configuración neesarios para la regeneración. Ocupa muy poco espacio y se hace en cuestión de segundos.
 - Los backups se conservan durante 7 días por defecto. Esto es configurable.
 - Puedes programar un backup en la GUI de OMV en tareas programadas simplemente escibiendo el comando adecuado para tu caso.
@@ -36,7 +38,7 @@ CARACTERÍSTICAS BACKUP:
 - Si quieres conservar una versión de backup permanentemente edita el prefijo ORB_ de la subcarpeta. Esa versión no se eliminará.
 - Ejecuta omv-regen help para ver la ayuda disponible.
 
-CARACTERÍSTICAS REGENERA:
+## CARACTERÍSTICAS REGENERA:
 - Regenera un sistema completo desde cero como si lo hicieras en la GUI manualmente, siguiendo el orden establecido en el sistema original.
 - Se puede utilizar una unidad de disco diferente para hacer la nueva instalación de OMV. De hecho es aconsejable hacerlo para poder volver al sistema original en caso de necesidad.
 - Se instalará el kernel proxmox si existía en el sistema original.
@@ -54,14 +56,16 @@ CARACTERÍSTICAS REGENERA:
 
 Nota: Ver mas abajo un esquema de la configuración de ejecución
 _____________________________________________________________________________________________________________________
-
+# omv-regen
 
 DO YOU NEED TO BACKUP OR RESTORE THE OMV CONFIGURATION? THIS IS THE SOLUTION.
 
 
 STATE: Stable.
 
-INSTALLATION: Copy and paste the following line in a terminal and run it.
+## INSTALLATION:
+
+Copy and paste the following line in a terminal and run it.
 
 ```
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
@@ -69,20 +73,20 @@ wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh
 
 ACKNOWLEDGMENTS: Thanks to Aaron Murray (Ryecoaaron). Without your support this would not be possible.
 
-PROGRAM FUNCTIONS:
+## PROGRAM FUNCTIONS:
 
 1 - `omv-regen backup` - Makes a backup of essential data to regenerate the configurations of an OMV system.
 
 2 - `omv-regen regenera` - Regenerates a complete OMV system with its original configurations from a fresh installation of OMV and the previous backup.
 
-PROCEDURE:
+## PROCEDURE:
 - Install omv-regen on the original system and make a backup with omv-regen backup.
 - Do a clean install of OMV, don't configure anything. You can use another disk. Remember to connect the data disks.
 - Mount a flash drive with the backup or copy it directly to a root folder.
 - Install omv-regen on the new system and run omv-regen regenera.
 - When the process is finished you will have the system with a clean installation and configured as the original.
 
-BACKUP FEATURES:
+## BACKUP FEATURES:
 - Stores the system database and some configuration files needed for regeneration. It takes up very little space and is done in a matter of seconds.
 - Backups are kept for 7 days by default. This is configurable.
 - You can schedule a backup in the OMV GUI in scheduled tasks simply by typing the appropriate command for your case.
@@ -91,7 +95,7 @@ BACKUP FEATURES:
 - If you want to keep a backup version permanently edit the ORB_ prefix of the subfolder. That version will not be removed.
 - Run omv-regen help to see the available help.
 
-REGENERATE FEATURES:
+## REGENERATE FEATURES:
 - Regenerate a complete system from scratch as if you did it in the GUI manually, following the order set in the original system.
 - A different drive can be used to do the new OMV installation. In fact, it is advisable to do so to be able to return to the original system in case of need.
 - The proxmox kernel will be installed if it existed on the original system.

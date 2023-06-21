@@ -128,7 +128,7 @@ ________________________________________________________________________________
 ```
 _______________________________________________________________________________
 
-              HELP FOR USING OMV-REGEN    (BACKUP AND REGENERATE)
+              HELP FOR USING OMV-REGEN    (BACKUP AND REGENERA)
 
   - omv-regen   regenerates an OMV system from a clean install by restoring the
     existing configurations to the original system.
@@ -138,7 +138,7 @@ _______________________________________________________________________________
     plugins and OMV must match.
   - Use omv-regen             to enable omv-regen on your system.
   - Use omv-regen backup      to store the necessary information to regenerate.
-  - Use omv-regen regenerate  to run a system regeneration from a clean OMV.
+  - Use omv-regen regenera    to run a system regeneration from a clean OMV.
 _______________________________________________________________________________
 
    omv-regen       -->       Install and enable the command on the system.

@@ -16,9 +16,9 @@ AGRADECIMIENTOS: Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no serí
 
 FUNCIONES DEL PROGRAMA:
 
-1 - omv-regen backup - Realiza un backup de datos esenciales para regenerar las configuraciones de un sistema OMV.
+1 - `omv-regen backup` - Realiza un backup de datos esenciales para regenerar las configuraciones de un sistema OMV.
 
-2 - omv-regen regenera - Regenera un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup anterior.
+2 - `omv-regen regenera` - Regenera un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup anterior.
 
 PROCEDIMIENTO:
 - Instala omv-regen en el sistema original y haz un backup con omv-regen backup.
@@ -71,9 +71,9 @@ ACKNOWLEDGMENTS: Thanks to Aaron Murray (Ryecoaaron). Without your support this 
 
 PROGRAM FUNCTIONS:
 
-1 - omv-regen backup - Makes a backup of essential data to regenerate the configurations of an OMV system.
+1 - `omv-regen backup` - Makes a backup of essential data to regenerate the configurations of an OMV system.
 
-2 - omv-regen regenera - Regenerates a complete OMV system with its original configurations from a fresh installation of OMV and the previous backup.
+2 - `omv-regen regenera` - Regenerates a complete OMV system with its original configurations from a fresh installation of OMV and the previous backup.
 
 PROCEDURE:
 - Install omv-regen on the original system and make a backup with omv-regen backup.
@@ -121,6 +121,7 @@ ________________________________________________________________________________
 
 
 
+```
 _______________________________________________________________________________
 
               HELP FOR USING OMV-REGEN    (BACKUP AND REGENERATE)
@@ -164,4 +165,4 @@ _______________________________________________________________________________
 
     -r     Enable automatic [-r]eboot if needed (create reboot service).
 _______________________________________________________________________________
-
+```

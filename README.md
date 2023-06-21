@@ -48,7 +48,7 @@ CARACTERÍSTICAS REGENERA:
 - Todos los complementos que existían en el sistema original serán instalados y regenerados. En los complementos basados en podman se regenerarán las configuraciones de la GUI. Las configuraciones del propio contenedor, al igual que los contenedores docker, deben ser respaldadas por otros medios.
 - Si quieres evitar la instalación y regeneración de algún complemento que tenías instalado puedes editar el archivo ORB_DpkgOMV y eliminar la linea correspondiente. El complemento no se instalará.
 - Todas las configuraciones manuales realizadas en CLI y paquetes instalados manualmente serán omitidas durante la regeneración. Utiliza openmediavault-apttool y openmediavault-symlinks en el sistema original si los necesitas para conservar ciertas configuraciones especiales, después haz el backup.
-- El último paso de la regeneración es la configuración de red y el sistema se reiniciará. Después de eso perderás la conexión si tu IP es distinta. En pantalla tendrás la nueva IP. Si quieres evitar perder la conexión establece la misma IP del sistema original antes de lanzar la regeneración.
+- El último paso de la regeneración es la configuración de red y el sistema se reiniciará. Después de eso perderás la conexión si tu IP es distinta. En pantalla tendrás la nueva IP. Si quieres evitar perder la conexión establece la misma IP del sistema original antes de lanzar la regeneración. En este paso se mostrará un mensaje en pantalla durante 10 segundos que permite saltar la regeneración de la interfaz de red mediante la pulsación de cualquier tecla. 
 
 Nota: Ver mas abajo un esquema de la configuración de ejecución
 _____________________________________________________________________________________________________________________
@@ -101,7 +101,7 @@ REGENERATE FEATURES:
 - All plugins that existed in the original system will be installed and regenerated. In podman based plugins the GUI settings will be regenerated. The configurations of the container itself, just like docker containers, must be backed up by other means.
 - If you want to avoid the installation and regeneration of a plugin that you had installed, you can edit the ORB_DpkgOMV file and delete the corresponding line. The plugin will not install.
 - All manual configurations done in CLI and manually installed packages will be skipped during regeneration. Use openmediavault-apttool and openmediavault-symlinks on the original system if you need them to preserve certain special settings, then make the backup.
-- The last step of the regeneration is the network configuration and the system will reboot. After that you will lose the connection if your IP is different. On the screen you will have the new IP. If you want to avoid losing the connection, set the same IP of the original system before launching the regeneration.
+- The last step of the regeneration is the network configuration and the system will reboot. After that you will lose the connection if your IP is different. On the screen you will have the new IP. If you want to avoid losing the connection, set the same IP of the original system before launching the regeneration. In this step, a message will be displayed on the screen for 10 seconds that allows you to skip the regeneration of the network interface by pressing any key.
 
 ______________________________________________________________________________________________________________________
 

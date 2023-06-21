@@ -8,7 +8,9 @@ ESTADO: Estable.
 
 INSTALACIÓN: Copia y pega la siguiente linea en una terminal y ejecútala.
 
+```
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
+```
 
 AGRADECIMIENTOS: Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no sería posible.
 
@@ -61,7 +63,9 @@ STATE: Stable.
 
 INSTALLATION: Copy and paste the following line in a terminal and run it.
 
+```
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
+```
 
 ACKNOWLEDGMENTS: Thanks to Aaron Murray (Ryecoaaron). Without your support this would not be possible.
 

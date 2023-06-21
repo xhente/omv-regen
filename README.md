@@ -116,3 +116,48 @@ ________________________________________________________________________________
 [CONFIGURACION OMV-REGEN.ods](https://github.com/xhente/omv-regen/files/11675172/CONFIGURACION.OMV-REGEN.ods)
 
 
+
+_______________________________________________________________________________
+
+              HELP FOR USING OMV-REGEN    (BACKUP AND REGENERATE)
+
+  - omv-regen   regenerates an OMV system from a clean install by restoring the
+    existing configurations to the original system.
+  - Install omv-regen on the original system, update and make a backup. Install
+    OMV on an empty disk without configuring anything.  Mount a backup, install
+    omv-regen and then regenerate. The version available on the internet of the
+    plugins and OMV must match.
+  - Use omv-regen             to enable omv-regen on your system.
+  - Use omv-regen backup      to store the necessary information to regenerate.
+  - Use omv-regen regenerate  to run a system regeneration from a clean OMV.
+_______________________________________________________________________________
+
+   omv-regen       -->       Install and enable the command on the system.
+_______________________________________________________________________________
+
+   omv-regen backup   [OPTIONS]   [/folder_one "/folder two" /folder ... ]
+
+
+    -b     Set the path to store the subfolders with [-b]ackups.
+
+    -d     Sets the [-d]ays of age of the saved backups (default 7 days).
+                          You can edit the ORB_ prefix to keep a version.
+    -h     Help.
+
+    -o     Enable [-o]ptional folder backup. (by default /home /etc/libvirt)
+                          Spaces to separate (can use quotes).
+    -u     Enable automatic system [-u]pdate before backup.
+_______________________________________________________________________________
+
+   omv-regen regenera   [OPTIONS]   [/backup_folder]
+
+
+    -b     Sets path where the [-b]ackup created by omv-regen is stored.
+
+    -h     Help
+
+    -k     Skip installing the proxmox [-k]ernel.
+
+    -r     Enable automatic [-r]eboot if needed (create reboot service).
+_______________________________________________________________________________
+

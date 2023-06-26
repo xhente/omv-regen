@@ -32,11 +32,12 @@ AGRADECIMIENTOS: Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no serí
 ## CARACTERÍSTICAS BACKUP:
 - Almacena la base de datos del sistema y algunos archivos de configuración neesarios para la regeneración. Ocupa muy poco espacio y se hace en cuestión de segundos.
 - Los backups se conservan durante 7 días por defecto. Esto es configurable.
-- Puedes programar un backup en la GUI de OMV en tareas programadas simplemente escibiendo el comando adecuado para tu caso.
+- Para ejecutar el script puedes programar un backup en la GUI de OMV en tareas programadas simplemente escibiendo el comando adecuado para tu caso.
 - Por defecto se copian las carpetas /home y /etc/libvirt (si existe).
 - Puedes añadir carpetas personalizadas al backup.
 - Si quieres conservar una versión de backup permanentemente edita el prefijo ORB_ de la subcarpeta. Esa versión no se eliminará.
 - Ejecuta omv-regen help para ver la ayuda disponible.
+- Si no especificas ningún directorio, el backup se almacenará en /ORBackup 
 
 ## CARACTERÍSTICAS REGENERA:
 - Regenera un sistema completo desde cero como si lo hicieras en la GUI manualmente, siguiendo el orden establecido en el sistema original.
@@ -89,11 +90,12 @@ ACKNOWLEDGMENTS: Thanks to Aaron Murray (Ryecoaaron). Without your support this 
 ## BACKUP FEATURES:
 - Stores the system database and some configuration files needed for regeneration. It takes up very little space and is done in a matter of seconds.
 - Backups are kept for 7 days by default. This is configurable.
-- You can schedule a backup in the OMV GUI in scheduled tasks simply by typing the appropriate command for your case.
+- To run the script you can schedule a backup in the OMV GUI in scheduled tasks simply by typing the appropriate command for your case.
 - By default, the folders /home and /etc/libvirt (if it exists) are copied.
 - You can add custom folders to the backup.
 - If you want to keep a backup version permanently edit the ORB_ prefix of the subfolder. That version will not be removed.
 - Run omv-regen help to see the available help.
+- If you do not specify any directory, the backup will be made in /ORBackup
 
 ## REGENERATE FEATURES:
 - Regenerate a complete system from scratch as if you did it in the GUI manually, following the order set in the original system.

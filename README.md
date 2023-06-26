@@ -167,6 +167,8 @@ _______________________________________________________________________________
 
     -k     Skip installing the proxmox [-k]ernel.
 
+    -n     Skip [-n]etwork interface regeneration. 
+
     -r     Enable automatic [-r]eboot if needed (create reboot service).
 _______________________________________________________________________________
 ```

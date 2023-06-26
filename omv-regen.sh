@@ -13,6 +13,7 @@ OpDias=7
 OpFold=""
 OpUpda=""
 OpKern=1
+OpRed=1
 OpRebo=""
 declare -A ORB
 ORB[Dpkg]='/ORB_Dpkg'
@@ -201,6 +202,8 @@ help () {
   echo -e "    -h     Help                                                                "
   echo -e "                                                                               "
   echo -e "    -k     Skip installing the proxmox [-k]ernel.                              "
+  echo -e "                                                                               "
+  echo -e "    -n     Skip [-n]etwork interface regeneration.                             "
   echo -e "                                                                               "
   echo -e "    -r     Enable automatic [-r]eboot if needed (create reboot service).       "
   echo -e "_______________________________________________________________________________"
@@ -497,6 +500,10 @@ if [ $Rege ]; then
         OpKern=""
         echoe "The proxmox kernel will not be installed." "No se instalará el kernel proxmox."
         ;;
+      n)
+        OpRed=""
+        echoe "The network interface will not be regenerated." "La interfaz de red no se va a regenerar."
+        ;;
       r)
         OpRebo=1
         echoe 3 "It will automatically reboot the system after installing a kernel." "Se reiniciará automáticamente el sistema después de instalar un kernel."
@@ -779,7 +786,7 @@ done
 Analiza openmediavault-kernel
 if [ "${VersionOR}" ] && [ "${VersIdem}" = "OK" ] && [ "${InstII}" = "NO" ]; then
   Instala openmediavault-kernel
-  if [ ! $OpKern ]; then
+  if [ ! "${OpKern}" ]; then
     echoe "Skip proxmox kernel option enabled. Kernel will not be installed." "Opción saltar kernel proxmox habilitada. No se instalará kernel."
   else
     KernelOR=$(awk '{print $3}' "${Ruta}${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
@@ -995,20 +1002,25 @@ echoe "Deleting temporary files..." "Eliminando archivos temporales..."
 [ -f "/tmp/installdocker" ] && rm -f /tmp/installdocker
 IpAC=$(hostname -I | awk '{print $1}')
 IpOR=$(awk '{print $1}' "${Ruta}${ORB[HostnameI]}")
-if [ ! "${IpOR}" = "${IpAC}" ]; then
-  echoe 10 "It will regenerate the network interface and restart the server.\n\n\e[32m After restart you will be able to access from IP ${IpOR}\e[0m \n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\n\n\e[32m Después de reiniciar podrás acceder desde la IP ${IpOR}\e[0m \n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
-  if [ "${Tecla}" ]; then
-    Tecla=""
-    echoe "\nNetwork configuration aborted.\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will remain ${IpAC}\e[0m If you still need to regenerate the network you can run omv-regen regenerate again after the reboot. Rebooting...\n" "\nConfiguración de red abortada.\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar seguirá siendo ${IpAC}\e[0m \n\n Si aún necesitas regenerar la red puedes ejecutar de nuevo omv-regen regenera después del reinicio. Reiniciando...\n"
-    reboot
-    echoe 3 "" ""
-    exit
+if [ ! "${OpRed}" ]; then
+  echoe "Skip network interface regeneration option enabled. The network interface will not be regenerated." "Opción saltar regeneración de interfaz de red habilitada. No se regenerará la interfaz de red."
+else
+  if [ ! "${IpOR}" = "${IpAC}" ]; then
+    echoe 10 "It will regenerate the network interface and restart the server.\n\n\e[32m After restart you will be able to access from IP ${IpOR}\e[0m \n\nPress any key within 10 seconds to  ABORT  network configuration." "Se va a regenerar la interfaz de red y reiniciar el servidor.\n\n\e[32m Después de reiniciar podrás acceder desde la IP ${IpOR}\e[0m \n\nPresiona cualquier tecla antes de 10 segundos para  ABORTAR  la configuración de red."
+    if [ ! "${Tecla}" ]; then
+      echoe "Regenerating network interface..." "Regenerando interfaz de red..."
+      Regenera "${Config[interfaces]}"
+      echoe "\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will be ${IpOR}\e[0m Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar será ${IpOR}\e[0m Reiniciando..."
+      reboot
+      echoe 3 "" ""
+      exit
+    else
+      Tecla=""
+      echoe "\nNetwork configuration aborted." "\nConfiguración de red abortada."
+    fi
   fi
 fi
-
-echoe "Configuring network..." "Configurando red..."
-Regenera "${Config[interfaces]}"
-echoe "\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will be ${IpOR}\e[0m Rebooting..." "\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar será ${IpOR}\e[0m Reiniciando..."
+echoe "\n\nSystem regeneration finished!!\n\n\e[32m IP after reboot will remain ${IpAC}\e[0m If you still need to regenerate the network you can run omv-regen regenerate again after the reboot. Rebooting...\n" "\n\nLa regeneración del sistema ha finalizado!!\n\n\e[32m La IP después de reiniciar seguirá siendo ${IpAC}\e[0m \n\n Si aún necesitas regenerar la red puedes ejecutar de nuevo omv-regen regenera después del reinicio. Reiniciando...\n"
 reboot
 echoe 3 "" ""
 exit

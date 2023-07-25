@@ -14,8 +14,6 @@ Copia y pega la siguiente linea en una terminal y ejecútala.
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
 ```
 
-AGRADECIMIENTOS: Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no sería posible.
-
 ## FUNCIONES DEL PROGRAMA:
 
 1 - `omv-regen backup` - Realiza un backup de datos esenciales para regenerar las configuraciones de un sistema OMV.
@@ -56,6 +54,8 @@ AGRADECIMIENTOS: Gracias a Aaron Murray (Ryecoaaron). Sin tu apoyo esto no serí
 - El último paso de la regeneración es la configuración de red y el sistema se reiniciará. Después de eso perderás la conexión si tu IP es distinta. En pantalla tendrás la nueva IP. Si quieres evitar perder la conexión establece la misma IP del sistema original antes de lanzar la regeneración. En este paso se mostrará un mensaje en pantalla durante 10 segundos que permite saltar la regeneración de la interfaz de red mediante la pulsación de cualquier tecla. 
 
 Nota: Ver mas abajo un esquema de la configuración de ejecución
+
+AGRADECIMIENTOS: Gracias a Aaron Murray por los consejos en el desarrollo de este script.
 _____________________________________________________________________________________________________________________
 # omv-regen
 
@@ -71,8 +71,6 @@ Copy and paste the following line in a terminal and run it.
 ```
 wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
 ```
-
-ACKNOWLEDGMENTS: Thanks to Aaron Murray (Ryecoaaron). Without your support this would not be possible.
 
 ## PROGRAM FUNCTIONS:
 
@@ -113,6 +111,7 @@ ACKNOWLEDGMENTS: Thanks to Aaron Murray (Ryecoaaron). Without your support this 
 - All manual configurations done in CLI and manually installed packages will be skipped during regeneration. Use openmediavault-apttool and openmediavault-symlinks on the original system if you need them to preserve certain special settings, then make the backup.
 - The last step of the regeneration is the network configuration and the system will reboot. After that you will lose the connection if your IP is different. On the screen you will have the new IP. If you want to avoid losing the connection, set the same IP of the original system before launching the regeneration. In this step, a message will be displayed on the screen for 10 seconds that allows you to skip the regeneration of the network interface by pressing any key.
 
+ACKNOWLEDGMENTS: Thanks to Aaron Murray for advice on the development of this script.
 ______________________________________________________________________________________________________________________
 
 ![CONFIGURACION OMV-REGEN_Página_1](https://github.com/xhente/omv-regen/assets/110301854/8c22cdb1-3db2-43e8-ab68-2a81e44af6fe)

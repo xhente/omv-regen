@@ -25,6 +25,11 @@ wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh
    - PASO 2. Haz una instalación nueva de OMV en el disco que quieras y conecta las unidades de datos.
    - PASO 3. Utiliza omv-regen para clonar las configuraciones desde el backup en el nuevo sistema. 
 
+
+![omv-regen 2 0](https://github.com/xhente/omv-regen/assets/110301854/3fd00cda-543c-4811-8712-5492202fc306)
+
+
+
 ## CAMBIOS DE LA VERSION 1.0 A LA VERSION 2.0
 
   - omv-regen tiene ahora una GUI mediante cuadros de diálogo. Todas las funciones están integradas en la GUI.

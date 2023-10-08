@@ -15,10 +15,10 @@ ESTADO: Estable.
 
 ## INSTALACIÓN
 
-Copia y pega la siguiente linea en una terminal y ejecútala.
+Copia y pega la siguiente linea en una terminal y ejecútala como root o con sudo.
 
 ```
-wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
+sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash
 ```
 
    - PASO 1. Crea un backup del sistema original con omv-regen.
@@ -127,11 +127,12 @@ STATE: Stable.
 
 ## INSTALLATION:
 
-Copy and paste the following line in a terminal and run it.
+Copy and paste the following line into a terminal and run it as root or with sudo.
 
 ```
-wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
+sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash
 ```
+
 
    - STEP 1. Create a backup of the original system with omv-regen.
    - STEP 2. Do a fresh installation of OMV on the disk you want and connect the data drives.

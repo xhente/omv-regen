@@ -219,14 +219,10 @@ The result will be the following:
 ACKNOWLEDGMENTS: Thanks to Aaron Murray for advice in developing version 1.0 of omv-regen.
 ______________________________________________________________________________________________________________________
 
-![CONFIGURACION OMV-REGEN_Página_1](https://github.com/xhente/omv-regen/assets/110301854/8c22cdb1-3db2-43e8-ab68-2a81e44af6fe)
 
-![CONFIGURACION OMV-REGEN_Página_2](https://github.com/xhente/omv-regen/assets/110301854/086908c1-24f1-42bb-9017-3b7b1d2daca1)
-
-![CONFIGURACION OMV-REGEN_Página_3](https://github.com/xhente/omv-regen/assets/110301854/4a70d777-3af5-44e5-ba65-d4b110b72280)
-
-[CONFIGURACION OMV-REGEN.pdf](https://github.com/xhente/omv-regen/files/11675149/CONFIGURACION.OMV-REGEN.pdf)
-
-[CONFIGURACION OMV-REGEN.ods](https://github.com/xhente/omv-regen/files/11675172/CONFIGURACION.OMV-REGEN.ods)
-
+![CONFIGURACION OMV-REGEN_2 0_Página_1](https://github.com/xhente/omv-regen/assets/110301854/82def122-6edd-45e9-b7b2-144f184e9845)
+![CONFIGURACION OMV-REGEN_2 0_Página_2](https://github.com/xhente/omv-regen/assets/110301854/b5baec28-827e-4b07-adfa-f1fa0efe267a)
+![CONFIGURACION OMV-REGEN_2 0_Página_3](https://github.com/xhente/omv-regen/assets/110301854/45fecf09-c8d7-468c-8f20-36a1740e9bd8)
+[CONFIGURACION OMV-REGEN_2.0.pdf](https://github.com/xhente/omv-regen/files/12840372/CONFIGURACION.OMV-REGEN_2.0.pdf)
+[CONFIGURACION OMV-REGEN_2.0.ods](https://github.com/xhente/omv-regen/files/12840373/CONFIGURACION.OMV-REGEN_2.0.ods)
 

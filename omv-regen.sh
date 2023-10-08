@@ -9,7 +9,7 @@
 
 
 # Establece idioma del sistema
-Sp=""; [ "$(cut -b 7,8 /etc/default/locale)" = "es" ] && Sp="si"
+Sp=""; [ "$(printenv LANG)" = "es_ES.UTF-8" ] && Sp="si"
 
 # Traducción
 declare -A txt

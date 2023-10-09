@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 2.0.1
+# omv-regen 2.0.2
 # Utilidad para respaldar y restaurar la configuración de openmediavault
 
-ORVersion="2.0.1"
+ORVersion="2.0.2"
 
 # Establece idioma del sistema
 Sp=""; [ "$(printenv LANG)" = "es_ES.UTF-8" ] && Sp="si"
@@ -433,7 +433,7 @@ MenuBackup () {
     [ "${ValBacRuta}" ] && txt 4 "\n       ${RojoD}**** Esta ruta no existe.${ResetD}" "\n       ${RojoD}**** This path does not exist.${ResetD}" || txt 4 "" ""
     [ "${ValDias}" ] && txt 5 "\n       ${RojoD}**** Este valor debe ser un número.${ResetD}" "\n       ${RojoD}**** This value must be a number.${ResetD}" || txt 5 "" ""
     [ "${ORA[Actualizar]}" = "${txt[Ajustar]}" ] && txt 6 "\n       ${RojoD}**** Este valor debe ser Si o No.${ResetD}" "\n       ${RojoD}**** This value must be Yes or No.${ResetD}" || txt 6 "" ""
-    [ "${ORA[Actualizar]}" = "No" ] && txt 9 "\n       **** Si el backup es para regenerar asegúrate actualizar antes.\n       **** Deshabilita esta opción solo para backups programados." "\n       **** If the backup is to regenerate, make sure to update before.\n       **** Disable this option only for scheduled backups." || txt 9 "" ""
+    [ "${ORA[Actualizar]}" = "No" ] && txt 9 "\n       **** Si el backup es para regenerar asegúrate de actualizar antes.\n       **** Deshabilita esta opción solo para backups programados." "\n       **** If the backup is to regenerate, make sure to update before.\n       **** Disable this option only for scheduled backups." || txt 9 "" ""
     Texto=""; cont=0
     for i in "${CARPETAS[@]}"; do
       if [ "$i" ];then
@@ -945,11 +945,11 @@ ValidarRegenera () {
     TarUserNumero="$(find "${ORA[RutaOrigen]}" -name "ORB_${FechaBackup}"'_user*.tar.gz' | awk 'END {print NR}')"
     [ "${TarUserNumero}" = 0 ] && TarUserNumero=""
     # Comprobar si el sistema original tenía kernel proxmox
-    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Unamea"
+    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Unamea" >/dev/null
     KernelOR=$(awk '{print $3}' "/tmp/regen_${FechaBackup}/${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
     # Comprobar si están conectados los discos del sistema original
-    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Rootfs"
-    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Lsblk"
+    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Rootfs" >/dev/null
+    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Lsblk" >/dev/null
     Discos="$(lsblk --nodeps -o name,serial)"
     Dev="$(df "${Configxml}" | awk '/^\/dev/ {print $1}' | awk -F "/" '{print $3}')"
     RootfsAC="$(echo "${Discos}" | awk -v a="${Dev:0:3}" '{ if($1 == a) print $2}')"
@@ -968,7 +968,7 @@ ValidarRegenera () {
       ValRegDiscos="si"
     fi
     # Comprobar valores de red
-    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_HostnameI"
+    tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_HostnameI" >/dev/null
     IpAC=$(hostname -I | awk '{print $1}')
     IpOR=$(awk '{print $1}' "/tmp/regen_${FechaBackup}/${ORB[HostnameI]}")
     # Limpiar tmp
@@ -1297,7 +1297,7 @@ EjecutarBackup () {
   [ "${ValidarBackup}" ] && Mensaje "Los ajustes no son válidos, no se puede ejecutar el backup." "The settings are invalid, the backup cannot be executed."
   [ "${ValidarBackup}" ] && Camino="MenuBackup"
   Fecha=$(date +%y%m%d_%H%M%S)
-  Abortar 10 "\n\n  Se va a realizar un BACKUP en  \n\n  ${ORA[RutaBackup]} \n\n " "\n\nA BACKUP is going to be made in\n\n  ${ORA[RutaBackup]} \n\n "
+  [ ! "${Cli}" ] && Abortar 10 "\n\n  Se va a realizar un BACKUP en  \n\n  ${ORA[RutaBackup]} \n\n " "\n\nA BACKUP is going to be made in\n\n  ${ORA[RutaBackup]} \n\n "
   if [ "${Abortar}" ]; then
     Camino="MenuBackup"
   else
@@ -1307,64 +1307,63 @@ EjecutarBackup () {
       mkdir /ORBackup
     fi
     if [ "${ORA[Actualizar]}" = "${txt[Si]}" ]; then
-      echoe ">>>    Actualizando el sistema." ">>>    Updating the system."
+      echoe "\n>>>    Actualizando el sistema.\n" "\n>>>    Updating the system.\n"
       if ! omv-upgrade; then
-        Salir "Error actualizando el sistema.  Saliendo..." "Failed updating system. Exiting..."
+        Salir "\nError actualizando el sistema.  Saliendo..." "\nFailed updating system. Exiting..."
       else
         Limpiar
       fi
     fi
-    echoe ">>>    Creando carpeta regen." ">>>    Creating regen folder."
     CarpetaRegen="/regen_${Fecha}"
+    echoe "\n>>>    Copiando archivos a ${CarpetaRegen} ...\n" "\n>>>    Copying files to ${CarpetaRegen} ...\n"
     mkdir "${CarpetaRegen}"
-    echoe ">>>    Copiando archivos a ${CarpetaRegen}..." ">>>    Copying files to ${CarpetaRegen}..."
     for i in "${ARCHIVOS[@]}"; do
       [ ! -d "$(dirname "${CarpetaRegen}$i")" ] && mkdir -p "$(dirname "${CarpetaRegen}$i")"
       cp -apv "$i" "${CarpetaRegen}$i"
     done
     xmlstarlet fo "${Configxml}" | tee "${CarpetaRegen}${Configxml}" >/dev/null
     if [ "$(xmlstarlet val "${CarpetaRegen}${Configxml}" | awk '{print $3}')" = "invalid" ]; then
-      Salir "La base de datos es inutilizable, no se puede hacer unbackup para regenerar este sistema. Saliendo..." "The database is unusable, a backup cannot be made to regenerate this system. Exiting..."
+      Salir "\nLa base de datos de openmediavault es inutilizable, no se puede hacer un backup para regenerar este sistema. Saliendo..." "\nopenmediavault database is unusable, a backup cannot be made to regenerate this system. Exiting..."
     fi
-    if dpkg -l | grep openmediavault-kvm; then
+    if dpkg -l | grep openmediavault-kvm >/dev/null; then
+   	  echoe "\n>>>    openmediavault-kvm está instalado, copiando carpetas /etc/libvirt y /var//lib/libvirt ...\n" "\n>>>    openmediavault-kvm is installed, copying /etc/libvirt and /var//lib/libvirt folders...\n"
       mkdir -p "${CarpetaRegen}/etc/libvirt" "${CarpetaRegen}/var/lib/libvirt"
       rsync -av /etc/libvirt/ "${CarpetaRegen}/etc/libvirt"
       rsync -av /var/lib/libvirt/ "${CarpetaRegen}/var/lib/libvirt"
     fi
-    echoe ">>>    Extrayendo lista de versiones (dpkg)..." ">>>    Extracting version list (dpkg)..."
+    echoe "\n>>>    Extrayendo lista de versiones (dpkg)...\n" "\n>>>    Extracting version list (dpkg)...\n"
     dpkg -l | grep openmediavault > "${CarpetaRegen}${ORB[DpkgOMV]}"
     dpkg -l > "${CarpetaRegen}${ORB[Dpkg]}"
     awk '{print $2" "$3}' "${CarpetaRegen}${ORB[DpkgOMV]}"
-    echoe ">>>    Extrayendo información del sistema (uname -a)..." ">>>    Extracting system info (uname -a)..."
+    echoe "\n>>>    Extrayendo información del sistema (uname -a)...\n" "\n>>>    Extracting system info (uname -a)...\n"
     uname -a | tee "${CarpetaRegen}${ORB[Unamea]}"
-    echoe ">>>    Extrayendo información de zfs (zpool list)..." ">>>    Extracting zfs info (zpool list)..."
+    echoe "\n>>>    Extrayendo información de zfs (zpool list)...\n" "\n>>>    Extracting zfs info (zpool list)...\n"
     zpool list | tee "${CarpetaRegen}${ORB[Zpoollist]}"
-    echoe ">>>    Extrayendo información de systemd (systemctl)..." ">>>    Extracting information from systemd (systemctl)..."
+    echoe "\n>>>    Extrayendo información de systemd (systemctl)...\n" "\n>>>    Extracting information from systemd (systemctl)...\n"
     systemctl list-unit-files | tee "${CarpetaRegen}${ORB[Systemctl]}"
-    echoe ">>>    Extrayendo información de red (hostname -I)..." ">>>    Retrieving network information (hostname -I)..."
+    echoe "\n>>>    Extrayendo información de red (hostname -I)...\n" "\n>>>    Retrieving network information (hostname -I)...\n"
     hostname -I | tee "${CarpetaRegen}${ORB[HostnameI]}"
-    echoe ">>>    Extrayendo información de las unidades de disco del sistema (lsblk --nodeps -o name,serial)..." ">>>    Extracting information from system drives (lsblk --nodeps -o name,serial)..."
+    echoe "\n>>>    Extrayendo información de las unidades de disco del sistema (lsblk --nodeps -o name,serial)...\n" "\n>>>    Extracting information from system drives (lsblk --nodeps -o name,serial)...\n"
     Discos="$(lsblk --nodeps -o name,serial)"
     Dev="$(df "${Configxml}" | awk '/^\/dev/ {print $1}' | awk -F "/" '{print $3}')"
     echo "${Discos}" | awk -v a="${Dev:0:3}" '{ if($1 == a) print $2}' | tee "${CarpetaRegen}${ORB[Rootfs]}"
     Serial="$(echo "${Discos}" | awk -v a="${Dev:0:3}" '{ if($1 != a) print $2}' | tee "${CarpetaRegen}${ORB[Lsblk]}")"
     echo "${Serial}" | awk '{ if($1 != "SERIAL") print}' | tee "${CarpetaRegen}${ORB[Lsblk]}"
-    echoe ">>>    Empaquetando directorio ${CarpetaRegen} en ${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz ..." ">>>    Packaging ${CarpetaRegen} directory in ${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz ..."
+    echoe "\n>>>    Empaquetando directorio ${CarpetaRegen} en ${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz ...\n" "\n>>>    Packaging ${CarpetaRegen} directory in ${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz ...\n"
     tar -zcvf "${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz" "${CarpetaRegen}"
-    echoe ">>>    Eliminando ${CarpetaRegen} ..." "Deleting ${CarpetaRegen} ..."
     rm -rf "${CarpetaRegen}"
-    echoe ">>>    Copiando carpetas opcionales." ">>>    Copying optional folders."
+    [ "${#CARPETAS[@]}" = 0 ] && echoe "\n>>>    No se han establecido carpetas opcionales en la configuración del backup.\n" "\n>>>    No optional folders set in backup settings.\n" || echoe "\n>>>    Copiando carpetas opcionales.\n" "\n>>>    Copying optional folders.\n"
     cont=1
     for i in "${CARPETAS[@]}"; do
       if [ -d "$i" ]; then
-        echoe ">>>    Empaquetando directorio $i en ${ORA[RutaBackup]}/ORB_${Fecha}_user$cont.tar.gz ..." ">>>    Packaging $i directory in ${ORA[RutaBackup]}/ORB_${Fecha}_user$cont.tar.gz ..."
+        echoe "\n>>>    Empaquetando directorio $i en ${ORA[RutaBackup]}/ORB_${Fecha}_user$cont.tar.gz ...\n" "\n>>>    Packaging $i directory in ${ORA[RutaBackup]}/ORB_${Fecha}_user$cont.tar.gz ...\n"
         tar -zcf "${ORA[RutaBackup]}/ORB_${Fecha}_user$cont.tar.gz" "$i"
 		  ((cont++))
   	  else
-        echoe "${Rojo}>>>    Aviso: $i definido en los ajustes de Backup no existe y no se copia.${Reset}" "${Rojo}>>>    Warning: $i defined in the Backup settings does not exist and it is not copied.${Reset}"
+        echoe "${Rojo}\n>>>    Aviso: $i definido en los ajustes de Backup no existe y no se copia.\n${Reset}" "${Rojo}\n>>>    Warning: $i defined in the Backup settings does not exist and it is not copied.\n${Reset}"
       fi
     done
-    echoe ">>>    Eliminando backups de hace más de ${ORA[Dias]} días..." ">>>    Deleting backups larger than ${ORA[Dias]} days..."
+    echoe "\n>>>    Eliminando backups de hace más de ${ORA[Dias]} días...\n" "\n>>>    Deleting backups larger than ${ORA[Dias]} days...\n"
     find "${ORA[RutaBackup]}/" -maxdepth 1 -type f -name "ORB_*" -mtime "+${ORA[Dias]}" -exec rm -v {} +
     # Nota:   -mmin = minutos  ///  -mtime = dias    
     [ "${Cli}" ] && Salir "\n       ¡Backup completado!\n" "\n       Backup completed!\n"
@@ -1479,7 +1478,8 @@ OrdenarComplementos () {
         if [ ! "${ControlVersiones}" ]; then
           echoe "No instalado y versiones coinciden   -->   Se va a instalar y regenerar   -->   ${Plugin}" "Not installed and versions match   -->   It will be installed and regenerated   -->   ${Plugin}"
         else
-          echoe "No instalado y VERSIONES NO COINCIDEN   -->   Se va a instalar y NO SE VA A REGENERAR   -->   ${Plugin}" "Not installed and VERSIONS DO NOT MATCH   -->   It is going to be installed and IT WILL NOT BE REGENERATED   -->   ${Plugin}"
+          echoe "${Rojo}No instalado y VERSIONES NO COINCIDEN   -->   Se va a instalar y NO SE VA A REGENERAR   -->   ${Plugin}${Reset}" "${Rojo}Not installed and VERSIONS DO NOT MATCH   -->   It is going to be installed and IT WILL NOT BE REGENERATED   -->   ${Plugin}${Reset}"
+          sleep 3
         fi
       fi
     done < <(grep -v '^ *#' < "${ORA[RutaRegen]}${ORB[DpkgOMV]}")
@@ -1826,7 +1826,7 @@ case "$1" in
   backup)
     Cli="si"
     ValidarBackup
-    Camino="EjecutarBackup"
+    EjecutarBackup
     ;;
   regenera)
     Camino="EjecutarRegenera"

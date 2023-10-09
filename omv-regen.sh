@@ -1046,11 +1046,15 @@ BuscarOR () {
       if [ "${Ahora}" ]; then
         cat "${ORTemp}" > "${Omvregen}"
         rm -f "${ORTemp}"
+        ORA[ActualizacionPendiente]=""
+        GuardarAjustes
         Salir "Se ha actualizado omv-regen ${VersionAC} a la version ${VersionDI}\nEs necesario iniciarlo de nuevo. Saliendo..." "Updated omv-regen ${VersionAC} to version ${VersionDI}\nIt is necessary to start it again. Exiting..."
       else
         GuardarAjustes
       fi
     else
+      ORA[ActualizacionPendiente]=""
+      GuardarAjustes
       rm -f "${ORTemp}"
     fi
   fi

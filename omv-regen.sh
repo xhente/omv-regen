@@ -8,6 +8,7 @@
 # omv-regen 2.0.1
 # Utilidad para respaldar y restaurar la configuración de openmediavault
 
+ORVersion="2.0.1"
 
 # Establece idioma del sistema
 Sp=""; [ "$(printenv LANG)" = "es_ES.UTF-8" ] && Sp="si"
@@ -216,7 +217,7 @@ export NCURSES_NO_UTF8_ACS=1
 
 txt AyudaComoUsar \
 "\n \
-\n          COMO USAR OMV-REGEN 2.0 \
+\n          COMO USAR OMV-REGEN 2 \
 \n \
 \n    omv-regen sirve para regenerar las configuraciones de un sistema openmediavault en una instalación nueva de OMV. El procedimiento resumido es: \
 \n \
@@ -242,7 +243,7 @@ txt AyudaComoUsar \
 \n          - NO incluye contenedores configurados en Portainer. Deberás recrearlos tu mismo. \
 \n          - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios." \
 "\n \
-\n          HOW TO USE OMV-REGEN 2.0 \
+\n          HOW TO USE OMV-REGEN 2 \
 \n \
 \n    omv-regen is used to regenerate the configurations of an openmediavault system in a new OMV installation. The summarized procedure is: \
 \n \
@@ -270,7 +271,7 @@ txt AyudaComoUsar \
 
 txt AyudaFunciones \
 "\n \
-\n          FUNCIONES DE OMV-REGEN 2.0 \
+\n          FUNCIONES DE OMV-REGEN 2 \
 \n \
 \n  1 - ${AzulD}omv-regen${ResetD} - Proporciona acceso a los menús de configuración y ejecución de cualquier función de omv-regen. Desde aquí podrás configurar fácilmente los parámetros para hacer un backup o una regeneración y podrás ejecutar ambos. También podrás gestionar las actualizaciones de omv-regen. \
 \n
@@ -348,7 +349,7 @@ txt AyudaConsejos \
 
 txt AyudaBackup \
 "\n \
-\n          OPCIONES DE OMV-REGEN BACKUP 2.0 \
+\n          OPCIONES DE OMV-REGEN BACKUP 2 \
 \n \
 \n    ${AzulD}- RUTA DE LA CARPETA DE BACKUPS:${ResetD}    Esta carpeta se usará para almacenar todos los backups generados. Por defecto esta carpeta es /ORBackup, puedes usar la que quieras pero no uses los discos de datos si pretendes hacer una regeneración, no serán accesibles. Para hacer una regeneración es mejor copiar el backup directamente a tu escritorio con WinSCP o similar y luego copiarla al sistema nuevo. En esta carpeta omv-regen creará un archivo empaquetado con tar para cada backup, etiquetado con la fecha y la hora en el nombre. Si has incluido carpetas opcionales en el backup se crearán archivos adicionales también empaquetados con tar y con la etiqueta user1, user2,... Un backup completo con dos carpetas opcionales hecho el día 1 de octubre de 2023 a las 10:38 a.m. podría tener este aspecto: \
 \n         ${AzulD}ORB_231001_103828_regen.tar.gz${ResetD}    <-- Archivo con la información de regenera \
@@ -362,7 +363,7 @@ txt AyudaBackup \
 \n \
 \n    ${AzulD}- CARPETAS ADICIONALES:${ResetD}    Puedes definir tantas carpetas opcionales como quieras que se incluirán en el backup. Útil si tienes información que quieres transferir al nuevo sistema que vas a regenerar. Si copias carpetas con configuraciones del sistema podrías romperlo. Estas carpetas se devolverán a su ubicación original en la parte final del proceso de regeneración. Se crea un archivo tar comprimido para cada carpeta etiquetado de la misma forma que el resto del backup. Puedes incluir carpetas que estén ubicadas en los discos de datos. Puesto que la restauración de estas carpetas se hace al final del proceso, en ese momento todos los sistemas de archivos ya están montados y funcionando." \
 "\n \
-\n          OMV-REGEN BACKUP 2.0 OPTIONS \
+\n          OMV-REGEN BACKUP 2 OPTIONS \
 \n \
 \n    ${AzulD}- BACKUP FOLDER PATH:${ResetD}    This folder will be used to store all the backups generated. By default this folder is /ORBackup, you can use whatever you want but do not use the data disks if you intend to do a regeneration, they will not be accessible. To do a regeneration it is better to copy the backup directly to your desktop with WinSCP or similar and then copy it to the new system. In this folder omv-regen will create a tar-packaged archive for each backup, labeled with the date and time in the name. If you have included optional folders in the backup, additional files will be created, also packaged with tar and labeled user1, user2,... A complete backup with two optional folders done on October 1, 2023 at 10:38 a.m. could look like this: \
 \n         ${AzulD}ORB_231001_103828_regen.tar.gz${ResetD}    <-- File with regenera information \
@@ -378,7 +379,7 @@ txt AyudaBackup \
 
 txt AyudaRegenera \
 "\n \
-\n          OPCIONES DE OMV-REGEN REGENERA 2.0 \
+\n          OPCIONES DE OMV-REGEN REGENERA 2 \
 \n
 \n    ${AzulD}- RUTA BACKUP DE ORIGEN:${ResetD}    En el menú debes definir la ubicación de esta carpeta. Por defecto será /ORBackup pero puedes elegir la ubicación que quieras. Esta carpeta debe contener al menos un archivo tar generado con omv-regen. Antes de ejecutar una regeneración el programa comprobará que esta carpeta contiene todos los archivos necesarios para la regeneración. Cuando definas una ruta en el menú omv-regen escaneará los archivos de esa ruta y buscará el backup mas reciente. Una vez localizado el backup, omv-regen comprobará que en su interior están todos los archivos necesarios. Si falta algún archivo la ruta no se dará por válida y no se permitirá continuar adelante. \
 \n
@@ -386,7 +387,7 @@ txt AyudaRegenera \
 \n
 \n    ${AzulD}- REGENERAR LA INTERFAZ DE RED:${ResetD}    Esta opción sirve para omitir la regeneración de la interfaz de red. Si desactivas esta opción no se regenerará la interfaz de red y la IP seguirá siendo la misma que tiene el sistema después del reinicio al final del proceso. Si activas esta opción se regenerará la interfaz de red al final del proceso de regeneración. Si la IP original es distinta de la IP actual deberás conectarte a la IP original después del reinicio para acceder a OMV. El menú te indica cual será esta IP antes de iniciar la regeneración. Cuando finalice la regeneración también la tendrás en pantalla pero podrías no verla si no estás atento." \
 "\n \
-\n          OMV-REGEN OPTIONS REGENERA 2.0 \
+\n          OMV-REGEN REGENERA 2 OPTIONS \
 \n \
 \n    ${AzulD}- SOURCE BACKUP PATH:${ResetD}    In the menu you must define the location of this folder. By default it will be /ORBackup but you can choose the location you want. This folder must contain at least one tar file generated with omv-regen. Before executing a regeneration, the program will check that this folder contains all the files necessary for the regeneration. When you define a path in the menu omv-regen will scan the files in that path and look for the most recent backup. Once the backup is located, omv-regen will check that all the necessary files are inside. If any file is missing, the route will not be considered valid and you will not be allowed to continue further. \
 \n \
@@ -400,8 +401,8 @@ Ayuda () {
   i=0
   while [ "${AYUDA[i]}" ]; do
     dialog \
-      --backtitle "omv-regen 2.0 ${txt[Ayuda]}" \
-      --title "omv-regen 2.0 ${txt[Ayuda]}" \
+      --backtitle "omv-regen ${ORVersion} ${txt[Ayuda]}" \
+      --title "omv-regen ${ORVersion} ${txt[Ayuda]}" \
       --ok-label "${txt[Siguiente]}" \
       --cancel-label "${txt[Salir]}" \
       --extra-button \
@@ -465,7 +466,7 @@ MenuBackup () {
       ${Texto}${txt[7]}${txt[8]} \n \
       ${txt[3]} \n\n "
     dialog \
-      --backtitle "omv-regen backup" \
+      --backtitle "omv-regen backup ${ORVersion}" \
       --title "${txt[1]}" \
       --ok-label "${txt[Ejecutar]}" \
       --cancel-label "${txt[Volver]}" \
@@ -507,7 +508,7 @@ BackupAjustes () {
   while [ "${Camino}" = "BackupAjustes" ]; do
     txt 1 "Escribe la ruta de destino de los backups" "Write the backup destination path"
     ORA[RutaBackup]=$(dialog \
-      --backtitle "omv-regen backup 2.0" \
+      --backtitle "omv-regen backup ${ORVersion}" \
       --title "${txt[1]}" \
       --ok-label "${txt[Continuar]}" \
       --cancel-label "${txt[Cancelar]}" \
@@ -551,7 +552,7 @@ BackupAjustes () {
     txt 3 "Número de días que se guardan los backups:    " "Number of days that backups are kept:     "
     txt 4 "Actualizar el sistema antes del backup (S/N): " "Update the system before backup (Y/N):    "
     Respuesta=$(dialog \
-      --backtitle "omv-regen backup" \
+      --backtitle "omv-regen backup ${ORVersion}" \
       --title "${txt[1]}" \
       --ok-label "${txt[Continuar]}" \
       --cancel-label "${txt[Cancelar]}" \
@@ -633,7 +634,7 @@ AñadirCarpeta () {
   [ "${Carpeta}" = "extra" ] && txt 2 "/ Pulsa CONTINUAR para terminar (o déjalo en blanco)." "/ Press CONTINUE to finish (or leave it blank)." || txt 2 "${Carpeta}"
   [ "${Carpeta}" = "extra" ] && txt 3 "Salir" "Exit" || txt 3 "Quitar" "Remove"
   Ruta=$(dialog \
-    --backtitle "omv-regen backup 2.0" \
+    --backtitle "omv-regen backup ${ORVersion}" \
     --title "${txt[1]}" \
     --ok-label "${txt[Continuar]}" \
     --cancel-label "${txt[3]}" \
@@ -742,7 +743,7 @@ MenuRegenera () {
       ${txt[8]}${txt[81]}${txt[82]} \
       ${txt[9]}${txt[91]} \n\n "
     dialog \
-      --backtitle "omv-regen regenera 2.0" \
+      --backtitle "omv-regen regenera ${ORVersion}" \
       --title "${txt[1]}" \
       --ok-label "${txt[11]}" \
       --extra-button \
@@ -777,7 +778,7 @@ RegeneraAjustes () {
   while [ "${Camino}" = "RegeneraAjustes" ]; do
     txt 1 "Escribe la ruta del backup del sistema original" "Write the original system backup path"
     Ruta=$(dialog \
-      --backtitle "omv-regen regenera 2.0" \
+      --backtitle "omv-regen regenera ${ORVersion}" \
       --title "${txt[1]}" \
       --ok-label "${txt[Continuar]}" \
       --cancel-label "${txt[Cancelar]}" \
@@ -806,7 +807,7 @@ RegeneraAjustes () {
     txt 3 "Instalar kernel proxmox si ya estaba en el sistema original." "Install proxmox kernel if it was already on the original system."
     txt 4 "Regenerar interfaz de red." "Regenerate network interface."
     Respuesta=$(dialog \
-      --backtitle "omv-regen regenera 2.0" \
+      --backtitle "omv-regen regenera ${ORVersion}" \
       --title "${txt[1]}" \
       --ok-label "${txt[Continuar]}" \
       --cancel-label "${txt[Cancelar]}" \
@@ -846,7 +847,7 @@ OpcionesActualizacion () {
   txt 3 "Actualizar automáticamente.                  " "Update automatically."
   txt 4 "Actualizar ahora.                            " "Update now."
   Respuesta=$(dialog \
-    --backtitle "omv-regen regenera 2.0" \
+    --backtitle "omv-regen ${ORVersion}" \
     --title "${txt[1]}" \
     --ok-label "${txt[Continuar]}" \
     --cancel-label "${txt[Cancelar]}" \
@@ -1032,8 +1033,7 @@ BuscarOR () {
     Info 3 "Comprobando actualizaciones de omv-regen, no se ha podido descargar el archivo." "Checking omv-regen updates, the file could not be downloaded."
   else
     VersionDI="$(awk -F "regen " 'NR==8{print $2}' "${ORTemp}")"
-    VersionAC="$(awk -F "regen " 'NR==8{print $2}' "${Omvregen}")"
-    if [ "${VersionAC}" = "${VersionDI}" ]; then
+    if [ "${ORVersion}" = "${VersionDI}" ]; then
       ORA[ActualizacionPendiente]=""
     else
       ORA[ActualizacionPendiente]="si"
@@ -1051,7 +1051,7 @@ BuscarOR () {
         rm -f "${ORTemp}"
         ORA[ActualizacionPendiente]=""
         GuardarAjustes
-        Salir "Se ha actualizado omv-regen ${VersionAC} a la version ${VersionDI}\nEs necesario iniciarlo de nuevo. Saliendo..." "Updated omv-regen ${VersionAC} to version ${VersionDI}\nIt is necessary to start it again. Exiting..."
+        Salir "Se ha actualizado omv-regen ${ORVersion} a la version ${VersionDI}\nEs necesario iniciarlo de nuevo. Saliendo..." "Updated omv-regen ${ORVersion} to version ${VersionDI}\nIt is necessary to start it again. Exiting..."
       fi
     fi
     GuardarAjustes
@@ -1082,7 +1082,7 @@ Continuar () {
 Salir () {
   if [ "$1" = "ayuda" ]; then
     [ "$Sp" ] && echo -e "$2" || echo -e "$3"
-    [ "$Sp" ] && echo -e  "\n\n\n${Verde}>>>  >>>   omv-regen 2.0   <<<  <<<\n\nomv-regen          ==> para acceder al menú\nomv-regen backup   ==> para ejecutar un backup\nomv-regen regenera ==> para ejecutar una regeneración\nomv-regen ayuda    ==> para ver la ayuda${Reset}\n\n" || echo -e "\n\n\n${Verde}>>>  >>>   omv-regen 2.0   <<<  <<<\n\nomv-regen          ==> to access the menu\nomv-regen backup   ==> to run a backup\nomv-regen regenera ==> to run a regeneration\nomv-regen help     ==> to see the help${Reset}\n\n"
+    [ "$Sp" ] && echo -e  "\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n\nomv-regen          ==> para acceder al menú\nomv-regen backup   ==> para ejecutar un backup\nomv-regen regenera ==> para ejecutar una regeneración\nomv-regen ayuda    ==> para ver la ayuda${Reset}\n\n" || echo -e "\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n\nomv-regen          ==> to access the menu\nomv-regen backup   ==> to run a backup\nomv-regen regenera ==> to run a regeneration\nomv-regen help     ==> to see the help${Reset}\n\n"
   else
     [ "$Sp" ] && echo -e "$1" || echo -e "$2"
   fi
@@ -1097,8 +1097,8 @@ Abortar () {
   txt 1 "$2" "$3"
   txt 2 "Se ha abortado la operación." "The operation has been aborted."
   txt 3 "$4" "$5"
-  dialog --backtitle "omv-regen 2.0" \
-         --title "omv-regen 2.0" \
+  dialog --backtitle "omv-regen ${ORVersion}" \
+         --title "omv-regen ${ORVersion}" \
          --ok-label "${txt[Continuar]}" \
          --cancel-label "${txt[Abortar]}" \
          --colors \
@@ -1106,7 +1106,8 @@ Abortar () {
   Respuesta=$?
   if [ ! "${Respuesta}" -eq 0 ]; then
     Abortar="si"
-    dialog --title "omv-regen 2.0" \
+    dialog --backtitle "omv-regen ${ORVersion}" \
+           --title "omv-regen ${ORVersion}" \
            --colors \
            --infobox "\n  \n${txt[2]}  \n\n${txt[3]}  \n\n " 0 0
     sleep 3
@@ -1118,19 +1119,19 @@ Abortar () {
 # $2 y $3 es el texto
 Info () {
   txt 1 "$2" "$3"
-  dialog --title "omv-regen 2.0" --backtitle "omv-regen 2.0" --colors --infobox "\n${txt[1]}\n " 0 0
+  dialog --title "omv-regen ${ORVersion}" --backtitle "omv-regen ${ORVersion}" --colors --infobox "\n${txt[1]}\n " 0 0
   sleep "$1"
 }
 
 Mensaje () {
   txt 1 "$1" "$2"
-  dialog --title "omv-regen 2.0" --backtitle "omv-regen 2.0" --colors --msgbox "\n${txt[1]}\n " 0 0
+  dialog --title "omv-regen ${ORVersion}" --backtitle "omv-regen ${ORVersion}" --colors --msgbox "\n${txt[1]}\n " 0 0
 }
 
 Pregunta () {
   Pregunta=""
   txt 1 "$1" "$2"
-  dialog --title "omv-regen 2.0" --backtitle "omv-regen 2.0" --yes-label "${txt[Si]}" --colors --yesno "\n${txt[1]}\n " 0 0
+  dialog --title "omv-regen ${ORVersion}" --backtitle "omv-regen ${ORVersion}" --yes-label "${txt[Si]}" --colors --yesno "\n${txt[1]}\n " 0 0
   [ $? -eq 0 ] && Pregunta="" || Pregunta="si"
 }
 
@@ -1400,6 +1401,7 @@ EjecutarRegenera () {
   fi
   if [ "${Camino}" = "EjecutarRegenera" ]; then
     clear; echoe "\n\n       <<< REGENERANDO SISTEMA OMV >>>\n\n" "\n\n       <<< REGENERATING OMV SYSTEM >>>\n\n"
+    echoe "Actualizando openmediavault..." "Updating openmediavault..."
     if ! omv-upgrade; then
       Salir "Error actualizando el sistema.  Saliendo..." "Failed updating system. Exiting..."
     else
@@ -1775,7 +1777,7 @@ if [ ! "$0" = "${Omvregen}" ]; then
   touch "${Omvregen}"
   wget -O - "${URLomvregen}" > "${Omvregen}"
   chmod +x "${Omvregen}"
-  Salir ayuda "\n  Se ha instalado omv-regen 2.0\n" "\n  omv-regen 2.0 has been installed.\n"
+  Salir ayuda "\n  Se ha instalado omv-regen ${ORVersion}\n" "\n  omv-regen ${ORVersion} has been installed.\n"
 fi
 
 # Generar/recuperar configuraciones de omv-regen
@@ -1855,8 +1857,8 @@ while true; do
     txt 10 "--> Salir de omv-regen.                       " "--> Exit omv-regen.                        "
     [ "${ORA[ActualizacionPendiente]}" ] && txt 11 "          ¡¡ HAY UNA ACTUALIZACION DISPONIBLE DE OMV-REGEN !!\n\n\n" "                AN UPDATE TO OMV-REGEN IS AVAILABLE !!\n\n\n" || txt 11 ""
     Camino=$(dialog \
-      --backtitle "omv-regen 2.0" \
-      --title "omv-regen 2.0" \
+      --backtitle "omv-regen ${ORVersion}" \
+      --title "omv-regen ${ORVersion}" \
       --ok-label "${txt[Continuar]}" \
       --cancel-label "${txt[Salir]}" \
       --help-button \

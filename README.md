@@ -26,7 +26,7 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
    - PASO 3. Utiliza omv-regen para clonar las configuraciones desde el backup en el nuevo sistema. 
 
 
-![omv-regen 2 0](https://github.com/xhente/omv-regen/assets/110301854/3fd00cda-543c-4811-8712-5492202fc306)
+![omv-regen 2 0 esp](https://github.com/xhente/omv-regen/assets/110301854/a1bbfe2e-9c12-485d-b461-16ca2ed15f52)
 
 
 
@@ -137,6 +137,11 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
    - STEP 1. Create a backup of the original system with omv-regen.
    - STEP 2. Do a fresh installation of OMV on the disk you want and connect the data drives.
    - STEP 3. Use omv-regen to clone the configurations from the backup to the new system.
+
+
+![omv-regen 2 0](https://github.com/xhente/omv-regen/assets/110301854/3fd00cda-543c-4811-8712-5492202fc306)
+
+
 
 ## CHANGES FROM VERSION 1.0 TO VERSION 2.0
 

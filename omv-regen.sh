@@ -5,7 +5,7 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 2.0
+# omv-regen 2.0.1
 
 
 # Establece idioma del sistema
@@ -22,14 +22,13 @@ txt () {
 }
 
 txt Abortar "Abortar" "Abort"; txt Actualizar "Actualizar" "Update"; txt Ahora "Ahora" "Now"
-txt Ajustar "Ajustar" "Adjust"; txt Ajustes "Ajustes" "Settings"; txt ajustes "ajustes" "settings"
-txt Anterior "Anterior" "Previous"; txt Ayuda "Ayuda" "Help"; txt Backup_Ajustes "Backup_Ajustes" "Backup_Settings"
-txt Buscar "Buscar" "Search"; txt Cancelar "Cancelar" "Cancel"; txt Carpeta "Carpeta" "Folder"
-txt Continuar "Continuar" "Continue"; txt Crear "Crear" "Create"; txt Dias "Días" "Days"
-txt Ejecutar "Ejecutar" "Run"; txt Eliminar "Eliminar" "Delete"; txt Modificar "Modificar" "Modify"
-txt Salir "Salir" "Exit"; txt Si "Si" "Yes"; txt Siempre "Siempre" "Always"; txt Siguiente "Siguiente" "Next"
-txt Red "Red" "Network"; txt Regenera_Ajustes "Regenera_Ajustes" "Regenera_Settings"; txt Resetear "Resetear" "Reset"
-txt Ruta "Ruta" "Path"; txt Tarea "Tarea" "Task"; txt Volver "Volver" "Go back"
+txt Ajustar "Ajustar" "Adjust"; txt Ajustes "Ajustes" "Settings"; txt Anterior "Anterior" "Previous"
+txt Ayuda "Ayuda" "Help"; txt Backup_Ajustes "Backup_Ajustes" "Backup_Settings"; txt Buscar "Buscar" "Search"
+txt Cancelar "Cancelar" "Cancel"; txt Carpeta "Carpeta" "Folder"; txt Continuar "Continuar" "Continue"
+txt Crear "Crear" "Create"; txt Dias "Días" "Days"; txt Ejecutar "Ejecutar" "Run"; txt Eliminar "Eliminar" "Delete"
+txt Modificar "Modificar" "Modify"; txt Salir "Salir" "Exit"; txt Si "Si" "Yes"; txt Siempre "Siempre" "Always"
+txt Siguiente "Siguiente" "Next"; txt Red "Red" "Network"; txt Regenera_Ajustes "Regenera_Ajustes" "Regenera_Settings"
+txt Resetear "Resetear" "Reset"; txt Ruta "Ruta" "Path"; txt Tarea "Tarea" "Task"; txt Volver "Volver" "Go back"
 
 . /etc/default/openmediavault
 Fecha=""
@@ -97,6 +96,7 @@ ValRegDiscos=""
 ValRegRootfs=""
 TarRegen=""
 TarUserNumero=""
+ControlVersiones=""
 ComplementosNoInstalados=""
 Pregunta=""
 Texto=""
@@ -106,12 +106,11 @@ ConfTmp="/etc/openmediavault/config.rg"
 ORTemp="/tmp/ORTemp"
 Listasucia="${OMV_ENGINED_DIRTY_MODULES_FILE}"
 Backports="${OMV_APT_USE_KERNEL_BACKPORTS}"
-cont=0
 declare -a COMPLEMENTOS
 Plugin=""
 KernelOR=""
 KernelIN=""
-declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-remotemount" "openmediavault-symlinks")
+declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-remotemount")
 OrdenarComplementos=""
 VersionOR=""
 VersionDI=""
@@ -1159,16 +1158,20 @@ Analizar () {
   [ "${InstII}" == "ii" ] && InstII="si" || InstII=""
 }
 
-# Control de versiones. Si no es la misma versión se detiene la regeneración. 
-ComprobarVersiones () {
-  ComprobarVersiones=""
-  Paquete=$1
-  No=$2
+# Control de versiones.
+# $1=esencial -> Si no es la misma versión se detiene la regeneración.
+# $1=noesencial -> Si no es la misma versión se avisa y se almacena en una variable.
+# $2 es el paquete que se analiza.
+ControlVersiones () {
+  ControlVersiones=""
+  Paquete=$2
+  [ "$1" = "esencial" ]; Esencial="si"
+  [ "$1" = "noesencial" ]; Esencial=""
 
   Analizar "${Paquete}"
   if [ "${VersionOR}" ] && [ ! "${VersionOR}" = "${VersionDI}" ]; then
-    if [ "${No}" ]; then
-      ComprobarVersiones="si"
+    if [ ! "${Esencial}" ]; then
+      ControlVersiones="si"
       Info 10 "La versión del sistema original del paquete ${Paquete} es ${VersionOR} \nLa versión disponible en internet para la instalación de este paquete es ${VersionDI} \nEstas versiones no coinciden. Eso significa que ha habido una actualización reciente de este paquete.\nRegenerar este complemento podría resultar en un sistema corrupto.\nPuesto que no se trata de un complemento esencial para el funcionamiento del sistema se va a instalar ${Paquete} pero no se va a regenerar.\nTendrás que configurarlo después manualmente." "The original system version of the package ${Paquete} is ${VersionOR} \nThe version available on the Internet for the installation of this package is ${VersionDI} \nThese versions do not match. That means there has been a recent update to this package.\nRegenerating this plugin could result in a corrupt system.\nSince this is not an essential plugin for the functioning of the system, ${Paquete} will be installed but will not be regenerated.\nYou will have to configure it later manually."
       ComplementosNoInstalados="${ComplementosNoInstalados}${Paquete} -> ${VersionOR} -> ${VersionDI}\n"
     else
@@ -1398,6 +1401,7 @@ EjecutarRegenera () {
       Salir "Error actualizando el sistema.  Saliendo..." "Failed updating system. Exiting..."
     else
       Limpiar
+      ControlVersiones openmediavault
     fi
     f=1
     while [ ! "${FASE[7]}" = "hecho" ]; do
@@ -1456,18 +1460,18 @@ OrdenarComplementos () {
       if [ ! "${InstII}" ]; then
         case "${Plugin}" in
           *kernel|*sharerootfs|*zfs|*lvm2|*mergerfs|*snapraid|*remotemount)
-            ComprobarVersiones "${Plugin}"
+            ControlVersiones esencial "${Plugin}"
             echoe "No instalado y versiones coinciden   -->   Se va a instalar   -->   ${Plugin}" "Not installed and versions match   -->   It will install   -->   ${Plugin}"
             ;;
           *symlinks|*apttool|*kvm)
-            ComprobarVersiones "${Plugin}" no
-            if [ ! "${ComprobarVersiones}" ]; then
+            ControlVersiones noesencial "${Plugin}"
+            if [ ! "${ControlVersiones}" ]; then
               echoe "No instalado y versiones coinciden   -->   Se va a instalar   -->   ${Plugin}" "Not installed and versions match   -->   It will install   -->   ${Plugin}"
             fi
             ;;
           * )
-            ComprobarVersiones "${Plugin}" no
-            if [ ! "${ComprobarVersiones}" ]; then
+            ControlVersiones noesencial "${Plugin}"
+            if [ ! "${ControlVersiones}" ]; then
               echoe "No instalado y versiones coinciden   -->   Se va a instalar   -->   ${Plugin}" "Not installed and versions match   -->   It will install   -->   ${Plugin}"
             fi
             (( i++ ))
@@ -1523,7 +1527,7 @@ RegeneraFase2 () {
     else
       Salir "Hubo un problema al descargar el paquete omv-extras. Saliendo..." "There was a problem downloading the omv-extras package. Exiting..."
     fi
-    ComprobarVersiones "openmediavault-omvextrasorg"
+    ControlVersiones esencial "openmediavault-omvextrasorg"
     echoe "Regenerando omv-extras y repositorio de docker..." "Regenerating omv-extras and docker repository..."
     Regenera "${CONFIG[openmediavault-omvextras]}"
     /usr/sbin/omv-aptclean repos
@@ -1578,14 +1582,33 @@ RegeneraFase4 () {
   fi
 
   echoe "Regenerar complementos requeridos para los sistemas de archivos." "Regenerate plugins required for file systems."
+  for a in "${SISTEMA_ARCHIVOS[@]}"; do
+    Analizar "$a"
+    if [ ! "${VersionOR}" ]; then
+      echoe "$a no estaba instalado en el sistema original." "$a was not installed on the original system."
+    elif [ ! "${InstII}" ]; then
+      ControlVersiones esencial "$a"
+      if [ "$a" = "openmediavault-zfs" ]; then
+        echoe "\nHabilitando Backports... \n" "\nEnabling backports... \n"
+        Backports YES
+        Instalar "$a"
+        for i in $(awk 'NR>1{print $1}' "${ORA[RutaRegen]}${ORB[Zpoollist]}"); do
+          zpool import -f "$i"
+        done
+      else
+        Instalar "$a"
+      fi
+      Regenera "${CONFIG[$a]}"
+    fi
+  done
   Analizar openmediavault-symlinks
   if [ ! "${VersionOR}" ]; then
     echoe "openmediavault-symlinks no estaba instalado en el sistema original." "openmediavault-symlinks was not installed on the original system."
   elif [ ! "${InstII}" ]; then
-    ComprobarVersiones "openmediavault-symlinks" no
-    Instalar "$a"
-    if [ ! "${ComprobarVersiones}" ]; then
-      Regenera "openmediavault-symlinks"
+    Instalar openmediavault-symlinks
+    ControlVersiones noesencial openmediavault-symlinks
+    if [ ! "${ControlVersiones}" ]; then
+      Regenera openmediavault-symlinks
       LeerValor /config/services/symlinks/symlinks/symlink/source
       if [ "${NumVal}" ]; then
         b=0; SymFU=""; SymDE=""
@@ -1602,27 +1625,7 @@ RegeneraFase4 () {
         echoe "No hay symlinks creados en la base de datos original." "No symlinks created in original database."
       fi
     fi
-  fi      
-      
-  for a in "${SISTEMA_ARCHIVOS[@]}"; do
-    Analizar "$a"
-    if [ ! "${VersionOR}" ]; then
-      echoe "$a no estaba instalado en el sistema original." "$a was not installed on the original system."
-    elif [ ! "${InstII}" ]; then
-      ComprobarVersiones "$a"
-      if [ "$a" = "openmediavault-zfs" ]; then
-        echoe "\nHabilitando Backports... \n" "\nEnabling backports... \n"
-        Backports YES
-        Instalar "$a"
-        for i in $(awk 'NR>1{print $1}' "${ORA[RutaRegen]}${ORB[Zpoollist]}"); do
-          zpool import -f "$i"
-        done
-      else
-        Instalar "$a"
-      fi
-      Regenera "${CONFIG[$a]}"
-    fi
-  done
+  fi
   echoe "Fase Nº4 terminada." "Phase No.4 completed."; sleep 1
   FASE[4]="hecho"; FASE[5]="iniciar"; GuardarAjustes
 }
@@ -1659,8 +1662,8 @@ RegeneraFase6 () {
     echoe "openmediavault-apttool no estaba instalado en el sistema original." "openmediavault-apttool was not installed on the original system."
   elif [ ! "${InstII}" ]; then
     Instalar openmediavault-apttool
-    ComprobarVersiones openmediavault-apttool no
-    if [ ! "${ComprobarVersiones}" ]; then
+    ControlVersiones noesencial openmediavault-apttool
+    if [ ! "${ControlVersiones}" ]; then
       Regenera "${CONFIG[openmediavault-apttool]}"
       LeerValor /config/services/apttools/packages/package/packagename
       if [ ! "${NumVal}" ]; then
@@ -1696,20 +1699,20 @@ RegeneraFase6 () {
         Salir "openmediavault-kvm no se pudo instalar. Saliendo..." "openmediavault-kvm could not be installed. Exiting..."
       fi
     fi
-    ComprobarVersiones openmediavault-kvm no
-    if [ ! "${ComprobarVersiones}" ]; then
+    ControlVersiones noesencial openmediavault-kvm
+    if [ ! "${ControlVersiones}" ]; then
       Regenera "${CONFIG[openmediavault-kvm]}"
     fi
   fi
 
   echoe "Instalar resto de complementos" "Install rest of plugins"
   for i in "${COMPLEMENTOS[@]}"; do
-    ComprobarVersiones "$i" no
     if [ ! "${InstII}" ]; then
-      Instalar "$i" 
+      Instalar "$i"
+      ControlVersiones noesencial "$i"
       if [ ! "${CONFIG[$i]}" ]; then
         echoe "\n${Rojo}ERROR >>> No existe la Configuración en omv-regen para regenerar el complemento $i. Probablemente es un complemento nuevo.${Reset}\n" "\n${Rojo}ERROR >>> There is no setting in omv-regen to regenerate the plugin $i. It's probably a new plugin.${Reset}\n"
-      elif [ ! "${ComprobarVersiones}" ]; then
+      elif [ ! "${ControlVersiones}" ]; then
         Regenera "${CONFIG[$i]}"
       fi
     fi

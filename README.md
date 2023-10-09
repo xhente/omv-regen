@@ -5,6 +5,12 @@
 
 .
 
+Ask your questions in the openmediavault forum.
+
+https://forum.openmediavault.org/
+
+Pregunta tus dudas en el foro de openmediavault.
+
 .
 
 # omv-regen 2.0

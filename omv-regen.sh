@@ -6,6 +6,7 @@
 # warranty of any kind, whether express or implied.
 
 # omv-regen 2.0.1
+# Utilidad para respaldar y restaurar la configuración de openmediavault
 
 
 # Establece idioma del sistema
@@ -436,7 +437,7 @@ MenuBackup () {
     for i in "${CARPETAS[@]}"; do
       if [ "$i" ];then
         ((cont++))
-        Texto="${Texto}\n    ${AzulD}${txt[Carpeta]} $cont  >>> $i${ResetD}"
+        Texto="${Texto}\n    ${AzulD}${txt[Carpeta]} $cont  ==> $i${ResetD}"
       fi
     done
     txt 8 "\n       **** No se han incluido carpetas opcionales." "\n       **** No optional folders have been included."
@@ -1032,7 +1033,9 @@ BuscarOR () {
   else
     VersionDI="$(awk -F "regen " 'NR==8{print $2}' "${ORTemp}")"
     VersionAC="$(awk -F "regen " 'NR==8{print $2}' "${Omvregen}")"
-    if [ ! "${VersionAC}" = "${VersionDI}" ]; then
+    if [ "${VersionAC}" = "${VersionDI}" ]; then
+      ORA[ActualizacionPendiente]=""
+    else
       ORA[ActualizacionPendiente]="si"
       if [ "${ORA[Siempre]}" = "on" ]; then
         Ahora="si"
@@ -1049,14 +1052,10 @@ BuscarOR () {
         ORA[ActualizacionPendiente]=""
         GuardarAjustes
         Salir "Se ha actualizado omv-regen ${VersionAC} a la version ${VersionDI}\nEs necesario iniciarlo de nuevo. Saliendo..." "Updated omv-regen ${VersionAC} to version ${VersionDI}\nIt is necessary to start it again. Exiting..."
-      else
-        GuardarAjustes
       fi
-    else
-      ORA[ActualizacionPendiente]=""
-      GuardarAjustes
-      rm -f "${ORTemp}"
     fi
+    GuardarAjustes
+    rm -f "${ORTemp}"
   fi
   [ "${Camino}" = "Salir" ] && exit
 }
@@ -1465,23 +1464,21 @@ OrdenarComplementos () {
         case "${Plugin}" in
           *kernel|*sharerootfs|*zfs|*lvm2|*mergerfs|*snapraid|*remotemount)
             ControlVersiones esencial "${Plugin}"
-            echoe "No instalado y versiones coinciden   -->   Se va a instalar   -->   ${Plugin}" "Not installed and versions match   -->   It will install   -->   ${Plugin}"
             ;;
           *symlinks|*apttool|*kvm)
             ControlVersiones noesencial "${Plugin}"
-            if [ ! "${ControlVersiones}" ]; then
-              echoe "No instalado y versiones coinciden   -->   Se va a instalar   -->   ${Plugin}" "Not installed and versions match   -->   It will install   -->   ${Plugin}"
-            fi
             ;;
           * )
             ControlVersiones noesencial "${Plugin}"
-            if [ ! "${ControlVersiones}" ]; then
-              echoe "No instalado y versiones coinciden   -->   Se va a instalar   -->   ${Plugin}" "Not installed and versions match   -->   It will install   -->   ${Plugin}"
-            fi
             (( i++ ))
             COMPLEMENTOS[i]="${Plugin}"
             ;;
         esac
+        if [ ! "${ControlVersiones}" ]; then
+          echoe "No instalado y versiones coinciden   -->   Se va a instalar y regenerar   -->   ${Plugin}" "Not installed and versions match   -->   It will be installed and regenerated   -->   ${Plugin}"
+        else
+          echoe "No instalado y VERSIONES NO COINCIDEN   -->   Se va a instalar y NO SE VA A REGENERAR   -->   ${Plugin}" "Not installed and VERSIONS DO NOT MATCH   -->   It is going to be installed and IT WILL NOT BE REGENERATED   -->   ${Plugin}"
+        fi
       fi
     done < <(grep -v '^ *#' < "${ORA[RutaRegen]}${ORB[DpkgOMV]}")
     OrdenarComplementos="si"

@@ -118,7 +118,7 @@ Nota: Ver mas abajo un esquema de la configuración de ejecución
 
 AGRADECIMIENTOS: Gracias a Aaron Murray por los consejos en el desarrollo de la versión 1.0 de omv-regen.
 _____________________________________________________________________________________________________________________
-# omv-regen
+# omv-regen 2.0
 
 DO YOU NEED TO BACKUP OR RESTORE THE OMV CONFIGURATION? THIS IS THE SOLUTION.
 

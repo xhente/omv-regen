@@ -10,9 +10,13 @@
 
 ORVersion="2.0.2"
 
-# Establece idioma del sistema
+# Establece idioma español si procede
+Sp=""
+Idioma="$(printenv LANG)"
+[ "${Idioma:0:2}" = "es" ] && Sp="si"
 Idioma="$(awk -F "=" '/LANG=/ {print $2}' /etc/default/locale)"
-Sp=""; [ "${Idioma:0:2}" = "es" ] && Sp="si"
+[ "${Idioma:0:2}" = "es" ] && Sp="si"
+[ "${Idioma:1:2}" = "es" ] && Sp="si"
 
 # Traducción
 declare -A txt

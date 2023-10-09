@@ -11,7 +11,8 @@
 ORVersion="2.0.2"
 
 # Establece idioma del sistema
-Sp=""; [ "$(printenv LANG)" = "es_ES.UTF-8" ] && Sp="si"
+Idioma="$(awk -F "=" '/LANG=/ {print $2}' /etc/default/locale)"
+Sp=""; [ "${Idioma:0:2}" = "es" ] && Sp="si"
 
 # Traducción
 declare -A txt
@@ -125,6 +126,8 @@ Reset="\e[0m"
 RojoD="\Z1"
 AzulD="\Z4"
 ResetD="\Zn"
+Abortar=""
+Ahora=""
 
 # NODOS DE LA BASE DE DATOS
 # La primera variable es la ruta del nodo. (nulo = no hay nodo en la base de datos)
@@ -914,7 +917,7 @@ ValidarBackup () {
   [ ! "${ORA[Actualizar]}" ] && ValidarBackup="si"
   # Salida CLI
   if [ "${ValidarBackup}" ] && [ "${Cli}" ]; then
-    Salir "Los ajustes establecidos no son válidos. Ejecuta ${Rojo}omv-regen${Reset} sin argumentos para modificarlos.\nSaliendo..." "The established settings are not valid. Run ${Rojo}omv-regen${Reset} with no arguments to adjust them.\nExiting..."
+    Salir "${Rojo}Los ajustes establecidos no son válidos${Reset}. Ejecuta ${Verde}omv-regen${Reset} sin argumentos para modificarlos.\nSaliendo..." "${Rojo}The established settings are not valid${Reset}. Run ${Verde}omv-regen${Reset} with no arguments to adjust them.\nExiting..."
   fi
 }
 
@@ -1027,10 +1030,13 @@ GuardarAjustes () {
 # Buscar nueva versión de omv-regen y actualizar si existe.
 BuscarOR () {
   clear
+  txt 1 "Buscando actualizaciones de omv-regen..." "Checking for omv-regen updates..."
+  txt 2 "No se ha podido descargar el archivo." "The file could not be downloaded."
+  echoe "${txt[1]}"
   [ -f "${ORTemp}" ] && rm -f "${ORTemp}"
   wget -O - "${URLomvregen}" > "${ORTemp}"
   if [ ! -f "${ORTemp}" ]; then
-    Info 3 "Comprobando actualizaciones de omv-regen, no se ha podido descargar el archivo." "Checking omv-regen updates, the file could not be downloaded."
+    echoe "${txt[2]}"; Info 3 "${txt[1]}\n${txt[2]}"
   else
     VersionDI="$(awk -F "regen " 'NR==8{print $2}' "${ORTemp}")"
     if [ "${ORVersion}" = "${VersionDI}" ]; then
@@ -1297,7 +1303,7 @@ EjecutarBackup () {
   [ "${ValidarBackup}" ] && Mensaje "Los ajustes no son válidos, no se puede ejecutar el backup." "The settings are invalid, the backup cannot be executed."
   [ "${ValidarBackup}" ] && Camino="MenuBackup"
   Fecha=$(date +%y%m%d_%H%M%S)
-  [ ! "${Cli}" ] && Abortar 10 "\n\n  Se va a realizar un BACKUP en  \n\n  ${ORA[RutaBackup]} \n\n " "\n\nA BACKUP is going to be made in\n\n  ${ORA[RutaBackup]} \n\n "
+  [ "${Cli}" ] && Abortar="" || Abortar 10 "\n\n  Se va a realizar un BACKUP en  \n\n  ${ORA[RutaBackup]} \n\n " "\n\nA BACKUP is going to be made in\n\n  ${ORA[RutaBackup]} \n\n "
   if [ "${Abortar}" ]; then
     Camino="MenuBackup"
   else
@@ -1316,7 +1322,7 @@ EjecutarBackup () {
           echoe "$i"
    		    ((cont++))
   	    else
-          echoe "${Rojo}$i --> no esiste y no se incluirá.${Reset}" "${Rojo}$i --> does not exist and will not be included.${Reset}"
+          echoe "${Rojo}$i --> no existe y no se incluirá.${Reset}" "${Rojo}$i --> does not exist and will not be included.${Reset}"
         fi
       done
     fi
@@ -1382,7 +1388,7 @@ EjecutarBackup () {
     done
     echoe "\n>>>    Eliminando backups de hace más de ${ORA[Dias]} días...\n" "\n>>>    Deleting backups larger than ${ORA[Dias]} days...\n"
     find "${ORA[RutaBackup]}/" -maxdepth 1 -type f -name "ORB_*" -mtime "+${ORA[Dias]}" -exec rm -v {} +
-    # Nota:   -mmin = minutos  ///  -mtime = dias    
+    # Nota:   -mmin = minutos  ///  -mtime = dias
     [ "${Cli}" ] && Salir "\n       ¡Backup completado!\n" "\n       Backup completed!\n"
     Continuar
   fi
@@ -1828,6 +1834,7 @@ if [ "${FASE[1]}" = "iniciar" ]; then
 elif [ "${FASE[1]}" = "" ]; then
   Info 3 "El archivo de ajustes de omv-regen no se puede leer o ha sido manipulado." "The omv-regen settings file cannot be read or has been tampered with."
 elif [ ! "${FASE[7]}" = "hecho" ]; then
+  echoe "Hay una regeneración en progreso..." "There is a regeneration in progress..."
   Camino="EjecutarRegenera"
 else
   unset FASE
@@ -1842,7 +1849,6 @@ fi
 case "$1" in
   backup)
     Cli="si"
-    ValidarBackup
     EjecutarBackup
     ;;
   regenera)

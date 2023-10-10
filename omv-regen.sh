@@ -1314,17 +1314,16 @@ EjecutarBackup () {
     clear
     echoe "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>\n" "\n       <<< Backup to regenerate system dated ${Fecha} >>>\n"
     echoe "\n>>>    Los parámetros actuales establecidos para el backup son:\n" "\n>>>    The current parameters set for the backup are:\n"
+    echoe "Carpeta para almacenar el backup ==> ${ORA[RutaBackup]}" "Folder to store the backup ==> ${ORA[RutaBackup]}"
     echoe "Actualizar sistema antes de hacer el backup ==> ${ORA[Actualizar]}" "Update system before making the backup ==> ${ORA[Actualizar]}"
     echoe "Eliminar backups con una antigüedad superior a ==> ${ORA[Dias]} días." "Delete backups older than ==> ${ORA[Dias]} days."
     if [ "${#CARPETAS[@]}" = 0 ]; then
       echoe "Carpetas opcionales a incluir en el backup ==> Ninguna" "Optional folders to include in the backup ==> None"
     else
       echoe "Carpetas opcionales a incluir en el backup ==>" "Optional folders to include in the backup ==>"
-      cont=1
       for i in "${CARPETAS[@]}"; do
         if [ -d "$i" ]; then
           echoe "$i"
-   		    ((cont++))
   	    else
           echoe "${Rojo}$i --> no existe y no se incluirá.${Reset}" "${Rojo}$i --> does not exist and will not be included.${Reset}"
         fi

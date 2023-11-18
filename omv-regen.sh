@@ -5,7 +5,7 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 2.0.2
+# omv-regen 2.0.3
 # Utilidad para respaldar y restaurar la configuración de openmediavault
 
 ORVersion="2.0.3"

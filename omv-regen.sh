@@ -8,7 +8,7 @@
 # omv-regen 2.0.2
 # Utilidad para respaldar y restaurar la configuración de openmediavault
 
-ORVersion="2.0.2"
+ORVersion="2.0.3"
 
 # Establece idioma español si procede
 Sp=""
@@ -959,8 +959,14 @@ ValidarRegenera () {
     tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Lsblk" >/dev/null
     Discos="$(lsblk --nodeps -o name,serial)"
     Dev="$(df "${Configxml}" | awk '/^\/dev/ {print $1}' | awk -F "/" '{print $3}')"
-    RootfsAC="$(echo "${Discos}" | awk -v a="${Dev:0:3}" '{ if($1 == a) print $2}')"
-    Serial="$(echo "${Discos}" | awk -v a="${Dev:0:3}" '{ if($1 != a) print $2}')"
+    if [ "${Dev}" = "root" ]; then
+      Dev="$(mount | grep ' / ' | cut -d' ' -f 1 | awk -F "/" '{print $3}')"
+      Dev="${Dev:0:7}"
+    else
+      Dev="${Dev:0:3}"
+    fi
+    RootfsAC="$(echo "${Discos}" | awk -v a="${Dev}" '{ if($1 == a) print $2}')"
+    Serial="$(echo "${Discos}" | awk -v a="${Dev}" '{ if($1 != a) print $2}')"
     DiscosAC="$(echo "${Serial}" | awk '{ if($1 != "SERIAL") print}')"
     RootfsOR="$(cat "/tmp/regen_${FechaBackup}/${ORB[Rootfs]}")"
     DiscosOR="$(cat "/tmp/regen_${FechaBackup}/${ORB[Lsblk]}")"
@@ -987,10 +993,13 @@ ValidarRegenera () {
   # Comprobar sistema actual
   if [ "${FASE[1]}" = "iniciar" ]; then
     DpkgAC=$(dpkg -l | grep openmediavault | awk '{print $2}')
-    [ ! "$(echo "${DpkgAC}" | awk 'NR==1{print $1}')" = "openmediavault" ] && ValDpkg="si"
-    [ ! "$(echo "${DpkgAC}" | awk 'NR==2{print $1}')" = "openmediavault-keyring" ] && ValDpkg="si"
-    [ ! "$(echo "${DpkgAC}" | awk 'NR==3{print $1}')" = "" ] && ValDpkg="si"
-    [ "${ValDpkg}" ] && ValidarRegenera="si"
+    if [ "$(echo "${DpkgAC}" | awk 'NR==1{print $1}')" = "openmediavault" ] && [ "$(echo "${DpkgAC}" | awk 'NR==2{print $1}')" = "openmediavault-keyring" ] && [ "$(echo "${DpkgAC}" | awk 'NR==3{print $1}')" = "" ]; then
+      ValDpkg=""
+    elif [ "$(echo "${DpkgAC}" | awk 'NR==1{print $1}')" = "openmediavault" ] && [ "$(echo "${DpkgAC}" | awk 'NR==2{print $1}')" = "openmediavault-flashmemory" ] && [ "$(echo "${DpkgAC}" | awk 'NR==3{print $1}')" = "openmediavault-keyring" ] && [ "$(echo "${DpkgAC}" | awk 'NR==4{print $1}')" = "openmediavault-omvextrasorg" ] && [ "$(echo "${DpkgAC}" | awk 'NR==5{print $1}')" = "" ]; then
+      ValDpkg=""
+    else
+      ValDpkg="si"; ValidarRegenera="si"
+    fi
   fi
   # Comprobar formatos
   SiNo "${ORA[Kernel]}"
@@ -1372,8 +1381,14 @@ EjecutarBackup () {
     echoe "\n>>>    Extrayendo información de las unidades de disco del sistema (lsblk --nodeps -o name,serial)...\n" "\n>>>    Extracting information from system drives (lsblk --nodeps -o name,serial)...\n"
     Discos="$(lsblk --nodeps -o name,serial)"
     Dev="$(df "${Configxml}" | awk '/^\/dev/ {print $1}' | awk -F "/" '{print $3}')"
-    echo "${Discos}" | awk -v a="${Dev:0:3}" '{ if($1 == a) print $2}' | tee "${CarpetaRegen}${ORB[Rootfs]}"
-    Serial="$(echo "${Discos}" | awk -v a="${Dev:0:3}" '{ if($1 != a) print $2}' | tee "${CarpetaRegen}${ORB[Lsblk]}")"
+    if [ "${Dev}" = "root" ]; then
+      Dev="$(mount | grep ' / ' | cut -d' ' -f 1 | awk -F "/" '{print $3}')"
+      Dev="${Dev:0:7}"
+    else
+      Dev="${Dev:0:3}"
+    fi
+    echo "${Discos}" | awk -v a="${Dev}" '{ if($1 == a) print $2}' | tee "${CarpetaRegen}${ORB[Rootfs]}"
+    Serial="$(echo "${Discos}" | awk -v a="${Dev}" '{ if($1 != a) print $2}' | tee "${CarpetaRegen}${ORB[Lsblk]}")"
     echo "${Serial}" | awk '{ if($1 != "SERIAL") print}' | tee "${CarpetaRegen}${ORB[Lsblk]}"
     echoe "\n>>>    Empaquetando directorio ${CarpetaRegen} en ${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz ...\n" "\n>>>    Packaging ${CarpetaRegen} directory in ${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz ...\n"
     tar -zcvf "${ORA[RutaBackup]}/ORB_${Fecha}_regen.tar.gz" "${CarpetaRegen}"

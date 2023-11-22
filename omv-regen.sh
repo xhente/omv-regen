@@ -5,37 +5,12 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 2.0.3
+# omv-regen 2.0.4
 # Utilidad para respaldar y restaurar la configuración de openmediavault
 
-ORVersion="2.0.3"
+ORVersion="2.0.4"
 
-# Establece idioma español si procede
-Sp=""
-Idioma="$(printenv LANG)"
-[ "${Idioma:0:2}" = "es" ] && Sp="si"
-Idioma="$(awk -F "=" '/LANG=/ {print $2}' /etc/default/locale)"
-[ "${Idioma:0:2}" = "es" ] && Sp="si"
-[ "${Idioma:1:2}" = "es" ] && Sp="si"
-
-# Traducción
-declare -A txt
-txt () {
-  if [ "$3" ]; then
-    [ "$Sp" ] && txt[$1]="$2" || txt[$1]="$3"
-  else
-    txt[$1]="$2"
-  fi
-}
-
-txt Abortar "Abortar" "Abort"; txt Actualizar "Actualizar" "Update"; txt Ahora "Ahora" "Now"
-txt Ajustar "Ajustar" "Adjust"; txt Ajustes "Ajustes" "Settings"; txt Anterior "Anterior" "Previous"
-txt Ayuda "Ayuda" "Help"; txt Backup_Ajustes "Backup_Ajustes" "Backup_Settings"; txt Buscar "Buscar" "Search"
-txt Cancelar "Cancelar" "Cancel"; txt Carpeta "Carpeta" "Folder"; txt Continuar "Continuar" "Continue"
-txt Crear "Crear" "Create"; txt Dias "Días" "Days"; txt Ejecutar "Ejecutar" "Run"; txt Eliminar "Eliminar" "Delete"
-txt Modificar "Modificar" "Modify"; txt Salir "Salir" "Exit"; txt Si "Si" "Yes"; txt Siempre "Siempre" "Always"
-txt Siguiente "Siguiente" "Next"; txt Red "Red" "Network"; txt Regenera_Ajustes "Regenera_Ajustes" "Regenera_Settings"
-txt Resetear "Resetear" "Reset"; txt Ruta "Ruta" "Path"; txt Tarea "Tarea" "Task"; txt Volver "Volver" "Go back"
+# Definicion de Variables
 
 . /etc/default/openmediavault
 Fecha=""
@@ -44,14 +19,22 @@ Camino="MenuPrincipal"
 Alto=30
 Ancho=70
 
+declare -A txt
 declare -A ORA
 declare -a FASE
 declare -a CARPETAS
+declare -a AYUDA
 
 ResetearAjustes () {
+  ORA[Idioma]="en"
+  Idioma="$(printenv LANG)"
+  [ "${Idioma:0:2}" = "es" ] && ORA[Idioma]="es"
+  Idioma="$(awk -F "=" '/LANG=/ {print $2}' /etc/default/locale)"
+  [ "${Idioma:0:2}" = "es" ] && ORA[Idioma]="es"
+  [ "${Idioma:1:2}" = "es" ] && ORA[Idioma]="es"
   ORA[RutaBackup]="/ORBackup"
   ORA[Dias]='7'
-  ORA[Actualizar]="${txt[Si]}"
+  ORA[Actualizar]="Si"
   ORA[RutaOrigen]="/ORBackup"
   ORA[Kernel]="on"
   ORA[Red]="on"
@@ -67,6 +50,9 @@ ResetearAjustes () {
 }
 
 ResetearAjustes
+
+# Actualizar Archivos de Ajustes existentes
+Idioma="${ORA[Idioma]}"
 
 declare -a RUTAS=""
 declare -A ORB
@@ -214,13 +200,38 @@ CONFIG[openmediavault-zfs]="nulo zfszed collectd fstab monit quota nfs samba sha
 
 export DEBIAN_FRONTEND=noninteractive
 export APT_LISTCHANGES_FRONTEND=none
-export LANG=C.UTF-8
-export LANGUAGE=C
-export LC_ALL=C.UTF-8
 # Nota: Evita que los cuadros de diálogo fallen
 export NCURSES_NO_UTF8_ACS=1
 
-######################################### TEXTOS DE AYUDA ##############################################
+############################################# TRADUCCIONES ####################################################
+
+txt () {
+  if [ "$3" ] && [ "${ORA[Idioma]}" = "en" ]; then
+    txt[$1]="$3"
+  else
+    txt[$1]="$2"
+  fi
+}
+
+Traducir () {
+  if [ "${ORA[Idioma]}" = "es" ]; then
+    export LANG=es_ES.UTF-8
+    export LANGUAGE=es_ES.UTF-8
+  else
+    export LANG=C.UTF-8
+    export LANGUAGE=C
+  fi
+  export LC_ALL=C.UTF-8
+
+  txt Abortar "Abortar" "Abort"; txt Actualizar "Actualizar" "Update"; txt Ahora "Ahora" "Now"
+  txt Ajustar "Ajustar" "Adjust"; txt Ajustes "Ajustes" "Settings"; txt Anterior "Anterior" "Previous"
+  txt Ayuda "Ayuda" "Help"; txt Backup_Ajustes "Backup_Ajustes" "Backup_Settings"; txt Buscar "Buscar" "Search"
+  txt Cancelar "Cancelar" "Cancel"; txt Carpeta "Carpeta" "Folder"; txt Continuar "Continuar" "Continue"
+  txt Crear "Crear" "Create"; txt Dias "Días" "Days"; txt Ejecutar "Ejecutar" "Run"; txt Eliminar "Eliminar" "Delete"
+  txt Idioma "Idioma" "Language"; txt Modificar "Modificar" "Modify"; txt Salir "Salir" "Exit"; txt Si "Si" "Yes"
+  txt Siempre "Siempre" "Always"; txt Siguiente "Siguiente" "Next"; txt Red "Red" "Network"
+  txt Regenera_Ajustes "Regenera_Ajustes" "Regenera_Settings"; txt Resetear "Resetear" "Reset"; txt Ruta "Ruta" "Path"
+  txt Tarea "Tarea" "Task"; txt Volver "Volver" "Go back"
 
 txt AyudaComoUsar \
 "\n \
@@ -402,7 +413,13 @@ txt AyudaRegenera \
 \n \
 \n    ${AzulD}- REGENERATE THE NETWORK INTERFACE:${ResetD}    This option is used to skip regenerating the network interface. If you deactivate this option, the network interface will not be regenerated and the IP will remain the same as the system's after the reboot at the end of the process. If you activate this option, the network interface will be regenerated at the end of the regeneration process. If the original IP is different from the current IP you will need to connect to the original IP after the reboot to access OMV. The menu tells you what this IP will be before starting the regeneration. When the regeneration ends you will also have it on the screen but you may not see it if you are not attentive."
 
-declare -a AYUDA=("${txt[AyudaComoUsar]}" "${txt[AyudaFunciones]}" "${txt[AyudaProcedimiento]}" "${txt[AyudaConsejos]}" "${txt[AyudaBackup]}" "${txt[AyudaRegenera]}")
+  AYUDA=("${txt[AyudaComoUsar]}" "${txt[AyudaFunciones]}" "${txt[AyudaProcedimiento]}" "${txt[AyudaConsejos]}" "${txt[AyudaBackup]}" "${txt[AyudaRegenera]}")
+  if [ "$ORA[Actualizar]" = "Si" ] || [ "$ORA[Actualizar]" = "Yes" ]; then
+    ORA[Actualizar]="${txt[Si]}"
+  fi
+}
+
+########################################## MENUS #################################################
 
 Ayuda () {
   i=0
@@ -429,8 +446,6 @@ Ayuda () {
     esac
   done
 }
-
-########################################## MENUS #################################################
 
 # MENU BACKUP
 MenuBackup () {
@@ -884,6 +899,33 @@ OpcionesActualizacion () {
   Camino="MenuPrincipal"
 }
 
+# MENU PARA CAMBIAR EL IDIOMA ESPAÑOL/INGLES
+CambiarIdioma () {
+  txt 1 "Cambiar idioma" "Change language"
+  txt 2 "Español  Spanish" "Spanish  Español"
+  txt 3 "Inglés   English" "English  Inglés"
+  Respuesta=$(dialog \
+    --backtitle "omv-regen ${ORVersion}" \
+    --title "${txt[1]}" \
+    --ok-label "${txt[Continuar]}" \
+    --cancel-label "${txt[Cancelar]}" \
+    --stdout \
+    --radiolist  "\n " 0 0 2 \
+    1 "${txt[2]}" on \
+    2 "${txt[3]}" off)
+  Salida=$?
+  case $Salida in
+    0)
+      [ "${Respuesta}" = 1 ] && ORA[Idioma]=es
+      [ "${Respuesta}" = 2 ] && ORA[Idioma]=en
+      Traducir; GuardarAjustes
+      ;;
+    1|255)
+      Info 3 "Operación cancelada. No se han guardado los cambios." "Operation cancelled. Changes have not been saved."
+      ;;
+  esac
+}
+
 ################################### FUNCIONES #######################################
 
 # Validar ajustes de Backup.
@@ -1051,7 +1093,7 @@ BuscarOR () {
   if [ ! -f "${ORTemp}" ]; then
     echoe "${txt[2]}"; Info 3 "${txt[1]}\n${txt[2]}"
   else
-    VersionDI="$(awk -F "regen " 'NR==8{print $2}' "${ORTemp}")"
+    VersionDI="$(awk -F "regen " 'NR==8 {print $2}' "${ORTemp}")"
     if [ "${ORVersion}" = "${VersionDI}" ]; then
       ORA[ActualizacionPendiente]=""
     else
@@ -1084,7 +1126,11 @@ BuscarOR () {
 
 # Muestra el mensaje en español o inglés según el sistema.
 echoe () {
-  [ "$Sp" ] && echo -e "$1" || echo -e "$2"
+  if [ "$2" ] && [ "${ORA[Idioma]}" = "en" ]; then
+    echo -e "$2"
+  else
+    echo -e "$1"
+  fi
 }
 
 # Parada del programa hasta que se pulse una tecla.
@@ -1100,10 +1146,10 @@ Continuar () {
 # Mostrar mensaje y salir. Si $1=ayuda sale con ayuda.
 Salir () {
   if [ "$1" = "ayuda" ]; then
-    [ "$Sp" ] && echo -e "$2" || echo -e "$3"
-    [ "$Sp" ] && echo -e  "\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n\nomv-regen          ==> para acceder al menú\nomv-regen backup   ==> para ejecutar un backup\nomv-regen regenera ==> para ejecutar una regeneración\nomv-regen ayuda    ==> para ver la ayuda${Reset}\n\n" || echo -e "\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n\nomv-regen          ==> to access the menu\nomv-regen backup   ==> to run a backup\nomv-regen regenera ==> to run a regeneration\nomv-regen help     ==> to see the help${Reset}\n\n"
+    [ "${ORA[Idioma]}" = "es" ] && echo -e "$2" || echo -e "$3"
+    [ "${ORA[Idioma]}" = "es" ] && echo -e  "\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n\nomv-regen          ==> para acceder al menú\nomv-regen backup   ==> para ejecutar un backup\nomv-regen regenera ==> para ejecutar una regeneración\nomv-regen ayuda    ==> para ver la ayuda${Reset}\n\n" || echo -e "\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n\nomv-regen          ==> to access the menu\nomv-regen backup   ==> to run a backup\nomv-regen regenera ==> to run a regeneration\nomv-regen help     ==> to see the help${Reset}\n\n"
   else
-    [ "$Sp" ] && echo -e "$1" || echo -e "$2"
+    [ "${ORA[Idioma]}" = "es" ] && echo -e "$1" || echo -e "$2"
   fi
   exit
 }
@@ -1601,7 +1647,8 @@ RegeneraFase3 () {
       "\n\nKernel proxmox ${KernelOR} installed.\nA system reboot is required to continue regeneration.\n\n\n${RojoD}To complete the regeneration AFTER REBOOT RUN AGAIN omv-regen\n\n ${ResetD}\nThe process will continue automatically.\n "
       echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
       FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
-      exit
+      reboot
+      sleep 3; exit
     fi
   fi
   echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
@@ -1751,6 +1798,7 @@ RegeneraFase6 () {
 
   echoe "Instalar resto de complementos" "Install rest of plugins"
   for i in "${COMPLEMENTOS[@]}"; do
+    Analizar "$i"
     if [ ! "${InstII}" ]; then
       Instalar "$i"
       ControlVersiones noesencial "$i"
@@ -1782,9 +1830,9 @@ RegeneraFase7 () {
   echoe "Configurar red y reiniciar" "Configure network and reboot"
   echoe "Regenerando Red..." "Regenerating Network..."
   if [ "${ORA[Red]}" = "off" ]; then
-    Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es NO regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar." "Regeneration is complete!\n\nThe active setting in omv-regen is to NOT regenerate the network interface.\nThe system will reboot to finish."
+    Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es NO regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar.\nRecuerda borrar la caché del navegador." "Regeneration is complete!\n\nThe active setting in omv-regen is to NOT regenerate the network interface.\nThe system will reboot to finish.\nRemember to clear your browser cache."
   else
-    Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar.\n${RojoD}La IP del sistema de origen era ${IpOR}${ResetD}\nDespués del reinicio puedes acceder al servidor en esa IP." "Regeneration is complete!\n\nThe active setting in omv-regen is to regenerate the network interface.\nThe system will reboot to finish.\n${RojoD}The IP of the original system was ${IpOR}${ResetD}\nAfter reboot you can access the server on that IP."
+    Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar.\n${RojoD}La IP del sistema de origen era ${IpOR}${ResetD}\nDespués del reinicio puedes acceder al servidor en esa IP.\nRecuerda borrar la caché del navegador." "Regeneration is complete!\n\nThe active setting in omv-regen is to regenerate the network interface.\nThe system will reboot to finish.\n${RojoD}The IP of the original system was ${IpOR}${ResetD}\nAfter reboot you can access the server on that IP.\nRemember to clear your browser cache."
   fi
   if [ "${ComplementosNoInstalados}" ]; then
     Info 10 "Debido a una reciente actualización, la versión que tenía el servidor original y la versión disponible en internet para la instalación de:\n${ComplementosNoInstalados} \nno coinciden.\nEse o esos complementos no eran esenciales para el sistema y omv-regen los ha instalado pero no los ha regenerado, tendrás que configurarlo en la GUI de OMV. Si prefieres hacer una regeneración completa haz un nuevo backup actualizado del sistema original y comienza de nuevo." "Due to a recent update, the version that the original server had and the version available on the internet for:\n${ComplementosNoInstalados} \ninstallation do not match.\nThat plugin or plugins were not essential for the system and omv-regen has installed them but has not regenerated them, you will have to configure it in the OMV GUI. If you prefer to do a complete regeneration, make a new updated backup of the original system and start again."
@@ -1825,6 +1873,7 @@ fi
 if [ ! -f "${ORAjustes}" ]; then
   [ ! -d "/etc/regen" ] && mkdir -p "/etc/regen"
   touch "${ORAjustes}"
+  Traducir
   GuardarAjustes
 else
   for i in "${!ORA[@]}"; do
@@ -1843,6 +1892,12 @@ else
       FASE[i]="${linea:8}"
     fi
   done < "${ORAjustes}"
+  # Actualizar Archivos de Ajustes existentes
+  if [ "${ORA[Idioma]}" = "" ]; then
+    ORA[Idioma]="${Idioma}"
+    GuardarAjustes
+  fi
+  Traducir
 fi
 
 # Comprobar estado de regenera
@@ -1874,7 +1929,7 @@ case "$1" in
     ;;
   ayuda|help|-h|-help)
     Ayuda
-    exit
+    clear; exit
     ;;
   "")
     ;;
@@ -1894,9 +1949,10 @@ while true; do
     txt 6 "--> Modificar y guardar ajustes de Regenera.   " "--> Modify and save Regenera settings.     "
     txt 7 "--> Actualizar omv-regen.                      " "--> Update omv-regen.                      "
     txt 8 "--> Resetear ajustes.                          " "--> Reset settings.                        "
-    txt 9 "--> Ayuda general.                             " "--> General help.                          "
-    txt 10 "--> Salir de omv-regen.                       " "--> Exit omv-regen.                        "
-    [ "${ORA[ActualizacionPendiente]}" ] && txt 11 "          ¡¡ HAY UNA ACTUALIZACION DISPONIBLE DE OMV-REGEN !!\n\n\n" "                AN UPDATE TO OMV-REGEN IS AVAILABLE !!\n\n\n" || txt 11 ""
+    txt 9 "--> Cambiar idioma.                            " "--> Change language.                       "
+    txt 10 "--> Ayuda general.                            " "--> General help.                          "
+    txt 11 "--> Salir de omv-regen.                       " "--> Exit omv-regen.                        "
+    [ "${ORA[ActualizacionPendiente]}" ] && txt 12 "          ¡¡ HAY UNA ACTUALIZACION DISPONIBLE DE OMV-REGEN !!\n\n\n" "                AN UPDATE TO OMV-REGEN IS AVAILABLE !!\n\n\n" || txt 12 ""
     Camino=$(dialog \
       --backtitle "omv-regen ${ORVersion}" \
       --title "omv-regen ${ORVersion}" \
@@ -1905,15 +1961,16 @@ while true; do
       --help-button \
       --help-label "${txt[Ayuda]}"\
       --stdout \
-      --menu "\n${txt[11]}${txt[1]}\n " 0 0 9 \
+      --menu "\n${txt[12]}${txt[1]}\n " 0 0 9 \
       Backup "${txt[2]}" \
       "${txt[Backup_Ajustes]}" "${txt[3]}" \
       Regenera "${txt[5]}" \
       "${txt[Regenera_Ajustes]}" "${txt[6]}" \
       "${txt[Actualizar]}" "${txt[7]}" \
       "${txt[Resetear]}" "${txt[8]}" \
-      "${txt[Ayuda]}" "${txt[9]}" \
-      "${txt[Salir]}" "${txt[10]}")
+      "${txt[Idioma]}" "${txt[9]}" \
+      "${txt[Ayuda]}" "${txt[10]}" \
+      "${txt[Salir]}" "${txt[11]}")
     Salida=$?
     case $Salida in
       0)
@@ -1944,10 +2001,13 @@ while true; do
     Resetear|"${txt[Resetear]}")
       Pregunta "Esto eliminará todos los ajustes guardados de omv-regen,\nincluido el progreso de la regeneración si ya se ha iniciado.\n¿Estás seguro?" "This will delete all saved omv-regen settings,\nincluding the progress of the regeneration if it has already started.\nYou're sure?"
       if [ ! "${Pregunta}" ]; then
-        ResetearAjustes; GuardarAjustes
+        ResetearAjustes; Traducir; GuardarAjustes
         Info 3 "Se han eliminado todos los ajustes guardados." "All saved settings have been deleted."
       fi
       Camino="MenuPrincipal"
+      ;;
+    Idioma|"${txt[Idioma]}")
+      CambiarIdioma; Camino="MenuPrincipal"
       ;;
     Ayuda|"${txt[Ayuda]}")
       Ayuda; Camino="MenuPrincipal"

@@ -5,14 +5,15 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 2.0.4
-# Utilidad para respaldar y restaurar la configuración de openmediavault
+# omv-regen 7.0
+# Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="2.0.4"
+ORVersion="7.0"
 
 # Definicion de Variables
-
 . /etc/default/openmediavault
+OmvVersion=$(dpkg -l openmediavault | awk '$2 == "openmediavault" { print substr($3,1,1) }')
+Codename="$(lsb_release --codename --short)"
 Fecha=""
 Cli=""
 Camino="MenuPrincipal"
@@ -103,7 +104,7 @@ declare -a COMPLEMENTOS
 Plugin=""
 KernelOR=""
 KernelIN=""
-declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-remotemount")
+declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-md" "openmediavault-remotemount")
 OrdenarComplementos=""
 VersionOR=""
 VersionDI=""
@@ -120,15 +121,21 @@ Abortar=""
 Ahora=""
 
 # NODOS DE LA BASE DE DATOS
-# La primera variable es la ruta del nodo. (nulo = no hay nodo en la base de datos)
-# Las siguientes variables son los módulos que debe actualizar salt
+# El primer valor es la ruta del nodo en la base de datos (nulo = no hay nodo en la base de datos)
+# Los siguientes valores son los módulos que debe actualizar salt
 
 # Interfaz GUI
 declare -A CONFIG
 CONFIG[webadmin]="/config/webadmin monit nginx"
 CONFIG[time]="/config/system/time chrony cron timezone"
-CONFIG[email]="/config/system/email cronapt mdadm monit postfix smartmontools"
-CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools"
+# Nota: El estado de salt cronapt solo existe en OMV6.
+if [ "${OmvVersion}" = "6" ]; then
+  CONFIG[email]="/config/system/email cronapt mdadm monit postfix smartmontools"
+  CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools"
+else
+  CONFIG[email]="/config/system/email mdadm monit postfix smartmontools"
+  CONFIG[notification]="/config/system/notification mdadm monit smartmontools"
+fi
 CONFIG[powermanagement]="/config/system/powermanagement cpufrequtils cron systemd-logind"
 CONFIG[monitoring]="/config/system/monitoring collectd monit rrdcached"
 CONFIG[crontab]="/config/system/crontab cron"
@@ -140,7 +147,7 @@ CONFIG[proxy]="/config/system/network/proxy apt profile"
 CONFIG[iptables]="/config/system/network/iptables iptables"
 CONFIG[hdparm]="/config/system/storage/hdparm hdparm"
 CONFIG[smart]="/config/services/smart smartmontools"
-CONFIG[fstab]="/config/system/fstab initramfs mdadm collectd fstab monit quota"
+CONFIG[fstab]="/config/system/fstab collectd fstab monit quota"
 CONFIG[shares]="/config/system/shares sharedfolders systemd"
 CONFIG[nfs]="/config/services/nfs avahi collectd fstab monit nfs quota"
 CONFIG[rsync]="/config/services/rsync rsync avahi rsyncd"
@@ -161,6 +168,7 @@ CONFIG[openmediavault-borgbackup]="/config/services/borgbackup borgbackup"
 CONFIG[openmediavault-clamav]="/config/services/clamav clamav"
 CONFIG[openmediavault-compose]="/config/services/compose compose"
 CONFIG[openmediavault-cputemp]="nulo"
+CONFIG[openmediavault-diskclone]="nulo"
 CONFIG[openmediavault-diskstats]="nulo"
 CONFIG[openmediavault-downloader]="/config/services/downloader"
 CONFIG[openmediavault-fail2ban]="/config/services/fail2ban fail2ban"
@@ -168,17 +176,20 @@ CONFIG[openmediavault-filebrowser]="/config/services/filebrowser avahi filebrows
 CONFIG[openmediavault-flashmemory]="nulo"
 CONFIG[openmediavault-forkeddaapd]="/config/services/daap forked-daapd monit"
 CONFIG[openmediavault-ftp]="/config/services/ftp avahi monit proftpd"
+CONFIG[openmediavault-hosts]="/config/system//network/hosts hosts"
 CONFIG[openmediavault-kernel]="nulo"
 CONFIG[openmediavault-kvm]="/config/services/kvm"
 CONFIG[openmediavault-locate]="nulo"
 CONFIG[openmediavault-luksencryption]="nulo luks"
 CONFIG[openmediavault-lvm2]="nulo collectd fstab monit quota"
+CONFIG[openmediavault-md]="nulo initramfs mdadm collectd fstab monit quota"
 CONFIG[openmediavault-mergerfs]="/config/services/mergerfs collectd fstab mergerfs monit quota"
 CONFIG[openmediavault-minidlna]="/config/services/minidlna minidlna"
 CONFIG[openmediavault-nut]="/config/services/nut collectd monit nut"
 CONFIG[openmediavault-onedrive]="/config/services/onedrive onedrive"
 CONFIG[openmediavault-owntone]="/config/services/owntone owntone"
 CONFIG[openmediavault-photoprism]="/config/services/photoprism avahi photoprism"
+CONFIG[openmediavault-podman]="nulo"
 CONFIG[openmediavault-remotemount]="/config/services/remotemount collectd fstab monit quota remotemount"
 CONFIG[openmediavault-resetperms]="/config/services/resetperms"
 CONFIG[openmediavault-rsnapshot]="/config/services/rsnapshot rsnapshot"
@@ -192,10 +203,11 @@ CONFIG[openmediavault-symlinks]="/config/services/symlinks"
 CONFIG[openmediavault-tftp]="/config/services/tftp avahi tftpd-hpa"
 CONFIG[openmediavault-tgt]="/config/services/tgt tgt"
 CONFIG[openmediavault-usbbackup]="/config/services/usbbackup usbbackup"
+CONFIG[openmediavault-webdav]="/config/services/webdav nginx webdav"
 CONFIG[openmediavault-wakealarm]="/config/system/wakealarm wakealarm"
 CONFIG[openmediavault-wetty]="/config/services/wetty avahi wetty"
 CONFIG[openmediavault-wireguard]="/config/services/wireguard wireguard"
-CONFIG[openmediavault-wol]="/Config/services/wol"
+CONFIG[openmediavault-wol]="/config/services/wol"
 CONFIG[openmediavault-zfs]="nulo zfszed collectd fstab monit quota nfs samba sharedfolders systemd tftpd-hpa"
 
 export DEBIAN_FRONTEND=noninteractive
@@ -223,19 +235,16 @@ Traducir () {
   fi
   export LC_ALL=C.UTF-8
 
-  txt Abortar "Abortar" "Abort"; txt Actualizar "Actualizar" "Update"; txt Ahora "Ahora" "Now"
-  txt Ajustar "Ajustar" "Adjust"; txt Ajustes "Ajustes" "Settings"; txt Anterior "Anterior" "Previous"
-  txt Ayuda "Ayuda" "Help"; txt Backup_Ajustes "Backup_Ajustes" "Backup_Settings"; txt Buscar "Buscar" "Search"
-  txt Cancelar "Cancelar" "Cancel"; txt Carpeta "Carpeta" "Folder"; txt Continuar "Continuar" "Continue"
-  txt Crear "Crear" "Create"; txt Dias "Días" "Days"; txt Ejecutar "Ejecutar" "Run"; txt Eliminar "Eliminar" "Delete"
-  txt Idioma "Idioma" "Language"; txt Modificar "Modificar" "Modify"; txt Salir "Salir" "Exit"; txt Si "Si" "Yes"
-  txt Siempre "Siempre" "Always"; txt Siguiente "Siguiente" "Next"; txt Red "Red" "Network"
-  txt Regenera_Ajustes "Regenera_Ajustes" "Regenera_Settings"; txt Resetear "Resetear" "Reset"; txt Ruta "Ruta" "Path"
-  txt Tarea "Tarea" "Task"; txt Volver "Volver" "Go back"
+  txt Abortar "Abortar" "Abort"; txt Actualizar "Actualizar" "Update"; txt Ahora "Ahora" "Now"; txt Ajustar "Ajustar" "Adjust"; txt Ajustes "Ajustes" "Settings"
+  txt Anterior "Anterior" "Previous"; txt Ayuda "Ayuda" "Help"; txt Backup_Ajustes "Backup_Ajustes" "Backup_Settings"; txt Buscar "Buscar" "Search"; txt Cancelar "Cancelar" "Cancel"
+  txt Carpeta "Carpeta" "Folder"; txt Continuar "Continuar" "Continue"; txt Crear "Crear" "Create"; txt Dias "Días" "Days"; txt Ejecutar "Ejecutar" "Run"; txt Eliminar "Eliminar" "Delete"
+  txt Idioma "Idioma" "Language"; txt Modificar "Modificar" "Modify"; txt Salir "Salir" "Exit"; txt Si "Si" "Yes"; txt Siempre "Siempre" "Always"; txt Siguiente "Siguiente" "Next"
+  txt Red "Red" "Network"; txt Regenera_Ajustes "Regenera_Ajustes" "Regenera_Settings"; txt Resetear "Resetear" "Reset"; txt Ruta "Ruta" "Path";   txt Tarea "Tarea" "Task"
+  txt Volver "Volver" "Go back"
 
 txt AyudaComoUsar \
 "\n \
-\n          COMO USAR OMV-REGEN 2 \
+\n          COMO USAR OMV-REGEN \
 \n \
 \n    omv-regen sirve para regenerar las configuraciones de un sistema openmediavault en una instalación nueva de OMV. El procedimiento resumido es: \
 \n \
@@ -261,7 +270,7 @@ txt AyudaComoUsar \
 \n          - NO incluye contenedores configurados en Portainer. Deberás recrearlos tu mismo. \
 \n          - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios." \
 "\n \
-\n          HOW TO USE OMV-REGEN 2 \
+\n          HOW TO USE OMV-REGEN \
 \n \
 \n    omv-regen is used to regenerate the configurations of an openmediavault system in a new OMV installation. The summarized procedure is: \
 \n \
@@ -289,7 +298,7 @@ txt AyudaComoUsar \
 
 txt AyudaFunciones \
 "\n \
-\n          FUNCIONES DE OMV-REGEN 2 \
+\n          FUNCIONES DE OMV-REGEN \
 \n \
 \n  1 - ${AzulD}omv-regen${ResetD} - Proporciona acceso a los menús de configuración y ejecución de cualquier función de omv-regen. Desde aquí podrás configurar fácilmente los parámetros para hacer un backup o una regeneración y podrás ejecutar ambos. También podrás gestionar las actualizaciones de omv-regen. \
 \n
@@ -299,7 +308,7 @@ txt AyudaFunciones \
 \n \
 \n  4 - ${AzulD}omv-regen ayuda${ResetD} - Acceso a los cuadros de diálogo con la ayuda completa de omv-regen." \
 "\n \
-\n          OMV-REGEN 2.0 FEATURES \
+\n          OMV-REGEN FEATURES \
 \n \
 \n  1 - ${AzulD}omv-regen${ResetD} - Provides access to the configuration menus and execution of any omv-regen function. From here you can easily configure the parameters to make a backup or a regeneration and you can execute both. You will also be able to manage omv-regen updates. \
 \n
@@ -345,7 +354,7 @@ txt AyudaConsejos \
 \n \
 \n    ${AzulD}- INTENTA HACER LA REGENERACION LO ANTES POSIBLE:${ResetD}    omv-regen omitirá, si es posible, la instalación de algún complemento si la versión disponible en internet para instalar no coincide con la versión que tenía instalada el servidor original. Esto se podrá hacer siempre que ese complemento no esté relacionado con el sistema de archivos, como pueden ser, mergerfs, zfs o similar, en tal caso la regeneración se detendrá y no podrás continuar. Si esto sucede tendrás que hacer un nuevo backup del sistema original actualizándolo previamente. Para evitar esto NO te demores en hacer la regeneración una vez hayas realizado el backup. omv-regen no te puede avisar antes de empezar a regenerar pues sin omv-extras instalado faltan los repositorios en el sistema para consultar versiones de la mayoría de los complementos. \
 \n
-\n    ${AzulD}- UNIDAD DE SISTEMA DIFERENTE:${ResetD}    Por el mismo motivo explicado en el punto anterior es muy recomendable utilizar una unidad de sistema diferente a la original para regenerar. Es muy sencillo usar un pendrive para instalar openmediavault. Si tienes la mala suerte de que se publique una actualización de un paquete esencial entre elmomento del backup y el momento de la regeneración no podrás terminarla, y necesitarás el sistema original para hacer un nuevo backup actualizado. \
+\n    ${AzulD}- UNIDAD DE SISTEMA DIFERENTE:${ResetD}    Por el mismo motivo explicado en el punto anterior es muy recomendable utilizar una unidad de sistema diferente a la original para regenerar. Es muy sencillo usar un pendrive para instalar openmediavault. Si tienes la mala suerte de que se publique una actualización de un paquete esencial entre el momento del backup y el momento de la regeneración no podrás terminarla, y necesitarás el sistema original para hacer un nuevo backup actualizado. \
 \n \
 \n    ${AzulD}- CONTENEDORES DOCKER:${ResetD}    Toda la información que hay en el disco de sistema original va a desaparecer. Para conservar los contenedores docker en el mismo estado asegurate de hacer algunas cosas antes. Cambia la ruta de instalación por defecto de docker desde la carpeta /var/lib/docker a una carpeta en alguno de los discos de datos. Configura todos los volumenes de los contenedores fuera del disco de sistema, en alguno de los discos de datos. Estas son recomendaciones generales, pero en este caso con mas motivo, si no lo haces perderás esos datos. Alternativamente puedes añadir la carpeta /var/lib/docker al backup como carpeta opcional." \
 "\n \
@@ -367,7 +376,7 @@ txt AyudaConsejos \
 
 txt AyudaBackup \
 "\n \
-\n          OPCIONES DE OMV-REGEN BACKUP 2 \
+\n          OPCIONES DE OMV-REGEN BACKUP \
 \n \
 \n    ${AzulD}- RUTA DE LA CARPETA DE BACKUPS:${ResetD}    Esta carpeta se usará para almacenar todos los backups generados. Por defecto esta carpeta es /ORBackup, puedes usar la que quieras pero no uses los discos de datos si pretendes hacer una regeneración, no serán accesibles. Para hacer una regeneración es mejor copiar el backup directamente a tu escritorio con WinSCP o similar y luego copiarla al sistema nuevo. En esta carpeta omv-regen creará un archivo empaquetado con tar para cada backup, etiquetado con la fecha y la hora en el nombre. Si has incluido carpetas opcionales en el backup se crearán archivos adicionales también empaquetados con tar y con la etiqueta user1, user2,... Un backup completo con dos carpetas opcionales hecho el día 1 de octubre de 2023 a las 10:38 a.m. podría tener este aspecto: \
 \n         ${AzulD}ORB_231001_103828_regen.tar.gz${ResetD}    <-- Archivo con la información de regenera \
@@ -381,7 +390,7 @@ txt AyudaBackup \
 \n \
 \n    ${AzulD}- CARPETAS ADICIONALES:${ResetD}    Puedes definir tantas carpetas opcionales como quieras que se incluirán en el backup. Útil si tienes información que quieres transferir al nuevo sistema que vas a regenerar. Si copias carpetas con configuraciones del sistema podrías romperlo. Estas carpetas se devolverán a su ubicación original en la parte final del proceso de regeneración. Se crea un archivo tar comprimido para cada carpeta etiquetado de la misma forma que el resto del backup. Puedes incluir carpetas que estén ubicadas en los discos de datos. Puesto que la restauración de estas carpetas se hace al final del proceso, en ese momento todos los sistemas de archivos ya están montados y funcionando." \
 "\n \
-\n          OMV-REGEN BACKUP 2 OPTIONS \
+\n          OMV-REGEN BACKUP OPTIONS \
 \n \
 \n    ${AzulD}- BACKUP FOLDER PATH:${ResetD}    This folder will be used to store all the backups generated. By default this folder is /ORBackup, you can use whatever you want but do not use the data disks if you intend to do a regeneration, they will not be accessible. To do a regeneration it is better to copy the backup directly to your desktop with WinSCP or similar and then copy it to the new system. In this folder omv-regen will create a tar-packaged archive for each backup, labeled with the date and time in the name. If you have included optional folders in the backup, additional files will be created, also packaged with tar and labeled user1, user2,... A complete backup with two optional folders done on October 1, 2023 at 10:38 a.m. could look like this: \
 \n         ${AzulD}ORB_231001_103828_regen.tar.gz${ResetD}    <-- File with regenera information \
@@ -397,7 +406,7 @@ txt AyudaBackup \
 
 txt AyudaRegenera \
 "\n \
-\n          OPCIONES DE OMV-REGEN REGENERA 2 \
+\n          OPCIONES DE OMV-REGEN REGENERA \
 \n
 \n    ${AzulD}- RUTA BACKUP DE ORIGEN:${ResetD}    En el menú debes definir la ubicación de esta carpeta. Por defecto será /ORBackup pero puedes elegir la ubicación que quieras. Esta carpeta debe contener al menos un archivo tar generado con omv-regen. Antes de ejecutar una regeneración el programa comprobará que esta carpeta contiene todos los archivos necesarios para la regeneración. Cuando definas una ruta en el menú omv-regen escaneará los archivos de esa ruta y buscará el backup mas reciente. Una vez localizado el backup, omv-regen comprobará que en su interior están todos los archivos necesarios. Si falta algún archivo la ruta no se dará por válida y no se permitirá continuar adelante. \
 \n
@@ -405,7 +414,7 @@ txt AyudaRegenera \
 \n
 \n    ${AzulD}- REGENERAR LA INTERFAZ DE RED:${ResetD}    Esta opción sirve para omitir la regeneración de la interfaz de red. Si desactivas esta opción no se regenerará la interfaz de red y la IP seguirá siendo la misma que tiene el sistema después del reinicio al final del proceso. Si activas esta opción se regenerará la interfaz de red al final del proceso de regeneración. Si la IP original es distinta de la IP actual deberás conectarte a la IP original después del reinicio para acceder a OMV. El menú te indica cual será esta IP antes de iniciar la regeneración. Cuando finalice la regeneración también la tendrás en pantalla pero podrías no verla si no estás atento." \
 "\n \
-\n          OMV-REGEN REGENERA 2 OPTIONS \
+\n          OMV-REGEN REGENERA OPTIONS \
 \n \
 \n    ${AzulD}- SOURCE BACKUP PATH:${ResetD}    In the menu you must define the location of this folder. By default it will be /ORBackup but you can choose the location you want. This folder must contain at least one tar file generated with omv-regen. Before executing a regeneration, the program will check that this folder contains all the files necessary for the regeneration. When you define a path in the menu omv-regen will scan the files in that path and look for the most recent backup. Once the backup is located, omv-regen will check that all the necessary files are inside. If any file is missing, the route will not be considered valid and you will not be allowed to continue further. \
 \n \
@@ -414,7 +423,7 @@ txt AyudaRegenera \
 \n    ${AzulD}- REGENERATE THE NETWORK INTERFACE:${ResetD}    This option is used to skip regenerating the network interface. If you deactivate this option, the network interface will not be regenerated and the IP will remain the same as the system's after the reboot at the end of the process. If you activate this option, the network interface will be regenerated at the end of the regeneration process. If the original IP is different from the current IP you will need to connect to the original IP after the reboot to access OMV. The menu tells you what this IP will be before starting the regeneration. When the regeneration ends you will also have it on the screen but you may not see it if you are not attentive."
 
   AYUDA=("${txt[AyudaComoUsar]}" "${txt[AyudaFunciones]}" "${txt[AyudaProcedimiento]}" "${txt[AyudaConsejos]}" "${txt[AyudaBackup]}" "${txt[AyudaRegenera]}")
-  if [ "$ORA[Actualizar]" = "Si" ] || [ "$ORA[Actualizar]" = "Yes" ]; then
+  if [ "${ORA[Actualizar]}" = "Si" ] || [ "${ORA[Actualizar]}" = "Yes" ]; then
     ORA[Actualizar]="${txt[Si]}"
   fi
 }
@@ -427,8 +436,8 @@ Ayuda () {
     dialog \
       --backtitle "omv-regen ${ORVersion} ${txt[Ayuda]}" \
       --title "omv-regen ${ORVersion} ${txt[Ayuda]}" \
-      --ok-label "${txt[Siguiente]}" \
-      --cancel-label "${txt[Salir]}" \
+      --yes-label "${txt[Siguiente]}" \
+      --no-label "${txt[Salir]}" \
       --extra-button \
       --extra-label "${txt[Anterior]}" \
       --colors \
@@ -490,8 +499,8 @@ MenuBackup () {
     dialog \
       --backtitle "omv-regen backup ${ORVersion}" \
       --title "${txt[1]}" \
-      --ok-label "${txt[Ejecutar]}" \
-      --cancel-label "${txt[Volver]}" \
+      --yes-label "${txt[Ejecutar]}" \
+      --no-label "${txt[Volver]}" \
       --extra-button \
       --extra-label "${txt[Modificar]}" \
       --help-button \
@@ -767,10 +776,10 @@ MenuRegenera () {
     dialog \
       --backtitle "omv-regen regenera ${ORVersion}" \
       --title "${txt[1]}" \
-      --ok-label "${txt[11]}" \
+      --yes-label "${txt[11]}" \
       --extra-button \
       --extra-label "${txt[12]}" \
-      --cancel-label "${txt[13]}" \
+      --no-label "${txt[13]}" \
       --colors \
       --yesno "${txt[2]}" 0 0
     Respuesta=$?
@@ -841,16 +850,9 @@ RegeneraAjustes () {
     Salida=$?
     case $Salida in
       0)
-        if [ "$(echo "$Respuesta" | grep Kernel)" ]; then
-          ORA[Kernel]="on"
-        else
-          ORA[Kernel]="off"
-        fi
-        if [ "$(echo "$Respuesta" | grep "${txt[Red]}")" ]; then
-          ORA[Red]="on"
-        else
-          ORA[Red]="off"
-        fi
+        ORA[Kernel]="off"; ORA[Red]="off"
+        [ "$(echo "$Respuesta" | grep Kernel)" ] && ORA[Kernel]="on"
+        [ "$(echo "$Respuesta" | grep "${txt[Red]}")" ] && ORA[Red]="on"
         GuardarAjustes
         Info 3 "La configuración de Regenera se ha guardado." "The Regenera configuration has been saved."
         ;;
@@ -882,8 +884,8 @@ OpcionesActualizacion () {
   Salida=$?
   case $Salida in
     0)
-      ORA[Buscar]=$(echo "$Respuesta" | grep "${txt[Buscar]}"); [ "${ORA[Buscar]}" ] && ORA[Buscar]="on" || ORA[Buscar]="off"
-      ORA[Siempre]=$(echo "$Respuesta" | grep "${txt[Siempre]}"); [ "${ORA[Siempre]}" ] && ORA[Siempre]="on" || ORA[Siempre]="off"
+      [ "$(echo "$Respuesta" | grep "${txt[Buscar]}")" ] && ORA[Buscar]="on"; [ ! "${ORA[Buscar]}" = "on" ] && ORA[Buscar]="off"
+      [ "$(echo "$Respuesta" | grep "${txt[Siempre]}")" ] && ORA[Siempre]="on"; [ ! "${ORA[Siempre]}" = "on" ] && ORA[Siempre]="off"
       [ "${ORA[Siempre]}" = "on" ] && ORA[Buscar]="on"
       Ahora=$(echo "$Respuesta" | grep "${txt[Ahora]}")
       GuardarAjustes
@@ -973,7 +975,6 @@ ValidarRegenera () {
   ValidarRegenera=""; ValRegRuta=""; ValFechaBackup=""; TarRegen=""; ValDpkg=""; ValRegCont=""; ValRegDiscos=""; ValRegRootfs=""; IpOR=""; IpAC=""; KernelOR=""; FechaBackup=""; TarUserNumero=""; Discos=""; Dev=""; RootfsAC=""; RootfsOR=""; DiscosAC=""; DiscosOR=""; Serial=""; DpkgAC=""
 
   # Validar Ruta de Backup de origen
-
   TarRegen="$(find "${ORA[RutaOrigen]}" -name 'ORB_*_regen.tar.gz' | sort -r | awk -F "/" 'NR==1{print $NF}')"
   if [ "${TarRegen}" = "" ]; then
     ValidarRegenera="si"; ValRegRuta="si"
@@ -1343,7 +1344,7 @@ Regenera () {
         echoe "Módulo de Salt ${Modulo} configurado." "Salt module ${Modulo} configured."
       done
       Limpiar
-      echoe "La configuración de módulos salt para la regeneración de ${Etiqueta} ha finalizado." "The configuration of salt modules for the regeneration of ${Etiqueta} is complete..."
+      echoe "Configuración de módulos salt completada." "Salt module configuration completed."
     fi
   fi
 }
@@ -1550,7 +1551,7 @@ OrdenarComplementos () {
       Analizar "${Plugin}"
       if [ ! "${InstII}" ]; then
         case "${Plugin}" in
-          *kernel|*sharerootfs|*zfs|*lvm2|*mergerfs|*snapraid|*remotemount)
+          *kernel|*sharerootfs|*zfs|*lvm2|*mergerfs|*snapraid|*remotemount|*md)
             ControlVersiones esencial "${Plugin}"
             ;;
           *symlinks|*apttool|*kvm)
@@ -1599,16 +1600,26 @@ RegeneraFase2 () {
   if [ ! "${VersionOR}" ]; then
     echoe "omv-extras no estaba instalado en el servidor original. No se va a instalar." "omv-extras was not installed on the original server. It is not going to be installed."
   elif [ ! "${InstII}" ]; then
-    echoe "Descargando el complemento omv-extras.org para openmediavault 6.x ..." "Downloading omv-extras.org plugin for openmediavault 6.x ..."
-    Archivo="openmediavault-omvextrasorg_latest_all6.deb"
+    [ -f "/etc/apt/sources.list.d/omvextras.list" ] && rm "/etc/apt/sources.list.d/omvextras.list"
+    echoe "Descargando el complemento omv-extras.org para openmediavault ${OmvVersion}.x ..." "Downloading omv-extras.org plugin for openmediavault ${OmvVersion}.x ..."
+    Archivo="openmediavault-omvextrasorg_latest_all${OmvVersion}.deb"
+    if ! grep -qrE "^deb.*${Codename}\s+main" /etc/apt/sources.list*; then
+      echoe "Añadiendo el repositorio principal que falta..." "Adding missing main repo..."
+      echo "deb http://deb.debian.org/debian/ ${Codename} main contrib non-free" | tee -a /etc/apt/sources.list
+    fi
+    if ! grep -qrE "^deb.*${Codename}-updates\s+main" /etc/apt/sources.list*; then
+      echoe "Añadiendo el repositorio de actualizaciones principales que falta..." "Adding missing main updates repo..."
+      echo "deb http://deb.debian.org/debian/ ${Codename}-updates main contrib non-free" | tee -a /etc/apt/sources.list
+    fi
     echoe "Actualizando repositorios antes de instalar..." "Updating repos before installing..."
     apt-get update
     echoe "Instalando prerequisitos..." "Install prerequisites..."
-    apt-get --yes --no-install-recommends install gnupg
-    [ -f "${Archivo}" ] && rm ${Archivo}
+    apt-get --yes --no-install-recommends install gnupg 
+    [ $? -gt 0 ] && Salir "No se pueden instalar los requisitos previos de omv-extras. Saliendo." "Unable to install omv-extras prerequisites.  Exiting."
+    [ -f "${Archivo}" ] && rm "${Archivo}"
     wget "${URLextras}/${Archivo}"
     if [ -f "${Archivo}" ]; then
-      if ! dpkg -i ${Archivo}; then
+      if ! dpkg -i "${Archivo}"; then
         echoe "Instalando otras dependencias..." "Installing other dependencies..."
         apt-get -f install
       fi
@@ -1643,8 +1654,8 @@ RegeneraFase3 () {
       sed -i 's/^exit 0.*$/echo "Completado"/' /tmp/installproxmox
       . /tmp/installproxmox "${KernelOR}"
       rm -f /tmp/installproxmox
-      Info 5 "\n\nKernel proxmox ${KernelOR} instalado.\nEs necesario reiniciar el sistema para continuar la regeneración.\n\n\n${RojoD}Para completar la regeneración DESPUES DE REINICIAR EJECUTA DE NUEVO omv-regen\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
-      "\n\nKernel proxmox ${KernelOR} installed.\nA system reboot is required to continue regeneration.\n\n\n${RojoD}To complete the regeneration AFTER REBOOT RUN AGAIN omv-regen\n\n ${ResetD}\nThe process will continue automatically.\n "
+      Info 5 "\n\nKernel proxmox ${KernelOR} instalado.\nSe va a reiniciar el sistema para utilizar el nuevo kernel.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
+      "\n\nKernel proxmox ${KernelOR} installed.\nThe system will be rebooted to use the new kernel.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
       echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
       FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
       reboot
@@ -1659,7 +1670,7 @@ RegeneraFase4 () {
   echoe "\n>>>   >>>    FASE Nº4: MONTAR SISTEMAS DE ARCHIVOS.\n" "\n>>>   >>>    PHASE Nº4: MOUNT FILE SYSTEMS.\n"
   Analizar openmediavault-sharerootfs
   if [ ! "${InstII}" ]; then
-    echoe "Instala openmediavault-sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS mdadm)" "Install openmediavault-sharerootfs. Regenerate fstab (EXT4 BTRFS mdadm file systems)"
+    echoe "Instala openmediavault-sharerootfs. Regenera fstab (Sistemas de archivos EXT4 BTRFS)" "Install openmediavault-sharerootfs. Regenerate fstab (EXT4 BTRFS file systems)"
     Instalar openmediavault-sharerootfs
     Regenera "${CONFIG[hdparm]}"
     Regenera "${CONFIG[fstab]}"
@@ -1699,7 +1710,7 @@ RegeneraFase4 () {
     Instalar openmediavault-symlinks
     ControlVersiones noesencial openmediavault-symlinks
     if [ ! "${ControlVersiones}" ]; then
-      Regenera openmediavault-symlinks
+      Regenera "${CONFIG[openmediavault-symlinks]}"
       LeerValor /config/services/symlinks/symlinks/symlink/source
       if [ "${NumVal}" ]; then
         b=0; SymFU=""; SymDE=""
@@ -1722,7 +1733,7 @@ RegeneraFase4 () {
 }
 
 RegeneraFase5 () {
-  echoe "\n>>>   >>>    FASE Nº5: REGENERAR RESTO DE GUI.\n" "\n>>>   >>>    PHASE Nº5: REGENERATE REST OF GUI.\n"
+  echoe "\n>>>   >>>    FASE Nº5: REGENERAR USUARIOS, CARPETAS COMPARTIDAS Y RESTO DE GUI.\n" "\n>>>   >>>    PHASE Nº5: REGENERATE USERS, SHARED FOLDERS AND REST OF GUI.\n"
   echoe "Restaurar archivos. Regenerar Usuarios. Carpetas compartidas. Smart. Servicios." "Restore files. Regenerate Users. Shared folders. Smart. Services."
   echoe "Restaurando archivos de sistema..." "Restoring system files..."
   rsync -av "${ORA[RutaRegen]}"/ / --exclude "${Configxml}" --exclude /ORB_* --exclude "${Omvregen}"
@@ -1832,7 +1843,7 @@ RegeneraFase7 () {
   if [ "${ORA[Red]}" = "off" ]; then
     Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es NO regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar.\nRecuerda borrar la caché del navegador." "Regeneration is complete!\n\nThe active setting in omv-regen is to NOT regenerate the network interface.\nThe system will reboot to finish.\nRemember to clear your browser cache."
   else
-    Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar.\n${RojoD}La IP del sistema de origen era ${IpOR}${ResetD}\nDespués del reinicio puedes acceder al servidor en esa IP.\nRecuerda borrar la caché del navegador." "Regeneration is complete!\n\nThe active setting in omv-regen is to regenerate the network interface.\nThe system will reboot to finish.\n${RojoD}The IP of the original system was ${IpOR}${ResetD}\nAfter reboot you can access the server on that IP.\nRemember to clear your browser cache."
+    Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar.\n${RojoD}La IP del sistema de origen era ${IpOR}${ResetD}\nDespués del reinicio puedes acceder al servidor en esa IP si era IP estática.\nRecuerda borrar la caché del navegador." "Regeneration is complete!\n\nThe active setting in omv-regen is to regenerate the network interface.\nThe system will reboot to finish.\n${RojoD}The IP of the original system was ${IpOR}${ResetD}\nAfter reboot you can access the server on that IP if it was static IP.\nRemember to clear your browser cache."
   fi
   if [ "${ComplementosNoInstalados}" ]; then
     Info 10 "Debido a una reciente actualización, la versión que tenía el servidor original y la versión disponible en internet para la instalación de:\n${ComplementosNoInstalados} \nno coinciden.\nEse o esos complementos no eran esenciales para el sistema y omv-regen los ha instalado pero no los ha regenerado, tendrás que configurarlo en la GUI de OMV. Si prefieres hacer una regeneración completa haz un nuevo backup actualizado del sistema original y comienza de nuevo." "Due to a recent update, the version that the original server had and the version available on the internet for:\n${ComplementosNoInstalados} \ninstallation do not match.\nThat plugin or plugins were not essential for the system and omv-regen has installed them but has not regenerated them, you will have to configure it in the OMV GUI. If you prefer to do a complete regeneration, make a new updated backup of the original system and start again."
@@ -1857,8 +1868,14 @@ RegeneraFase7 () {
 # Root
 [[ $(id -u) -ne 0 ]] && Salir ayuda "Ejecuta omv-regen con sudo o como root.  Saliendo..." "Run omv-regen with sudo or as root.  Exiting..."
 
-# Release 6.x.
-[ ! "$(lsb_release --codename --short)" = "bullseye" ] && Salir ayuda "Versión no soportada.   Solo está soportado OMV 6.x.   Saliendo..." "Unsupported version.  Only OMV 6.x. are supported.  Exiting..."
+# Versiones 6.x. o 7.x.
+if [ "${Codename}" = "bullseye" ]; then
+  [ ! ${OmvVersion} = "6" ] && Salir "Se ha detectado Debian 11. Debes instalar previamente OMV6." "Debian 11 has been detected. You must previously install OMV6."
+elif [ "${Codename}" = "bookworm" ]; then
+  [ ! ${OmvVersion} = "7" ] && Salir "Se ha detectado Debian 12. Debes instalar previamente OMV7." "Debian 12 has been detected. You must previously install OMV7."
+else
+  Salir "Versión no soportada.   Solo está soportado OMV 6.x. y OMV 7.x.  Saliendo..." "Unsupported version.  Only OMV 6.x. and OMV 7.x. are supported.  Exiting..."
+fi
 
 # Comprobar si omv-regen está instalado
 if [ ! "$0" = "${Omvregen}" ]; then
@@ -1944,15 +1961,14 @@ while true; do
     txt 1 "                      MENU PRINCIPAL OMV-REGEN " "                        OMV-REGEN MAIN MENU"
     txt 2 "--> Crear un backup del sistema actual.        " "--> Create a backup of the current system. "
     txt 3 "--> Modificar y guardar ajustes de Backup.     " "--> Modify and save Backup settings.       "
-    txt 4 "--> Crear/eliminar tarea programada de backups." "--> Create/delete scheduled backup task.   "
-    txt 5 "--> Regenerar sistema a partir de un Backup.   " "--> Regenerate a new system from a backup. "
-    txt 6 "--> Modificar y guardar ajustes de Regenera.   " "--> Modify and save Regenera settings.     "
-    txt 7 "--> Actualizar omv-regen.                      " "--> Update omv-regen.                      "
-    txt 8 "--> Resetear ajustes.                          " "--> Reset settings.                        "
-    txt 9 "--> Cambiar idioma.                            " "--> Change language.                       "
-    txt 10 "--> Ayuda general.                            " "--> General help.                          "
-    txt 11 "--> Salir de omv-regen.                       " "--> Exit omv-regen.                        "
-    [ "${ORA[ActualizacionPendiente]}" ] && txt 12 "          ¡¡ HAY UNA ACTUALIZACION DISPONIBLE DE OMV-REGEN !!\n\n\n" "                AN UPDATE TO OMV-REGEN IS AVAILABLE !!\n\n\n" || txt 12 ""
+    txt 4 "--> Regenerar sistema a partir de un Backup.   " "--> Regenerate a new system from a backup. "
+    txt 5 "--> Modificar y guardar ajustes de Regenera.   " "--> Modify and save Regenera settings.     "
+    txt 6 "--> Actualizar omv-regen.                      " "--> Update omv-regen.                      "
+    txt 7 "--> Resetear ajustes.                          " "--> Reset settings.                        "
+    txt 8 "--> Cambiar idioma.                            " "--> Change language.                       "
+    txt 9 "--> Ayuda general.                            " "--> General help.                          "
+    txt 10 "--> Salir de omv-regen.                       " "--> Exit omv-regen.                        "
+    [ "${ORA[ActualizacionPendiente]}" ] && txt 11 "          ¡¡ HAY UNA ACTUALIZACION DISPONIBLE DE OMV-REGEN !!\n\n\n" "                AN UPDATE TO OMV-REGEN IS AVAILABLE !!\n\n\n" || txt 11 ""
     Camino=$(dialog \
       --backtitle "omv-regen ${ORVersion}" \
       --title "omv-regen ${ORVersion}" \
@@ -1961,16 +1977,16 @@ while true; do
       --help-button \
       --help-label "${txt[Ayuda]}"\
       --stdout \
-      --menu "\n${txt[12]}${txt[1]}\n " 0 0 9 \
+      --menu "\n${txt[11]}${txt[1]}\n " 0 0 9 \
       Backup "${txt[2]}" \
       "${txt[Backup_Ajustes]}" "${txt[3]}" \
-      Regenera "${txt[5]}" \
-      "${txt[Regenera_Ajustes]}" "${txt[6]}" \
-      "${txt[Actualizar]}" "${txt[7]}" \
-      "${txt[Resetear]}" "${txt[8]}" \
-      "${txt[Idioma]}" "${txt[9]}" \
-      "${txt[Ayuda]}" "${txt[10]}" \
-      "${txt[Salir]}" "${txt[11]}")
+      Regenera "${txt[4]}" \
+      "${txt[Regenera_Ajustes]}" "${txt[5]}" \
+      "${txt[Actualizar]}" "${txt[6]}" \
+      "${txt[Resetear]}" "${txt[7]}" \
+      "${txt[Idioma]}" "${txt[8]}" \
+      "${txt[Ayuda]}" "${txt[9]}" \
+      "${txt[Salir]}" "${txt[10]}")
     Salida=$?
     case $Salida in
       0)

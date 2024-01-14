@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0
+# omv-regen 7.0.1
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0"
+ORVersion="7.0.1"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -1767,7 +1767,7 @@ RegeneraFase6 () {
     ControlVersiones noesencial openmediavault-apttool
     if [ ! "${ControlVersiones}" ]; then
       Regenera "${CONFIG[openmediavault-apttool]}"
-      LeerValor /config/services/apttools/packages/package/packagename
+      LeerValor /config/services/apttool/packages/package/packagename
       if [ ! "${NumVal}" ]; then
         echoe "La base de datos original no contiene paquetes instalados mediante el complemento apttool." "The original database does not contain packages installed using the apttool plugin."
       else

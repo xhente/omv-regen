@@ -29,10 +29,10 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
 
    - PASO 1. Crea un backup del sistema original con omv-regen.
    - PASO 2. Haz una instalación nueva de OMV en el disco que quieras y conecta las unidades de datos.
-   - PASO 3. Utiliza omv-regen para clonar las configuraciones desde el backup en el nuevo sistema. 
+   - PASO 3. Utiliza omv-regen para clonar las configuraciones desde el backup en el nuevo sistema.
 
 
-![omv-regen 2 0 esp](https://github.com/xhente/omv-regen/assets/110301854/a1bbfe2e-9c12-485d-b461-16ca2ed15f52)
+![omv-regen_7_esp](https://github.com/xhente/omv-regen/assets/110301854/662d83e2-8c2c-42d9-8d1c-24f6c3687410)
 
 
 ## COMO USAR OMV-REGEN
@@ -132,7 +132,7 @@ El resultado será el siguiente:
 
 Nota: Ver mas abajo un esquema de la configuración de ejecución
 
-AGRADECIMIENTOS: Gracias a Aaron Murray por los consejos en el desarrollo de la versión 1.0 de omv-regen.
+AGRADECIMIENTOS: Gracias a Aaron Murray por sus consejos en el desarrollo de omv-regen.
 _____________________________________________________________________________________________________________________
 # omv-regen
 
@@ -155,8 +155,7 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
    - STEP 3. Use omv-regen to clone the configurations from the backup to the new system.
 
 
-![omv-regen 2 0](https://github.com/xhente/omv-regen/assets/110301854/3fd00cda-543c-4811-8712-5492202fc306)
-
+![omv-regen_7_eng](https://github.com/xhente/omv-regen/assets/110301854/41f84af9-76e7-43f1-bd00-d5122f2718ea)
 
 
 ## HOW TO USE OMV-REGEN
@@ -254,13 +253,12 @@ The result will be the following:
       openmediavault-webdav
   - Selective installation of omv-extras depending on the Openmediavault version.
 
-ACKNOWLEDGMENTS: Thanks to Aaron Murray for advice in developing version 1.0 of omv-regen.
+ACKNOWLEDGMENTS: Thanks to Aaron Murray for his advice in developing omv-regen.
 ______________________________________________________________________________________________________________________
 
 
-![CONFIGURACION OMV-REGEN_2 0_Página_1](https://github.com/xhente/omv-regen/assets/110301854/82def122-6edd-45e9-b7b2-144f184e9845)
-![CONFIGURACION OMV-REGEN_2 0_Página_2](https://github.com/xhente/omv-regen/assets/110301854/b5baec28-827e-4b07-adfa-f1fa0efe267a)
-![CONFIGURACION OMV-REGEN_2 0_Página_3](https://github.com/xhente/omv-regen/assets/110301854/45fecf09-c8d7-468c-8f20-36a1740e9bd8)
-[CONFIGURACION OMV-REGEN_2.0.pdf](https://github.com/xhente/omv-regen/files/12840372/CONFIGURACION.OMV-REGEN_2.0.pdf)
-[CONFIGURACION OMV-REGEN_2.0.ods](https://github.com/xhente/omv-regen/files/12840373/CONFIGURACION.OMV-REGEN_2.0.ods)
-
+![CONFIGURACION OMV-REGEN_7 0_Página_1](https://github.com/xhente/omv-regen/assets/110301854/98d89e6d-8e3e-48ab-bc26-462cf921c7ef)
+![CONFIGURACION OMV-REGEN_7 0_Página_2](https://github.com/xhente/omv-regen/assets/110301854/c7e1887e-f982-4fd0-8100-19767117d0d0)
+![CONFIGURACION OMV-REGEN_7 0_Página_3](https://github.com/xhente/omv-regen/assets/110301854/196926f2-ca69-4689-aab9-486ae839d447)
+[CONFIGURACION OMV-REGEN_7.0.pdf](https://github.com/xhente/omv-regen/files/13792231/CONFIGURACION.OMV-REGEN_7.0.pdf)
+[CONFIGURACION OMV-REGEN_7.0.ods](https://github.com/xhente/omv-regen/files/13792232/CONFIGURACION.OMV-REGEN_7.0.ods)

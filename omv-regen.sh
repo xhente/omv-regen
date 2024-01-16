@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.1
+# omv-regen 7.0.2
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.1"
+ORVersion="7.0.2"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -176,7 +176,8 @@ CONFIG[openmediavault-filebrowser]="/config/services/filebrowser avahi filebrows
 CONFIG[openmediavault-flashmemory]="nulo"
 CONFIG[openmediavault-forkeddaapd]="/config/services/daap forked-daapd monit"
 CONFIG[openmediavault-ftp]="/config/services/ftp avahi monit proftpd"
-CONFIG[openmediavault-hosts]="/config/system//network/hosts hosts"
+CONFIG[openmediavault-hosts]="/config/system/network/hosts hosts"
+CONFIG[openmediavault-iperf3]="/config/services/iperf3 iperf3"
 CONFIG[openmediavault-kernel]="nulo"
 CONFIG[openmediavault-kvm]="/config/services/kvm"
 CONFIG[openmediavault-locate]="nulo"

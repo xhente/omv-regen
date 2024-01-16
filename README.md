@@ -15,9 +15,11 @@ Pregunta tus dudas en el foro de openmediavault.
 
 # omv-regen
 
-¿NECESITAS RESTAURAR LA CONFIGURACIÓN DE OMV? ESTA ES LA SOLUCIÓN.
+¿NECESITAS MIGRAR LA CONFIGURACIÓN DE OMV A OTRO SISTEMA?
+¿NECESITAS HACER UNA NUEVA INSTALACIÓN DE OMV Y MANTENER LA CONFIGURACIÓN? 
+ESTA ES LA SOLUCIÓN.
 
-ESTADO: Estable.
+ESTADO: Estable. Soporta OMV6 y OMV7.
 
 ## INSTALACIÓN
 
@@ -136,10 +138,11 @@ AGRADECIMIENTOS: Gracias a Aaron Murray por sus consejos en el desarrollo de omv
 _____________________________________________________________________________________________________________________
 # omv-regen
 
-DO YOU NEED TO RESTORE THE OMV CONFIGURATION? THIS IS THE SOLUTION.
+DO YOU NEED TO MIGRATE YOUR OMV CONFIGURATION TO ANOTHER SYSTEM?
+DO YOU NEED TO DO A NEW OMV INSTALLATION AND MAINTAIN THE CONFIGURATION?
+THIS IS THE SOLUTION.
 
-
-STATE: Stable.
+STATE: Stable. Supports OMV6 and OMV7.
 
 ## INSTALLATION:
 

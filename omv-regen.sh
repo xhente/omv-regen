@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.3
+# omv-regen 7.0.4
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.3"
+ORVersion="7.0.4"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -186,6 +186,7 @@ CONFIG[openmediavault-lvm2]="nulo collectd fstab monit quota"
 CONFIG[openmediavault-md]="nulo initramfs mdadm collectd fstab monit quota"
 CONFIG[openmediavault-mergerfs]="/config/services/mergerfs collectd fstab mergerfs monit quota"
 CONFIG[openmediavault-minidlna]="/config/services/minidlna minidlna"
+CONFIG[openmediavault-mounteditor]="nulo fstab monit"
 CONFIG[openmediavault-nut]="/config/services/nut collectd monit nut"
 CONFIG[openmediavault-onedrive]="/config/services/onedrive onedrive"
 CONFIG[openmediavault-owntone]="/config/services/owntone owntone"

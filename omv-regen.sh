@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.2
+# omv-regen 7.0.3
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.2"
+ORVersion="7.0.3"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -134,7 +134,7 @@ if [ "${OmvVersion}" = "6" ]; then
   CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools"
 else
   CONFIG[email]="/config/system/email mdadm monit postfix smartmontools"
-  CONFIG[notification]="/config/system/notification mdadm monit smartmontools"
+  CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools zfszed"
 fi
 CONFIG[powermanagement]="/config/system/powermanagement cpufrequtils cron systemd-logind"
 CONFIG[monitoring]="/config/system/monitoring collectd monit rrdcached"

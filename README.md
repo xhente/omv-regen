@@ -15,9 +15,11 @@ Pregunta tus dudas en el foro de openmediavault.
 
 # omv-regen
 
-¿NECESITAS RESTAURAR LA CONFIGURACIÓN DE OMV? ESTA ES LA SOLUCIÓN.
+¿NECESITAS MIGRAR LA CONFIGURACIÓN DE OMV A OTRO SISTEMA?
+¿NECESITAS HACER UNA NUEVA INSTALACIÓN DE OMV Y MANTENER LA CONFIGURACIÓN? 
+ESTA ES LA SOLUCIÓN.
 
-ESTADO: Estable.
+ESTADO: Estable. Soporta OMV6 y OMV7.
 
 ## INSTALACIÓN
 
@@ -114,8 +116,8 @@ El resultado será el siguiente:
   - Se ha suprimido el servicio de reinicio, ahora si se instala un kernel se debe reiniciar manualmente. Esto garantiza la visualización del proceso.
   - Si se debe reiniciar durante la regeneración omv-regen registrará el estado del proceso para iniciar automáticamente donde se detuvo.
   - Si hay un corte de energía o cualquier otro problema se puede ejecutar de nuevo omv-regen y continuará donde se detuvo sea donde sea.
-  - Selección de complementos según sean o no esenciales. Si hay una actualización en un complemento no esencial se instalará y no se regenerará, pero la regeneración continuará.
-  - Sistema integrado para avisar o actualizar automáticamente omv-regen a elección del usuario. Si hay una regeneración en curso no se actualizará hasta que termine.
+  - Selección de complementos según sean o no esenciales. Si hay una actualización en un complemento no esencial el complemento se instalará y no se regenerará, pero la regeneración del sistema continuará.
+  - Sistema integrado para avisar o actualizar automáticamente omv-regen a elección del usuario. Si hay una regeneración en curso no se actualizará omv-regen hasta que termine la regeneración del sistema.
   - Elección libre de las carpetas opcionales que se incluyen el backup.
   - Contenido de la ayuda más generoso.
 
@@ -123,11 +125,12 @@ El resultado será el siguiente:
 
   - omv-regen ahora admite las versiones de Openmediavault 6.x y 7.x
   - Añadido soporte para los nuevos complementos de OMV7.
-      openmediavault-md
-      openmediavault-hosts
-      openmediavault-diskclone
-      openmediavault-podman
-      openmediavault-webdav
+      - openmediavault-diskclone
+      - openmediavault-hosts
+      - openmediavault-iperf3
+      - openmediavault-md
+      - openmediavault-podman
+      - openmediavault-webdav
   - Instalación selectiva de omv-extras en función de la versión de Openmediavault.
 
 Nota: Ver mas abajo un esquema de la configuración de ejecución
@@ -136,10 +139,11 @@ AGRADECIMIENTOS: Gracias a Aaron Murray por sus consejos en el desarrollo de omv
 _____________________________________________________________________________________________________________________
 # omv-regen
 
-DO YOU NEED TO RESTORE THE OMV CONFIGURATION? THIS IS THE SOLUTION.
+DO YOU NEED TO MIGRATE YOUR OMV CONFIGURATION TO ANOTHER SYSTEM?
+DO YOU NEED TO DO A NEW OMV INSTALLATION AND MAINTAIN THE CONFIGURATION?
+THIS IS THE SOLUTION.
 
-
-STATE: Stable.
+STATE: Stable. Supports OMV6 and OMV7.
 
 ## INSTALLATION:
 
@@ -237,8 +241,8 @@ The result will be the following:
   - The reboot service has been removed, now if a kernel is installed it must be rebooted manually. This guarantees visualization of the process.
   - If it must be restarted during regeneration omv-regen will record the state of the process to automatically start where it stopped.
   - If there is a power outage or any other problem you can run omv-regen again and it will continue where it stopped wherever.
-  - Selection of plugins according to whether or not they are essential. If there is an update on a non-essential plugin it will be installed and not regenerated, but regeneration will continue.
-  - Integrated system to automatically notify or update omv-regen at the user's choice. If a regeneration is in progress it will not be updated until it is finished.
+  - Selection of plugins according to whether or not they are essential. If there is an update to a non-essential plugin the plugin will be installed and not regenerated, but system regeneration will continue.
+  - Integrated system to automatically notify or update omv-regen at the user's choice. If a regeneration is in progress, omv-regen will not be updated until the system regeneration is complete.
   - Free choice of optional folders that are included in the backup.
   - More generous help content.
 
@@ -246,11 +250,12 @@ The result will be the following:
 
   - omv-regen now supports Openmediavault versions 6.x and 7.x
   - Added support for new OMV7 plugins.
-      openmediavault-md
-      openmediavault-hosts
-      openmediavault-diskclone
-      openmediavault-podman
-      openmediavault-webdav
+      - openmediavault-diskclone
+      - openmediavault-hosts
+      - openmediavault-iperf3
+      - openmediavault-md
+      - openmediavault-podman
+      - openmediavault-webdav
   - Selective installation of omv-extras depending on the Openmediavault version.
 
 ACKNOWLEDGMENTS: Thanks to Aaron Murray for his advice in developing omv-regen.

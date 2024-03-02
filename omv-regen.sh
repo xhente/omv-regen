@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.4
+# omv-regen 7.0.5
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.4"
+ORVersion="7.0.5"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -104,7 +104,7 @@ declare -a COMPLEMENTOS
 Plugin=""
 KernelOR=""
 KernelIN=""
-declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-md" "openmediavault-remotemount")
+declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-md" "openmediavault-remotemount" "openmediavault-mounteditor")
 OrdenarComplementos=""
 VersionOR=""
 VersionDI=""
@@ -131,7 +131,7 @@ CONFIG[time]="/config/system/time chrony cron timezone"
 # Nota: El estado de salt cronapt solo existe en OMV6.
 if [ "${OmvVersion}" = "6" ]; then
   CONFIG[email]="/config/system/email cronapt mdadm monit postfix smartmontools"
-  CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools"
+  CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools zfszed"
 else
   CONFIG[email]="/config/system/email mdadm monit postfix smartmontools"
   CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools zfszed"

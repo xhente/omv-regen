@@ -262,8 +262,8 @@ ACKNOWLEDGMENTS: Thanks to Aaron Murray for his advice in developing omv-regen.
 ______________________________________________________________________________________________________________________
 
 
-![CONFIGURACION OMV-REGEN_7 0_Página_1](https://github.com/xhente/omv-regen/assets/110301854/98d89e6d-8e3e-48ab-bc26-462cf921c7ef)
-![CONFIGURACION OMV-REGEN_7 0_Página_2](https://github.com/xhente/omv-regen/assets/110301854/c7e1887e-f982-4fd0-8100-19767117d0d0)
-![CONFIGURACION OMV-REGEN_7 0_Página_3](https://github.com/xhente/omv-regen/assets/110301854/196926f2-ca69-4689-aab9-486ae839d447)
-[CONFIGURACION OMV-REGEN_7.0.pdf](https://github.com/xhente/omv-regen/files/13792231/CONFIGURACION.OMV-REGEN_7.0.pdf)
-[CONFIGURACION OMV-REGEN_7.0.ods](https://github.com/xhente/omv-regen/files/13792232/CONFIGURACION.OMV-REGEN_7.0.ods)
+![CONFIGURACION OMV-REGEN_7 0_Página_1](https://github.com/xhente/omv-regen/assets/110301854/5c7f380c-d921-4b67-bd17-f36bff3122aa)
+![CONFIGURACION OMV-REGEN_7 0_Página_2](https://github.com/xhente/omv-regen/assets/110301854/05d58167-8a0b-401a-9339-346f99182818)
+![CONFIGURACION OMV-REGEN_7 0_Página_3](https://github.com/xhente/omv-regen/assets/110301854/b8db9eab-a253-434c-b633-16fe27a766db)
+[CONFIGURACION OMV-REGEN_7.0.pdf](https://github.com/xhente/omv-regen/files/14469128/CONFIGURACION.OMV-REGEN_7.0.pdf)
+[CONFIGURACION OMV-REGEN_7.0.ods](https://github.com/xhente/omv-regen/files/14469129/CONFIGURACION.OMV-REGEN_7.0.ods)

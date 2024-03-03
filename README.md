@@ -171,7 +171,7 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
    - STEP 2. Do a fresh installation of OMV on the disk you want and connect the original data drives.
    - STEP 3. Use omv-regen to migrate the settings from the original system to the new system.
 
-![omv-regen_7_esp](https://github.com/xhente/omv-regen/assets/110301854/662d83e2-8c2c-42d9-8d1c-24f6c3687410)
+![omv-regen_7_eng](https://github.com/xhente/omv-regen/assets/110301854/a4201a06-dced-40cc-be7e-d1d947f39abe)
 
 ## WHAT IS OMV-REGEN
 

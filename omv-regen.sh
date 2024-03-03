@@ -311,13 +311,13 @@ txt AyudaComoUsar \
 \n \
 \n    El procedimiento básico se resume en tres pasos: \
 \n \
-\n          PASO 1. Crea un backup del sistema original con omv-regen backup. \
+\n          PASO 1. Crea un backup del sistema original con omv-regen. \
 \n          PASO 2. Haz una instalación nueva de OMV en el disco que quieras y conecta las unidades de datos originales. \
 \n          PASO 3. Utiliza omv-regen para migrar las configuraciones del sistema original al nuevo sistema. \
 \n \
 \n    ${AzulD}Paso 1. Crear un backup.${ResetD} \
 \n          - Inicia sesión por ssh en el sistema original, por ejemplo con putty. \
-\n          - Instala omv-regen en el sistema original. Teclea sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
+\n          - Instala omv-regen en el sistema original. Ejecuta -> sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
 \n          - Ejecuta el comando omv-regen y sigue las indicaciones de la interfaz gráfica de usuario para crear un backup. Marca la opción para actualizar el sistema antes de hacer el backup. omv-regen creará un archivo comprimido con tar que contiene los archivos necesarios para regenerar el sistema. Si has elegido opcionalmente alguna carpeta se creará otro archivo comprimido por cada carpeta elegida. Los archivos de cada backup están etiquetados en el nombre con fecha y hora.\
 \n          - Copia el backup a tu escritorio, por ejemplo con WinSCP. El archivo del backup es muy pequeño y se mueve instantáneamente. \
 \n \
@@ -327,7 +327,7 @@ txt AyudaComoUsar \
 \n \
 \n    ${AzulD}Paso 3. Migrar las configuraciones al nuevo sistema.${ResetD} \
 \n          - Inicia sesión por ssh en el nuevo sistema, por ejemplo con putty. \
-\n          - Instala omv-regen en el nuevo sistema. Teclea sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
+\n          - Instala omv-regen en el nuevo sistema. Ejecuta -> sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
 \n          - Crea una carpeta en el nuevo sistema y copia el backup a esa carpeta, por ejemplo con WinSCP. \
 \n          - Ejecuta el comando omv-regen y sigue las indicaciones de la interfaz gráfica de usuario para hacer la regeneración. Puedes elegir no configurar la red o no instalar el kernel proxmox si estaba instalado en el sistema original. Es posible que se requiera un reinicio durante el proceso, si es así omv-regen te pedirá hacerlo, después del reinicio ejecuta de nuevo omv-regen, el proceso seguirá su curso automáticamente. \
 \n          - omv-regen reiniciará el sistema cuando la regeneración finalice. Accede a la GUI de OMV en un navegador y comprueba que todo está como esperabas. Si no puedes acceder presiona Ctrl+Mays+R para borrar la caché del navegador, si es necesario repítelo varias veces. \
@@ -342,13 +342,13 @@ txt AyudaComoUsar \
 \n \
 \n    The basic procedure is summarized in three steps: \
 \n \
-\n          STEP 1. Create a backup of the original system with omv-regen backup. \
+\n          STEP 1. Create a backup of the original system with omv-regen. \
 \n          STEP 2. Do a fresh installation of OMV on the desired disk and connect the original data drives. \
 \n          STEP 3. Use omv-regen to migrate the settings from the original system to the new system. \
 \n \
 \n    ${AzulD}Step 1. Create a backup.${ResetD} \
 \n          - Log in via ssh on the original system, for example with putty. \
-\n          - Install omv-regen on the original system. Type sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
+\n          - Install omv-regen on the original system. Run -> sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
 \n          - Run the omv-regen command and follow the GUI prompts to create a backup. Check the option to update the system before making the backup. omv-regen will create a tar archive containing the files needed to regenerate the system. If you have optionally chosen a folder, another compressed file will be created for each folder chosen. The files in each backup are labeled in name with date and time.\
 \n          - Copy the backup to your desktop, for example with WinSCP. The backup file is very small and moves instantly. \
 \n \
@@ -358,7 +358,7 @@ txt AyudaComoUsar \
 \n \
 \n    ${AzulD}Step 3. Migrate configurations to the new system.${ResetD} \
 \n          - Log in via ssh to the new system, for example with putty. \
-\n          - Install omv-regen on the new system. Type sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
+\n          - Install omv-regen on the new system. Run -> sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash \
 \n          - Create a folder on the new system and copy the backup to that folder, for example with WinSCP. \
 \n          - Run the omv-regen command and follow the GUI prompts to do the regeneration. You can choose not to configure networking or not install the proxmox kernel if it was installed on the original system. A reboot may be required during the process, if so omv-regen will ask you to do so, after the reboot run omv-regen again, the process will continue automatically. \
 \n          - omv-regen will reboot the system when the regeneration is complete. Access the OMV GUI in a browser and check that everything is as you expected. If you cannot access press Ctrl+Shift+R to clear the browser cache, if necessary repeat it several times. \
@@ -373,19 +373,19 @@ txt AyudaFunciones \
 "\n \
 \n          FUNCIONES DE OMV-REGEN \
 \n \
-\n  1 - ${AzulD}omv-regen${ResetD} - Proporciona acceso a los menús de configuración y ejecución de cualquier función de omv-regen. Desde aquí podrás configurar fácilmente los parámetros para hacer un backup o una regeneración y podrás ejecutar ambos. También podrás gestionar las actualizaciones de omv-regen. \
+\n  1 - ${AzulD}omv-regen${ResetD} - Abre la interfaz gráfica con los menús de configuración y ejecución de cualquier función de omv-regen. La GUI te guiará para ejecutar un backup o una regeneración. \
 \n
-\n  2 - ${AzulD}omv-regen backup${ResetD} - Realiza un backup muy ligero de los datos esenciales para regenerar las configuraciones de un sistema OMV. Puedes incluir carpetas opcionales, incluso de tus discos de datos, y definir el destino. Ejecuta omv-regen en línea de comando y la interfaz te guiará para configurar los parámetros y guardarlos. Después puedes ejecutar el backup desde los menús o desde CLI con el comando: [ omv-regen backup ] Puedes configurar una tarea programada en la GUI de OMV que ejecute el comando [ omv-regen backup ] y gestionarlo desde allí. \
+\n  2 - ${AzulD}omv-regen backup${ResetD} - Realiza un backup muy ligero de los datos esenciales para regenerar las configuraciones de un sistema OMV. Puedes incluir carpetas opcionales, incluso de tus discos de datos, y definir el destino. Previamente debes configurar los parámetros del backup en la GUI de omv-regen, una vez configurado puedes ejecutar omv-regen backup en CLI o programar una tarea en la GUI de OMV para automatizar backups. \
 \n \
-\n  3 - ${AzulD}omv-regen regenera${ResetD} - Regenera un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup del sistema original realizado con omv-regen backup. Ejecuta omv-regen en línea de comando y la interfaz te guiará para configurar los parámetros y ejecutar la regeneración. Después puedes ejecutarla desde el menú o desde CLI con el comando: omv-regen regenera \
+\n  3 - ${AzulD}omv-regen regenera${ResetD} - Realiza una regeneración de un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup del sistema original realizado con omv-regen backup. Ejecuta omv-regen en línea de comando y la interfaz te guiará para configurar los parámetros y ejecutar la regeneración. Después puedes ejecutarla desde el menú o desde CLI con el comando omv-regen regenera \
 \n \
 \n  4 - ${AzulD}omv-regen ayuda${ResetD} - Acceso a los cuadros de diálogo con la ayuda completa de omv-regen." \
 "\n \
 \n          OMV-REGEN FEATURES \
 \n \
-\n  1 - ${AzulD}omv-regen${ResetD} - Provides access to the configuration menus and execution of any omv-regen function. From here you can easily configure the parameters to make a backup or a regeneration and you can execute both. You will also be able to manage omv-regen updates. \
+\n  1 - ${AzulD}omv-regen${ResetD} - Opens the graphical interface with the configuration and execution menus for any omv-regen function. The GUI will guide you to run a backup or regeneration. \
 \n
-\n  2 - ${AzulD}omv-regen backup${ResetD} - Performs a very light backup of essential data to regenerate the configurations of an OMV system. You can include optional folders, even from your data disks, and define the destination. Run omv-regen on the command line and the interface will guide you to configure the parameters and save them. You can then run the backup from the menus or from the CLI with the command: [ omv-regen backup ] You can configure a scheduled task in the OMV GUI that runs the command [ omv-regen backup ] and manage it from there. \
+\n  2 - ${AzulD}omv-regen backup${ResetD} - Performs a very light backup of essential data to regenerate the configurations of an OMV system. You can include optional folders, even from your data disks, and define the destination. You must previously configure the backup parameters in the omv-regen GUI, once configured you can run omv-regen backup in the CLI or schedule a task in the OMV GUI to automate backups. \
 \n \
 \n  3 - ${AzulD}omv-regen regenera${ResetD} - Regenerates a complete OMV system with its original configurations from a fresh OMV installation and the backup of the original system made with omv-regen backup. Run omv-regen on the command line and the interface will guide you to configure the parameters and run the regeneration. Then you can run it from the menu or from CLI with the command: omv-regen regenera \
 \n \
@@ -397,43 +397,42 @@ txt AyudaConsejos \
 \n \
 \n    ${AzulD}- CARPETAS OPCIONALES:${ResetD}    Si eliges carpetas opcionales asegúrate de que no son carpetas de sistema. O, si lo son, al menos asegúrate de que no dañarán el sistema cuando se copien al disco de OMV. Sería una lástima romper el sistema por esto una vez regenerado. \
 \n \
-\n    ${AzulD}- COMPLEMENTOS FILEBROWSER Y PHOTOPRISM:${ResetD}    Si utilizas los complementos Filebrowser o Photoprism debes buscar medios alternativos para respaldarlos. Son contenedores podman y omv-regen no los respaldará. omv-regen los instalará y regenerará las configuraciones de la base de datos de OMV, esto incluye las configuraciones de la GUI de OMV, carpeta compartida, puerto de acceso al complemento, etc. Pero las configuraciones internas de los dos contenedores se perderán. Tal vez sea suficiente con incluir la carpeta donde reside la base de datos del contenedor para que omv-regen también la restaure. Esto no garantiza nada, solo es una sugerencia no probada. \
+\n    ${AzulD}- COMPLEMENTOS FILEBROWSER Y PHOTOPRISM:${ResetD}    Si utilizas los complementos Filebrowser o Photoprism o cualquier otro basado en podman debes buscar medios alternativos para respaldarlos, omv-regen no los respaldará. omv-regen los instalará y regenerará las configuraciones de la base de datos de OMV, esto incluye las configuraciones de la GUI de OMV, carpeta compartida, puerto de acceso al complemento, etc. Pero las configuraciones internas de los dos contenedores se perderán. Tal vez sea suficiente con incluir la carpeta donde reside la base de datos del contenedor para que omv-regen también la restaure. Esto no garantiza nada, solo es una sugerencia no probada. \
 \n \
 \n    ${AzulD}- OPENMEDIAVAULT-APTTOOL:${ResetD}    Si tienes algún paquete instalado manualmente, por ejemplo lm-sensors, y quieres que también se instale al mismo tiempo puedes usar el complemento apttool. omv-regen instalará los paquetes que se hayan instalado mediante este complemento. \
 \n \
-\n    ${AzulD}- OPENMEDIAVAULT-SYMLINK:${ResetD}    De la misma forma que en el caso anterior, si usas symlinks en tu sistema omv-regen los recreará si se generaron con el complemento. Si lo hiciste de forma manual tendrás que volver a hacerlo. \
+\n    ${AzulD}- OPENMEDIAVAULT-SYMLINK:${ResetD}    Si usas symlinks en tu sistema omv-regen los recreará si se generaron con el complemento. Si lo hiciste de forma manual en CLI tendrás que volver a hacerlo en el sistema nuevo. \
 \n \
-\n    ${AzulD}- INTENTA HACER LA REGENERACION LO ANTES POSIBLE:${ResetD}    omv-regen omitirá, si es posible, la instalación de algún complemento si la versión disponible en internet para instalar no coincide con la versión que tenía instalada el servidor original. Esto se podrá hacer siempre que ese complemento no esté relacionado con el sistema de archivos, como pueden ser, mergerfs, zfs o similar, en tal caso la regeneración se detendrá y no podrás continuar. Si esto sucede tendrás que hacer un nuevo backup del sistema original actualizándolo previamente. Para evitar esto NO te demores en hacer la regeneración una vez hayas realizado el backup. omv-regen no te puede avisar antes de empezar a regenerar pues sin omv-extras instalado faltan los repositorios en el sistema para consultar versiones de la mayoría de los complementos. \
+\n    ${AzulD}- HAZ LA REGENERACION INMEDIATAMENTE DESPUÉS DEL BACKUP:${ResetD}    Debes hacer el backup y de forma inmediata hacer la regeneración para evitar diferencias entre versiones de paquetes. Ver Limitaciones de omv-regen. \
 \n
-\n    ${AzulD}- UNIDAD DE SISTEMA DIFERENTE:${ResetD}    Por el mismo motivo explicado en el punto anterior es muy recomendable utilizar una unidad de sistema diferente a la original para regenerar. Es muy sencillo usar un pendrive para instalar openmediavault. Si tienes la mala suerte de que se publique una actualización de un paquete esencial entre el momento del backup y el momento de la regeneración no podrás terminarla, y necesitarás el sistema original para hacer un nuevo backup actualizado. \
+\n    ${AzulD}- UNIDAD DE SISTEMA DIFERENTE:${ResetD}    Es muy recomendable utilizar una unidad de sistema diferente a la original para instalar OMV en el sistema nuevo. Es muy sencillo usar un pendrive para instalar openmediavault. Si tienes la mala suerte de que se publique una actualización de un paquete esencial entre el momento del backup y el momento de la regeneración no podrás terminar la regeneración, y necesitarás el sistema original para hacer un nuevo backup actualizado. \
 \n \
-\n    ${AzulD}- CONTENEDORES DOCKER:${ResetD}    Toda la información que hay en el disco de sistema original va a desaparecer. Para conservar los contenedores docker en el mismo estado asegurate de hacer algunas cosas antes. Cambia la ruta de instalación por defecto de docker desde la carpeta /var/lib/docker a una carpeta en alguno de los discos de datos. Configura todos los volumenes de los contenedores fuera del disco de sistema, en alguno de los discos de datos. Estas son recomendaciones generales, pero en este caso con mas motivo, si no lo haces perderás esos datos. Alternativamente puedes añadir la carpeta /var/lib/docker al backup como carpeta opcional." \
+\n    ${AzulD}- CONTENEDORES DOCKER:${ResetD}    Toda la información que hay en el disco de sistema original va a desaparecer. Para conservar los contenedores docker en el mismo estado asegúrate de hacer algunas cosas antes. Cambia la ruta de instalación por defecto de docker desde la carpeta /var/lib/docker a una carpeta en alguno de los discos de datos. Configura todos los volumenes de los contenedores fuera del disco de sistema, en alguno de los discos de datos. Estas son recomendaciones generales, pero en este caso con mas motivo, si no lo haces perderás esos datos. Alternativamente puedes añadir carpetas opcionales al backup." \
 "\n \
 \n          SOME ADVICES \
 \n \
 \n    ${AzulD}- OPTIONAL FOLDERS:${ResetD}    If you choose optional folders make sure they are not system folders. Or, if they are, at least make sure they won't harm your system when copied to the OMV disk. It would be a shame to break the system for this once regenerated. \
 \n \
-\n    ${AzulD}- FILEBROWSER AND PHOTOPRISM PLUGINS:${ResetD}    If you use the Filebrowser or Photoprism plugins you should find alternative means to back them up. They are podman containers and omv-regen will not support them. omv-regen will install them and regenerate the OMV database configurations, this includes the OMV GUI configurations, shared folder, plugin access port, etc. But the internal configurations of the two containers will be lost. It may be enough to include the folder where the container database resides so that omv-regen will restore it as well. This does not guarantee anything, it is just an untested suggestion. \
+\n    ${AzulD}- FILEBROWSER AND PHOTOPRISM PLUGINS:${ResetD}    If you use the Filebrowser or Photoprism plugins or any other based on podman you should find alternative means to back them up, omv-regen will not support them. omv-regen will install them and regenerate the OMV database configurations, this includes the OMV GUI configurations, shared folder, plugin access port, etc. But the internal configurations of the two containers will be lost. It may be enough to include the folder where the container database resides so that omv-regen will restore it as well. This does not guarantee anything, it is just an untested suggestion. \
 \n \
 \n    ${AzulD}- OPENMEDIAVAULT-APTTOOL:${ResetD}    If you have a package installed manually, for example lm-sensors, and you want it to also be installed at the same time you can use the apttool plugin. omv-regen will install packages that have been installed using this plugin. \
 \n \
-\n    ${AzulD}- OPENMEDIAVAULT-SYMLINK:${ResetD}    In the same way as in the previous case, if you use symlinks in your system omv-regen will recreate them if they were generated with the plugin. If you did it manually you will have to do it again. \
+\n    ${AzulD}- OPENMEDIAVAULT-SYMLINK:${ResetD}    If you use symlinks on your system omv-regen will recreate them if they were generated with the plugin. If you did it manually in CLI you will have to do it again in the new system. \
 \n \
-\n    ${AzulD}- TRY TO DO THE REGENERATION AS SOON AS POSSIBLE:${ResetD}    omv-regen will skip, if possible, the installation of any plugin if the version available on the Internet to install does not match the version that the original server had installed. This can be done as long as this plugin is not related to the file system, such as mergerfs, zfs or similar, in which case the regeneration will stop and you will not be able to continue. If this happens you will have to make a new backup of the original system, updating it previously. To avoid this, DO NOT delay doing the regeneration once you have made the backup. omv-regen cannot notify you before starting to regenerate because without omv-extras installed there are no repositories in the system to consult versions of most of the plugins. \
+\n    ${AzulD}- DO THE REGENERATION IMMEDIATELY AFTER THE BACKUP:${ResetD}    You must make the backup and immediately do the regeneration to avoid differences between package versions. See Limitations of omv-regen. \
 \n \
-\n    ${AzulD}- DIFFERENT SYSTEM UNIT:${ResetD}    For the same reason explained in the previous point, it is highly recommended to use a different system unit than the original one to regenerate. It is very easy to use a pendrive to install openmediavault. If you are unlucky enough that an update to an essential package is released between the time of the backup and the time of the rebuild, you will not be able to finish it, and you will need the original system to make a new updated backup. \
+\n    ${AzulD}- DIFFERENT SYSTEM UNIT:${ResetD}    It is highly recommended to use a different system drive than the original one to install OMV on the new system. It is very easy to use a pendrive to install openmediavault. If you are unlucky enough that an update to an essential package is released between the time of the backup and the time of the rebuild, you will not be able to finish the rebuild, and you will need the original system to make a new updated backup. \
 \n \
-\n    ${AzulD}- DOCKER CONTAINERS:${ResetD}    All the information on the original system disk will disappear. To keep your docker containers in the same state make sure you do a few things first. Change the default docker installation path from the /var/lib/docker folder to a folder on one of the data disks. Configure all container volumes off the system disk, on one of the data disks. These are general recommendations, but in this case even more so, if you don't do it you will lose that data. Alternatively you can add the /var/lib/docker folder to the backup as an optional folder."
+\n    ${AzulD}- DOCKER CONTAINERS:${ResetD}    All the information on the original system disk will disappear. To keep your docker containers in the same state make sure you do a few things first. Change the default docker installation path from the /var/lib/docker folder to a folder on one of the data disks. Configure all container volumes off the system disk, on one of the data disks. These are general recommendations, but in this case even more so, if you don't do it you will lose that data. Alternatively you can add optional folders to the backup."
 
 txt AyudaBackup \
 "\n \
 \n          OPCIONES DE OMV-REGEN BACKUP \
 \n \
-\n    ${AzulD}- RUTA DE LA CARPETA DE BACKUPS:${ResetD}    Esta carpeta se usará para almacenar todos los backups generados. Por defecto esta carpeta es /ORBackup, puedes usar la que quieras pero no uses los discos de datos si pretendes hacer una regeneración, no serán accesibles. Para hacer una regeneración es mejor copiar el backup directamente a tu escritorio con WinSCP o similar y luego copiarla al sistema nuevo. En esta carpeta omv-regen creará un archivo empaquetado con tar para cada backup, etiquetado con la fecha y la hora en el nombre. Si has incluido carpetas opcionales en el backup se crearán archivos adicionales también empaquetados con tar y con la etiqueta user1, user2,... Un backup completo con dos carpetas opcionales hecho el día 1 de octubre de 2023 a las 10:38 a.m. podría tener este aspecto: \
+\n    ${AzulD}- RUTA DE LA CARPETA DE BACKUPS:${ResetD}    Esta carpeta se usará para almacenar todos los backups generados. Por defecto esta carpeta es /ORBackup, puedes usar la que quieras pero no uses los discos de datos si pretendes hacer una regeneración, no serán accesibles en ese momento. Para hacer una regeneración es mejor copiar el backup directamente a tu escritorio con WinSCP o similar y luego copiarla al sistema nuevo. En esta carpeta omv-regen creará un archivo empaquetado con tar para cada backup, etiquetado con la fecha y la hora en el nombre. Si has incluido carpetas opcionales en el backup se crearán archivos adicionales también empaquetados con tar y con la etiqueta user1, user2,... Las subcarpetas tienen el prefijo ORB_ en su nombre. Si quieres conservar alguna versión de backup en particular y que omv-regen no la elimine puedes editar este prefijo a cualquier otra cosa y no se eliminará esa subcarpeta. Puedes utilizar omv-regen backup para programar backups con tareas programadas en la GUI de OMV. Se aplicará la configuración guardada. Un backup completo con dos carpetas opcionales hecho el día 1 de octubre de 2023 a las 10:38 a.m. podría tener este aspecto: \
 \n         ${AzulD}ORB_231001_103828_regen.tar.gz${ResetD}    <-- Archivo con la información de regenera \
 \n         ${AzulD}ORB_231001_103828_user1.tar.gz${ResetD}    <-- Archivo con la carpeta opcional 1 de usuario \
 \n         ${AzulD}ORB_231001_103828_user2.tar.gz${ResetD}    <-- Archivo con la carpeta opcional 2 de usuario \
-\n    Las subcarpetas tienen el prefijo ORB_ en su nombre. Si quieres conservar alguna versión de backup en particular y que omv-regen no la elimine puedes editar este prefijo a cualquier otra cosa y no se eliminará esa subcarpeta. Puedes utilizar omv-regen para programar backups con tareas programadas en la GUI de OMV. Se aplicará la configuración guardada. \
 \n \
 \n    ${AzulD}- DIAS QUE SE CONSERVAN LOS BACKUPS:${ResetD}    Esta opción establece el número de días máximo para conservar backups. Cada vez que hagas un backup se eliminarán todos aquellos existentes en la misma ruta con mas antigüedad de la configurada, mediante el escaneo de fechas de todos los archivos con el prefijo ORB_ Se establece un valor en días. El valor por defecto son 7 días. \
 \n \
@@ -443,11 +442,10 @@ txt AyudaBackup \
 "\n \
 \n          OMV-REGEN BACKUP OPTIONS \
 \n \
-\n    ${AzulD}- BACKUP FOLDER PATH:${ResetD}    This folder will be used to store all the backups generated. By default this folder is /ORBackup, you can use whatever you want but do not use the data disks if you intend to do a regeneration, they will not be accessible. To do a regeneration it is better to copy the backup directly to your desktop with WinSCP or similar and then copy it to the new system. In this folder omv-regen will create a tar-packaged archive for each backup, labeled with the date and time in the name. If you have included optional folders in the backup, additional files will be created, also packaged with tar and labeled user1, user2,... A complete backup with two optional folders done on October 1, 2023 at 10:38 a.m. could look like this: \
+\n    ${AzulD}- BACKUP FOLDER PATH:${ResetD}    This folder will be used to store all the backups generated. By default this folder is /ORBackup, you can use whatever you want but do not use the data disks if you intend to do a regeneration, they will not be accessible at that time. To do a regeneration it is better to copy the backup directly to your desktop with WinSCP or similar and then copy it to the new system. In this folder omv-regen will create a tar-packaged archive for each backup, labeled with the date and time in the name. If you have included optional folders in the backup, additional files will be created, also packaged with tar and labeled user1, user2,... The subfolders have the ORB_ prefix in their name. If you want to keep a particular backup version and not have omv-regen delete it, you can edit this prefix to anything else and that subfolder will not be deleted. You can use omv-regen backup to schedule backups with scheduled tasks in the OMV GUI. The saved settings will be applied. A full backup with two optional folders made on October 1, 2023 at 10:38 a.m. could look like this: \
 \n         ${AzulD}ORB_231001_103828_regen.tar.gz${ResetD}    <-- File with regenera information \
 \n         ${AzulD}ORB_231001_103828_user1.tar.gz${ResetD}    <-- File with optional user folder 1 \
 \n         ${AzulD}ORB_231001_103828_user2.tar.gz${ResetD}    <-- File with optional user folder 2 \
-\n    Subfolders have the ORB_ prefix in their name. If you want to keep a particular backup version and not have omv-regen delete it, you can edit this prefix to anything else and that subfolder will not be deleted. You can use omv-regen to schedule backups with scheduled tasks in the OMV GUI. The saved settings will be applied. \
 \n
 \n    ${AzulD}- DAYS BACKUPS ARE KEPT:${ResetD}    This option establishes the maximum number of days to keep backups. Every time you make a backup, all those existing in the same path that are older than the configured one will be eliminated, by scanning the files of all the files with the ORB_ prefix. A value is established in days. The default value is 7 days. \
 \n \

@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.6
+# omv-regen 7.0.7
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.6"
+ORVersion="7.0.7"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -1679,6 +1679,8 @@ RegeneraFase2 () {
     fi
     ControlVersiones esencial "openmediavault-omvextrasorg"
     echoe "Regenerando omv-extras y repositorio de docker..." "Regenerating omv-extras and docker repository..."
+  fi
+  if [ "${VersionOR}" ]; then
     Regenera "${CONFIG[openmediavault-omvextras]}"
     /usr/sbin/omv-aptclean repos
   fi

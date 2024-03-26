@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.7
+# omv-regen 7.0.8
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.7"
+ORVersion="7.0.8"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -91,7 +91,7 @@ ValRegRootfs=""
 TarRegen=""
 TarUserNumero=""
 ControlVersiones=""
-ComplementosNoInstalados=""
+ComplementosNoRegenerados=""
 Pregunta=""
 Texto=""
 URLomvregen="https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh"
@@ -1282,20 +1282,25 @@ Analizar () {
 # $1=noesencial -> Si no es la misma versión se avisa y se almacena en una variable.
 # $2 es el paquete que se analiza.
 ControlVersiones () {
-  ControlVersiones=""
-  Paquete=$2
-  [ "$1" = "esencial" ]; Esencial="si"
-  [ "$1" = "noesencial" ]; Esencial=""
+  ControlVersiones=""; Esencial=$1; Paquete=$2
 
+  txt 1 "La versión de ${Paquete} en el sistema original es ${VersionOR} y la versión disponible en el repositorio es ${VersionDI} \nEstas versiones no coinciden porque el sistema original no estaba actualizado cuando se hizo el backup o ha habido una actualización reciente. \nRegenerar ${Paquete} en estas condiciones podría corromper la base de datos. \n" "The version of ${Paquete} on the original system is ${VersionOR} and the version available in the repository is ${VersionDI} \nThese versions do not match because the original system was not updated when the backup was made or there has been a recent update. \nRegenerating ${Paquete} under these conditions could corrupt the database. \n"
+  txt 2 "Debes hacer un nuevo backup del sistema original actualizado y empezar de nuevo el proceso de regeneración. \n" "You must make a new backup of the original updated system and start the rebuild process again. \n"
   Analizar "${Paquete}"
   if [ "${VersionOR}" ] && [ ! "${VersionOR}" = "${VersionDI}" ]; then
-    if [ ! "${Esencial}" ]; then
+    if [ "${Esencial}" = "noesencial" ]; then
       ControlVersiones="si"
-      Info 10 "La versión del sistema original del paquete ${Paquete} es ${VersionOR} \nLa versión disponible en internet para la instalación de este paquete es ${VersionDI} \nEstas versiones no coinciden. Eso significa que ha habido una actualización reciente de este paquete.\nRegenerar este complemento podría resultar en un sistema corrupto.\nPuesto que no se trata de un complemento esencial para el funcionamiento del sistema se va a instalar ${Paquete} pero no se va a regenerar.\nTendrás que configurarlo después manualmente." "The original system version of the package ${Paquete} is ${VersionOR} \nThe version available on the Internet for the installation of this package is ${VersionDI} \nThese versions do not match. That means there has been a recent update to this package.\nRegenerating this plugin could result in a corrupt system.\nSince this is not an essential plugin for the functioning of the system, ${Paquete} will be installed but will not be regenerated.\nYou will have to configure it later manually."
-      ComplementosNoInstalados="${ComplementosNoInstalados}${Paquete} -> ${VersionOR} -> ${VersionDI}\n"
-    else
-      Info 10 "La versión del sistema original del paquete ${Paquete} es ${VersionOR} \nLa versión disponible en internet para la instalación de este paquete es ${VersionDI} \nEstas versiones no coinciden. Eso significa que ha habido una actualización reciente de este paquete.\n Continuar con la regeneración del sistema podría resultar en un sistema corrupto.\nNo se puede omitir la instalación de este paquete porque afectaría al resto del sistema.\nLamentablemente debes hacer un nuevo backup del sistema original actualizado y empezar de nuevo el proceso de regeneración." "The original system version of the package ${Paquete} is ${VersionOR} \nThe version available on the Internet for the installation of this package is ${VersionDI} \nThese versions do not match. That means there has been a recent update to this package.\nContinuing to regenerate the system could result in a corrupted system.\nIt is not possible to skip the installation of this package because it would affect the rest of the system.\nUnfortunately you must make a new backup of the original updated system and start the regeneration process again."
+      Info 10 "${txt[1]}Puesto que ${Paquete} no es un complemento esencial para el sistema se va a instalar pero no se va a regenerar. \nTendrás que configurarlo después manualmente. \n" "${txt[1]}Since ${Paquete} is not an essential plugin for the system, it will be installed but not regenerated. \nYou will have to configure it later manually. \n"
+      ComplementosNoRegenerados="${ComplementosNoRegenerados}${Paquete} -> ${VersionOR} -> ${VersionDI}\n"
+    elif [ "${Esencial}" = "esencial" ]; then
+      if [ "${Paquete}" = "openmediavault-omvextrasorg" ] || [ "${Paquete}" = "openmediavault" ]; then
+        Info 10 "Debido a una actualización reciente o a que el sistema original no estaba actualizado cuando se hizo el backup la versión de ${Paquete} instalada no coincide con la versión que tenía el sistema original. \nNo se puede continuar la regeneración en estas condiciones porque el sistema podría terminar corrupto. \n${txt[2]}" "Due to a recent update or because the original system was not updated when the backup was made, the version of ${Paquete} installed does not match the version that the original system had. \nThe regeneration cannot continue under these conditions because the system it could end up corrupt. \n${txt[2]}"
+      else
+        Info 10 "${txt[1]}La regeneración se va a detener porque ${Paquete} es esencial para el sistema. \n${txt[2]}" "${txt[1]}Regeneration will stop because ${Paquete} is essential to the system. \n${txt[2]}"
+      fi
       exit
+    else
+      echo "Error. No se ha definido si el paquete es esencial."; exit
     fi
   else
     echoe "Las versiones de ${Paquete} coinciden." "The versions of ${Paquete} match."
@@ -1542,7 +1547,7 @@ EjecutarRegenera () {
       Salir "Error actualizando el sistema.  Saliendo..." "Failed updating system. Exiting..."
     else
       Limpiar
-      ControlVersiones openmediavault
+      ControlVersiones esencial openmediavault
     fi
     f=1
     while [ ! "${FASE[7]}" = "hecho" ]; do
@@ -1896,8 +1901,9 @@ RegeneraFase7 () {
   else
     Info 10 "¡La regeneración ha finalizado!\n\nLa configuración activa en omv-regen es regenerar la interfaz de red.\nSe va a reiniciar el sistema para finalizar.\n${RojoD}La IP del sistema de origen era ${IpOR}${ResetD}\nDespués del reinicio puedes acceder al servidor en esa IP si era IP estática.\nRecuerda borrar la caché del navegador." "Regeneration is complete!\n\nThe active setting in omv-regen is to regenerate the network interface.\nThe system will reboot to finish.\n${RojoD}The IP of the original system was ${IpOR}${ResetD}\nAfter reboot you can access the server on that IP if it was static IP.\nRemember to clear your browser cache."
   fi
-  if [ "${ComplementosNoInstalados}" ]; then
-    Info 10 "Debido a una reciente actualización, la versión que tenía el servidor original y la versión disponible en internet para la instalación de:\n${ComplementosNoInstalados} \nno coinciden.\nEse o esos complementos no eran esenciales para el sistema y omv-regen los ha instalado pero no los ha regenerado, tendrás que configurarlo en la GUI de OMV. Si prefieres hacer una regeneración completa haz un nuevo backup actualizado del sistema original y comienza de nuevo." "Due to a recent update, the version that the original server had and the version available on the internet for:\n${ComplementosNoInstalados} \ninstallation do not match.\nThat plugin or plugins were not essential for the system and omv-regen has installed them but has not regenerated them, you will have to configure it in the OMV GUI. If you prefer to do a complete regeneration, make a new updated backup of the original system and start again."
+  if [ "${ComplementosNoRegenerados}" ]; then
+    Info 10 "Debido a una reciente actualización o a que el sistema original no estaba actualizado cuando se hizo el backup, la versión que tenía el servidor original y la versión disponible en internet para la instalación de:\n${ComplementosNoRegenerados} \nno coinciden.\nEse complemento no es esencial para el sistema y omv-regen lo ha instalado pero no lo ha regenerado, tendrás que configurarlo en la GUI de OMV. Si prefieres hacer una regeneración completa haz un nuevo backup actualizado del sistema original y comienza de nuevo." \
+    "Due to a recent update or because the original system was not updated when the backup was made, the version that the original server had and the version available on the internet for the installation of:\n${ComplementosNoRegenerados} \ndo not match.\nThat plugin It is not essential for the system and omv-regen has installed it but not regenerated it, you will have to configure it in the OMV GUI. If you prefer to do a complete regeneration, make a new updated backup of the original system and start again."
   fi
   echoe "Fase Nº7 terminada." "Phase No.7 completed."; sleep 1
   FASE[7]="hecho"; GuardarAjustes
@@ -1986,7 +1992,7 @@ else
 fi
 
 # Comprobar que no hay mas de un argumento y procesar
-[ "$2" ] && Salir ayuda "\nArgumento inválido. Saliendo..." "\nInvalid argument. Exiting..."
+[ "$2" ] && Salir ayuda "\nArgumento inválido. Si has actualizado desde una versión anterior consulta la ayuda. Saliendo..." "\nInvalid argument. If you have updated from a previous version, consult the help. Exiting..."
 case "$1" in
   backup)
     Cli="si"
@@ -2002,7 +2008,7 @@ case "$1" in
   "")
     ;;
   *)
-    Salir ayuda "\nArgumento inválido. Saliendo..." "\nInvalid argument. Exiting..."
+    Salir ayuda "\nArgumento inválido. Si has actualizado desde una versión anterior consulta la ayuda. Saliendo..." "\nInvalid argument. If you have updated from a previous version, consult the help. Exiting..."
     ;;
 esac
 

@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.8
+# omv-regen 7.0.9
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.8"
+ORVersion="7.0.9"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -1257,7 +1257,11 @@ Backports () {
   if [ ! "${Backports}" = "$1" ]; then
     if [ "$1" = "YES" ] || [ "$1" = "NO" ]; then
       Backports="$1"
-      sed -i "/bullseye-backports/d" /etc/apt/sources.list
+      if [ "${OmvVersion}" = "6" ]; then
+        sed -i "/bullseye-backports/d" /etc/apt/sources.list
+      else
+        sed -i "/bookworm-backports/d" /etc/apt/sources.list
+      fi
       omv_set_default "OMV_APT_USE_KERNEL_BACKPORTS" "${Backports}" true
       omv-salt stage run --quiet prepare
       omv-salt deploy run --quiet apt

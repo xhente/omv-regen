@@ -50,7 +50,7 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
 
    - Reinstalar openmediavault en un disco nuevo o un hardware nuevo manteniendo las configuraciones.
    - Migrar openmediavault entre diferentes arquitecturas, por ejemplo de una Raspberry a un sistema x86 o viceversa, pero cuidado, no todos los complementos son compatibles con todas las arquitecturas.
-   - Conseguir una instalación limpia de openmediavault tras un cambio de versiones de openmediavault. Si por ejemplo actualizas OMV5 a OMV6 y la actualización da problemas omv-regen puede trasladar la configuración a un sistema limpio.
+   - Conseguir una instalación limpia de openmediavault tras un cambio de versiones de openmediavault. Si por ejemplo actualizas OMV6 a OMV7 y la actualización da problemas omv-regen puede trasladar la configuración a un sistema limpio.
    - Reinstalar el sistema si se ha vuelto inestable por algún motivo, siempre que la base de datos esté en buen estado y el sistema pueda actualizarse a la última versión disponible.
 
 ## LIMITACIONES DE OMV-REGEN
@@ -188,7 +188,7 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
 
    - Reinstall openmediavault on a new disk or new hardware keeping the configurations.
    - Migrate openmediavault between different architectures, for example from a Raspberry to an x86 system or vice versa, but be careful, not all plugins are compatible with all architectures.
-   - Get a clean installation of openmediavault after a change of openmediavault versions. If, for example, you update OMV5 to OMV6 and the update causes problems, omv-regen can move the configuration to a clean system.
+   - Get a clean installation of openmediavault after a change of openmediavault versions. If, for example, you update OMV6 to OMV7 and the update causes problems, omv-regen can move the configuration to a clean system.
    - Reinstall the system if it has become unstable for any reason, as long as the database is healthy and the system can be updated to the latest available version.
 
 ## LIMITATIONS OF OMV-REGEN

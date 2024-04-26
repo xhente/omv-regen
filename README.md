@@ -44,14 +44,16 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
 
 ## QUÉ NO ES OMV-REGEN
 
-   - omv-regen no es una utilidad para backup y restauración del sistema operativo. Si necesitas un backup de openmediavault que puedas restaurar en cualquier momento utiliza el complemento openmediavault-backup. Ver Limitaciones de omv-regen para entender el motivo.
+   - omv-regen no es una utilidad para backup programado y restauración del sistema operativo encualquier momento. Si necesitas un backup de openmediavault que puedas restaurar en cualquier momento utiliza el complemento openmediavault-backup. La razón de esto se explican detalladamente en el apartado "Limitaciones de omv-regen", pero el resumen es que necesitas un backup actualizado para poder restaurar con omv-regen.
+   - Alternativamente puedes obtener un pendrive con un clon de tu sistema operativo y seguir utilizando el disco/pendrive original, eso te proporcionaría un backup utilizable en cualquier momento.
 
 ## OMV-REGEN ES ÚTIL PARA
 
    - Reinstalar openmediavault en un disco nuevo o un hardware nuevo manteniendo las configuraciones.
    - Migrar openmediavault entre diferentes arquitecturas, por ejemplo de una Raspberry a un sistema x86 o viceversa, pero cuidado, no todos los complementos son compatibles con todas las arquitecturas.
-   - Conseguir una instalación limpia de openmediavault tras un cambio de versiones de openmediavault. Si por ejemplo actualizas OMV5 a OMV6 y la actualización da problemas omv-regen puede trasladar la configuración a un sistema limpio.
+   - Conseguir una instalación limpia de openmediavault tras un cambio de versiones de openmediavault. Si por ejemplo actualizas OMV6 a OMV7 y la actualización da problemas omv-regen puede trasladar la configuración a un sistema limpio.
    - Reinstalar el sistema si se ha vuelto inestable por algún motivo, siempre que la base de datos esté en buen estado y el sistema pueda actualizarse a la última versión disponible.
+   - Puedes obtener un sistema en funcionamiento con tu configuración actual y seguir utilizando el sistema original. Solo regenera tu sistema en un pendrive por ejemplo. Eso te proporcionará una copia de seguridad real de tu sistema.
 
 ## LIMITACIONES DE OMV-REGEN
 
@@ -182,14 +184,16 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
 
 ## WHAT OMV-REGEN IS NOT
 
-   - omv-regen is not a utility for backup and restore of the operating system. If you need an openmediavault backup that you can restore at any time, use the openmediavault-backup plugin. See Limitations of omv-regen to understand why.
+   - omv-regen is not a utility for scheduled backup and restore of the operating system at any time. If you need an openmediavault backup that you can restore at any time, use the openmediavault-backup plugin. The reason for this is explained in detail in the "Limitations of omv-regen" section, but the summary is that you need an updated backup to be able to restore with omv-regen.
+   - Alternatively, you can obtain a pendrive with a clone of your operating system and continue using the original disk/pendrive, that would provide you with a usable backup at any time.
 
 ## OMV-REGEN IS USEFUL FOR
 
    - Reinstall openmediavault on a new disk or new hardware keeping the configurations.
    - Migrate openmediavault between different architectures, for example from a Raspberry to an x86 system or vice versa, but be careful, not all plugins are compatible with all architectures.
-   - Get a clean installation of openmediavault after a change of openmediavault versions. If, for example, you update OMV5 to OMV6 and the update causes problems, omv-regen can move the configuration to a clean system.
+   - Get a clean installation of openmediavault after a change of openmediavault versions. If, for example, you update OMV6 to OMV7 and the update causes problems, omv-regen can move the configuration to a clean system.
    - Reinstall the system if it has become unstable for any reason, as long as the database is healthy and the system can be updated to the latest available version.
+   - You can get a working system with your current configuration and still use the original system. Just regenerate your system on a pendrive for example. That will provide you with a real backup of your system.
 
 ## LIMITATIONS OF OMV-REGEN
 

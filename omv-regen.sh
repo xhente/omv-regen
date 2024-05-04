@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.9
+# omv-regen 7.0.10
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.9"
+ORVersion="7.0.10"
 
 # Definicion de Variables
 . /etc/default/openmediavault

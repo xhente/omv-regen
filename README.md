@@ -5,14 +5,6 @@
 
 .
 
-Ask your questions in the openmediavault forum.
-
-https://forum.openmediavault.org/
-
-Pregunta tus dudas en el foro de openmediavault.
-
-.
-
 # omv-regen
 
 UTILIDAD PARA MIGRAR LA CONFIGURACIÓN DE OMV A OTRO SISTEMA O

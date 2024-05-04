@@ -1474,7 +1474,7 @@ EjecutarBackup () {
       rsync -av /var/lib/libvirt/ "${CarpetaRegen}/var/lib/libvirt"
     fi
     echoe "\n>>>    Copiando carpeta /root a ${CarpetaRegen} ...\n" "\n>>>    Copying /root folder to ${CarpetaRegen} ...\n"
-    mkdir -p "${CarpetaRegen}/root"
+    mkdir -p "${CarpetaRegen}/root" --exclude *.deb
     rsync -av /root/ "${CarpetaRegen}/root"
     echoe "\n>>>    Extrayendo lista de versiones (dpkg)...\n" "\n>>>    Extracting version list (dpkg)...\n"
     dpkg -l | grep openmediavault > "${CarpetaRegen}${ORB[DpkgOMV]}"

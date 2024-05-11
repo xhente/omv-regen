@@ -74,7 +74,7 @@ El procedimiento básico se resume en tres pasos, crear un backup, instalar OMV,
       - NO incluye cualquier configuración realizada en CLI fuera de la GUI de OMV. Usa otros medios para respaldar eso.
       - NO incluye contenedores configurados en Portainer. Deberás recrearlos tu mismo.
       - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios.
-      - Puedes consultar el registro de la última regeneración o delúltimo backup en el archivo /var/log/omv-regen.log
+      - Puedes consultar el registro de la última regeneración o del último backup en el archivo /var/log/omv-regen.log
 
 ## FUNCIONES DE OMV-REGEN
 

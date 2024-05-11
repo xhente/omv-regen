@@ -5,14 +5,6 @@
 
 .
 
-Ask your questions in the openmediavault forum.
-
-https://forum.openmediavault.org/
-
-Pregunta tus dudas en el foro de openmediavault.
-
-.
-
 # omv-regen
 
 UTILIDAD PARA MIGRAR LA CONFIGURACIÓN DE OMV A OTRO SISTEMA O
@@ -82,6 +74,7 @@ El procedimiento básico se resume en tres pasos, crear un backup, instalar OMV,
       - NO incluye cualquier configuración realizada en CLI fuera de la GUI de OMV. Usa otros medios para respaldar eso.
       - NO incluye contenedores configurados en Portainer. Deberás recrearlos tu mismo.
       - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios.
+      - Puedes consultar el registro de la última regeneración o del último backup en el archivo /var/log/omv-regen.log
 
 ## FUNCIONES DE OMV-REGEN
 
@@ -111,7 +104,7 @@ El procedimiento básico se resume en tres pasos, crear un backup, instalar OMV,
     - ORB_231001_103828_user2.tar.gz    <-- Archivo con la carpeta opcional 2 de usuario
   - DIAS QUE SE CONSERVAN LOS BACKUPS: Esta opción establece el número de días máximo para conservar backups. Cada vez que hagas un backup se eliminarán todos aquellos existentes en la misma ruta con mas antigüedad de la configurada, mediante el escaneo de fechas de todos los archivos con el prefijo ORB_ Se establece un valor en días. El valor por defecto son 7 días.
   - ACTUALIZAR EL SISTEMA: Esta opción hará que el sistema se actualice automáticamente justo antes de realizar el backup. Asegúrate que esté activa si tu intención es hacer un backup para proceder a una regeneración inmediatamente después. Desactívala si estás haciendo backups programados. El valor establecido debe ser Si/on o No/off.
-  - CARPETAS ADICIONALES: Puedes definir tantas carpetas opcionales como quieras que se incluirán en el backup. Útil si tienes información que quieres transferir al nuevo sistema que vas a regenerar. Si copias carpetas con configuraciones del sistema podrías romperlo. Estas carpetas se devolverán a su ubicación original en la parte final del proceso de regeneración. Se crea un archivo tar comprimido para cada carpeta etiquetado de la misma forma que el resto del backup. Puedes incluir carpetas que estén ubicadas en los discos de datos. Puesto que la restauración de estas carpetas se hace al final del proceso, en ese momento todos los sistemas de archivos ya están montados y funcionando.
+  - CARPETAS ADICIONALES: Puedes definir tantas carpetas opcionales como quieras que se incluirán en el backup. Útil si tienes información que quieres transferir al nuevo sistema que vas a regenerar. Si copias carpetas con configuraciones del sistema podrías romperlo. Estas carpetas se devolverán a su ubicación original en la parte final del proceso de regeneración. Se crea un archivo tar comprimido para cada carpeta etiquetado de la misma forma que el resto del backup. Puedes incluir carpetas que estén ubicadas en los discos de datos. Puesto que la restauración de estas carpetas se hace al final del proceso, en ese momento todos los sistemas de archivos ya están montados y funcionando. La carpeta /root se incluirá por defecto en el backup.
 
 ## OPCIONES DE OMV-REGEN REGENERA
 
@@ -222,6 +215,7 @@ The basic procedure is summarized in three steps, create a backup, install OMV, 
       - It does NOT include any configuration done in CLI outside of the OMV GUI. Use other means to support that.
       - Does NOT include containers configured in Portainer. You will have to recreate them yourself.
       - Filebrowser and Photoprism plugins are podman containers. They will not be backed up, use other means.
+      - You can check the log of the last regeneration or last backup in the file /var/log/omv-regen.log
 
 ## OMV-REGEN FEATURES
 
@@ -251,7 +245,7 @@ The basic procedure is summarized in three steps, create a backup, install OMV, 
     - ORB_231001_103828_user2.tar.gz    <-- File with optional user folder 2
   - DAYS BACKUPS ARE KEPT: This option establishes the maximum number of days to keep backups. Every time you make a backup, all those existing in the same path that are older than the configured one will be eliminated, by scanning the files of all the files with the ORB_ prefix. A value is established in days. The default value is 7 days.
   - UPDATE SYSTEM: This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off.
-  - ADDITIONAL FOLDERS: You can define as many optional folders as you want that will be included in the backup. Useful if you have information that you want to transfer to the new system that you are going to regenerate. If you copy folders with system settings you could break it. These folders will be returned to their original location in the final part of the regeneration process. A compressed tar file is created for each folder labeled the same as the rest of the backup. You can include folders that are located on the data disks. Since the restoration of these folders is done at the end of the process, at that point all file systems are already mounted and working.
+  - ADDITIONAL FOLDERS: You can define as many optional folders as you want that will be included in the backup. Useful if you have information that you want to transfer to the new system that you are going to regenerate. If you copy folders with system settings you could break it. These folders will be returned to their original location in the final part of the regeneration process. A compressed tar file is created for each folder labeled the same as the rest of the backup. You can include folders that are located on the data disks. Since the restoration of these folders is done at the end of the process, at that point all file systems are already mounted and working. The /root folder is included by default in the backup.
 
 ## OMV-REGEN REGENERA OPTIONS
 

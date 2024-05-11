@@ -74,6 +74,7 @@ El procedimiento básico se resume en tres pasos, crear un backup, instalar OMV,
       - NO incluye cualquier configuración realizada en CLI fuera de la GUI de OMV. Usa otros medios para respaldar eso.
       - NO incluye contenedores configurados en Portainer. Deberás recrearlos tu mismo.
       - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios.
+      - Puedes consultar el registro de la última regeneración o delúltimo backup en el archivo /var/log/omv-regen.log
 
 ## FUNCIONES DE OMV-REGEN
 
@@ -214,6 +215,7 @@ The basic procedure is summarized in three steps, create a backup, install OMV, 
       - It does NOT include any configuration done in CLI outside of the OMV GUI. Use other means to support that.
       - Does NOT include containers configured in Portainer. You will have to recreate them yourself.
       - Filebrowser and Photoprism plugins are podman containers. They will not be backed up, use other means.
+      - You can check the log of the last regeneration or last backup in the file /var/log/omv-regen.log
 
 ## OMV-REGEN FEATURES
 

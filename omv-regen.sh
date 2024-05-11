@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.10
+# omv-regen 7.0.11
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.10"
+ORVersion="7.0.11"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -338,7 +338,8 @@ txt AyudaComoUsar \
 \n          - Todas las configuraciones realizadas en la GUI de OMV en el sistema original se replicarán en el sistema nuevo. Esto incluye usuarios y contraseñas, sistemas de archivos, docker y contenedores configurados con el complemento compose, etc. Asegúrate de que los datos persistentes de los contenedores residan en un disco independiente, si están en el disco del sistema operativo debes incluir esa carpeta en el backup de omv-regen si no quieres perderlos. \
 \n          - NO incluye cualquier configuración realizada en CLI fuera de la GUI de OMV. Usa otros medios para respaldar eso. \
 \n          - NO incluye contenedores configurados en Portainer. Deberás recrearlos tu mismo. \
-\n          - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios." \
+\n          - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios.
+\n          - Puedes consultar el registro de la última regeneración o del último backup en el archivo /var/log/omv-regen.log" \
 "\n \
 \n          HOW TO USE OMV-REGEN \
 \n \
@@ -369,7 +370,8 @@ txt AyudaComoUsar \
 \n          - All configurations made in the OMV GUI on the original system will be replicated on the new system. This includes users and passwords, filesystems, docker and containers configured with the compose plugin, etc. Make sure that the persistent data in the containers resides on a separate disk, if it is on the operating system disk you must include that folder in the omv-regen backup if you do not want to lose it. \
 \n          - It does NOT include any configuration done in CLI outside of the OMV GUI. Use other means to support that. \
 \n          - Does NOT include containers configured in Portainer. You will have to recreate them yourself. \
-\n          - Filebrowser and Photoprism plugins are podman containers. They will not be backed up, use other means." \
+\n          - Filebrowser and Photoprism plugins are podman containers. They will not be backed up, use other means. \
+\n          - You can check the log of the last regeneration or last backup in the file /var/log/omv-regen.log" \
 
 txt AyudaFunciones \
 "\n \
@@ -2005,7 +2007,7 @@ fi
 case "$1" in
   backup)
     Cli="si"
-    EjecutarBackup
+    EjecutarBackup | tee /var/log/omv-regen.log
     ;;
   regenera)
     Camino="EjecutarRegenera"
@@ -2098,10 +2100,10 @@ while true; do
       clear; exit
       ;;
     EjecutarBackup)
-      EjecutarBackup; Camino="MenuPrincipal"
+      EjecutarBackup | tee /var/log/omv-regen.log; Camino="MenuPrincipal"
       ;;
     EjecutarRegenera)
-      EjecutarRegenera; Camino="MenuPrincipal"
+      EjecutarRegenera | tee /var/log/omv-regen.log; Camino="MenuPrincipal"
       ;;
     *)
       Camino="MenuPrincipal"

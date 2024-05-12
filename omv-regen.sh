@@ -378,7 +378,7 @@ txt AyudaFunciones \
 \n          FUNCIONES DE OMV-REGEN \
 \n \
 \n  1 - ${AzulD}omv-regen${ResetD} - Abre la interfaz gráfica con los menús de configuración y ejecución de cualquier función de omv-regen. La GUI te guiará para ejecutar un backup o una regeneración. \
-\n
+\n \
 \n  2 - ${AzulD}omv-regen backup${ResetD} - Realiza un backup muy ligero de los datos esenciales para regenerar las configuraciones de un sistema OMV. Puedes incluir carpetas opcionales, incluso de tus discos de datos, y definir el destino. Previamente debes configurar los parámetros del backup en la GUI de omv-regen, una vez configurado puedes ejecutar omv-regen backup en CLI o programar una tarea en la GUI de OMV para automatizar backups. \
 \n \
 \n  3 - ${AzulD}omv-regen regenera${ResetD} - Realiza una regeneración de un sistema completo OMV con sus configuraciones originales a partir de una instalación nueva de OMV y el backup del sistema original realizado con omv-regen backup. Ejecuta omv-regen en línea de comando y la interfaz te guiará para configurar los parámetros y ejecutar la regeneración. Después puedes ejecutarla desde el menú o desde CLI con el comando omv-regen regenera \
@@ -388,7 +388,7 @@ txt AyudaFunciones \
 \n          OMV-REGEN FEATURES \
 \n \
 \n  1 - ${AzulD}omv-regen${ResetD} - Opens the graphical interface with the configuration and execution menus for any omv-regen function. The GUI will guide you to run a backup or regeneration. \
-\n
+\n \
 \n  2 - ${AzulD}omv-regen backup${ResetD} - Performs a very light backup of essential data to regenerate the configurations of an OMV system. You can include optional folders, even from your data disks, and define the destination. You must previously configure the backup parameters in the omv-regen GUI, once configured you can run omv-regen backup in the CLI or schedule a task in the OMV GUI to automate backups. \
 \n \
 \n  3 - ${AzulD}omv-regen regenera${ResetD} - Regenerates a complete OMV system with its original configurations from a fresh OMV installation and the backup of the original system made with omv-regen backup. Run omv-regen on the command line and the interface will guide you to configure the parameters and run the regeneration. Then you can run it from the menu or from CLI with the command: omv-regen regenera \
@@ -408,7 +408,7 @@ txt AyudaConsejos \
 \n    ${AzulD}- OPENMEDIAVAULT-SYMLINK:${ResetD}    Si usas symlinks en tu sistema omv-regen los recreará si se generaron con el complemento. Si lo hiciste de forma manual en CLI tendrás que volver a hacerlo en el sistema nuevo. \
 \n \
 \n    ${AzulD}- HAZ LA REGENERACION INMEDIATAMENTE DESPUÉS DEL BACKUP:${ResetD}    Debes hacer el backup y de forma inmediata hacer la regeneración para evitar diferencias entre versiones de paquetes. Ver Limitaciones de omv-regen. \
-\n
+\n \
 \n    ${AzulD}- UNIDAD DE SISTEMA DIFERENTE:${ResetD}    Es muy recomendable utilizar una unidad de sistema diferente a la original para instalar OMV en el sistema nuevo. Es muy sencillo usar un pendrive para instalar openmediavault. Si tienes la mala suerte de que se publique una actualización de un paquete esencial entre el momento del backup y el momento de la regeneración no podrás terminar la regeneración, y necesitarás el sistema original para hacer un nuevo backup actualizado. \
 \n \
 \n    ${AzulD}- CONTENEDORES DOCKER:${ResetD}    Toda la información que hay en el disco de sistema original va a desaparecer. Para conservar los contenedores docker en el mismo estado asegúrate de hacer algunas cosas antes. Cambia la ruta de instalación por defecto de docker desde la carpeta /var/lib/docker a una carpeta en alguno de los discos de datos. Configura todos los volumenes de los contenedores fuera del disco de sistema, en alguno de los discos de datos. Estas son recomendaciones generales, pero en este caso con mas motivo, si no lo haces perderás esos datos. Alternativamente puedes añadir carpetas opcionales al backup." \
@@ -450,7 +450,7 @@ txt AyudaBackup \
 \n         ${AzulD}ORB_231001_103828_regen.tar.gz${ResetD}    <-- File with regenera information \
 \n         ${AzulD}ORB_231001_103828_user1.tar.gz${ResetD}    <-- File with optional user folder 1 \
 \n         ${AzulD}ORB_231001_103828_user2.tar.gz${ResetD}    <-- File with optional user folder 2 \
-\n
+\n \
 \n    ${AzulD}- DAYS BACKUPS ARE KEPT:${ResetD}    This option establishes the maximum number of days to keep backups. Every time you make a backup, all those existing in the same path that are older than the configured one will be eliminated, by scanning the files of all the files with the ORB_ prefix. A value is established in days. The default value is 7 days. \
 \n \
 \n    ${AzulD}- UPDATE SYSTEM:${ResetD}  This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off. \
@@ -460,11 +460,11 @@ txt AyudaBackup \
 txt AyudaRegenera \
 "\n \
 \n          OPCIONES DE OMV-REGEN REGENERA \
-\n
+\n \
 \n    ${AzulD}- RUTA BACKUP DE ORIGEN:${ResetD}    En el menú debes definir la ubicación de esta carpeta. Por defecto será /ORBackup pero puedes elegir la ubicación que quieras. Esta carpeta debe contener al menos un archivo tar generado con omv-regen. Antes de ejecutar una regeneración el programa comprobará que esta carpeta contiene todos los archivos necesarios para la regeneración. Cuando definas una ruta en el menú omv-regen escaneará los archivos de esa ruta y buscará el backup mas reciente. Una vez localizado el backup, omv-regen comprobará que en su interior están todos los archivos necesarios. Si falta algún archivo la ruta no se dará por válida y no se permitirá continuar adelante. \
-\n
+\n \
 \n    ${AzulD}- INSTALAR KERNEL PROXMOX:${ResetD}    Si el sistema original tenía el kernel proxmox instalado tendrás la opción de decidir si quieres instalarlo también en el sistema nuevo o no. Cuando la regeneración esté en funcionamiento, si esta opción está activada se instalará el kernel a mitad de proceso. En ese momento omv-regen te pedirá que reinicies el sistema. Después de eso debes ejecutar de nuevo omv-regen y la regeneración continuará en el punto en que se detuvo. Ten en cuenta que si tienes un sistema de archivos ZFS o usas kvm es recomendable tener este kernel instalado, en caso contrario podrías tener problemas durante la instalación de estos dos complementos. Si desactivas esta opción el kernel proxmox no se instalará en el sistema nuevo. \
-\n
+\n \
 \n    ${AzulD}- REGENERAR LA INTERFAZ DE RED:${ResetD}    Esta opción sirve para omitir la regeneración de la interfaz de red. Si desactivas esta opción no se regenerará la interfaz de red y la IP seguirá siendo la misma que tiene el sistema después del reinicio al final del proceso. Si activas esta opción se regenerará la interfaz de red al final del proceso de regeneración. Si la IP original es distinta de la IP actual deberás conectarte a la IP original después del reinicio para acceder a OMV. El menú te indica cual será esta IP antes de iniciar la regeneración. Cuando finalice la regeneración también la tendrás en pantalla pero podrías no verla si no estás atento." \
 "\n \
 \n          OMV-REGEN REGENERA OPTIONS \
@@ -1138,8 +1138,7 @@ GuardarAjustes () {
 
 # Buscar nueva versión de omv-regen y actualizar si existe.
 BuscarOR () {
-  clear
-  txt 1 "Buscando actualizaciones de omv-regen..." "Checking for omv-regen updates..."
+  txt 1 "\n\nBuscando actualizaciones de omv-regen..." "\n\nChecking for omv-regen updates..."
   txt 2 "No se ha podido descargar el archivo." "The file could not be downloaded."
   echoe "${txt[1]}"
   [ -f "${ORTemp}" ] && rm -f "${ORTemp}"
@@ -1429,8 +1428,7 @@ EjecutarBackup () {
   if [ "${Abortar}" ]; then
     Camino="MenuBackup"
   else
-    clear
-    echoe "\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>\n" "\n       <<< Backup to regenerate system dated ${Fecha} >>>\n"
+    echoe "\n\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>\n" "\n\n       <<< Backup to regenerate system dated ${Fecha} >>>\n"
     echoe "\n>>>    Los parámetros actuales establecidos para el backup son:\n" "\n>>>    The current parameters set for the backup are:\n"
     echoe "Carpeta para almacenar el backup ==> ${ORA[RutaBackup]}" "Folder to store the backup ==> ${ORA[RutaBackup]}"
     echoe "Actualizar sistema antes de hacer el backup ==> ${ORA[Actualizar]}" "Update system before making the backup ==> ${ORA[Actualizar]}"
@@ -1476,8 +1474,7 @@ EjecutarBackup () {
       rsync -av /var/lib/libvirt/ "${CarpetaRegen}/var/lib/libvirt"
     fi
     echoe "\n>>>    Copiando carpeta /root a ${CarpetaRegen} ...\n" "\n>>>    Copying /root folder to ${CarpetaRegen} ...\n"
-    mkdir -p "${CarpetaRegen}/root" --exclude *.deb
-    rsync -av /root/ "${CarpetaRegen}/root"
+    rsync -av /root/ "${CarpetaRegen}/root" --exclude *.deb
     echoe "\n>>>    Extrayendo lista de versiones (dpkg)...\n" "\n>>>    Extracting version list (dpkg)...\n"
     dpkg -l | grep openmediavault > "${CarpetaRegen}${ORB[DpkgOMV]}"
     dpkg -l > "${CarpetaRegen}${ORB[Dpkg]}"
@@ -1485,7 +1482,7 @@ EjecutarBackup () {
     echoe "\n>>>    Extrayendo información del sistema (uname -a)...\n" "\n>>>    Extracting system info (uname -a)...\n"
     uname -a | tee "${CarpetaRegen}${ORB[Unamea]}"
     echoe "\n>>>    Extrayendo información de zfs (zpool list)...\n" "\n>>>    Extracting zfs info (zpool list)...\n"
-    zpool list | tee "${CarpetaRegen}${ORB[Zpoollist]}"
+    [ "$(dpkg -l | grep openmediavault-zfs)" ] && zpool list | tee "${CarpetaRegen}${ORB[Zpoollist]}"
     echoe "\n>>>    Extrayendo información de systemd (systemctl)...\n" "\n>>>    Extracting information from systemd (systemctl)...\n"
     systemctl list-unit-files | tee "${CarpetaRegen}${ORB[Systemctl]}"
     echoe "\n>>>    Extrayendo información de red (hostname -I)...\n" "\n>>>    Retrieving network information (hostname -I)...\n"
@@ -2047,7 +2044,7 @@ while true; do
     txt 6 "--> Actualizar omv-regen.                      " "--> Update omv-regen.                      "
     txt 7 "--> Resetear ajustes.                          " "--> Reset settings.                        "
     txt 8 "--> Cambiar idioma.                            " "--> Change language.                       "
-    txt 9 "--> Ayuda general.                            " "--> General help.                          "
+    txt 9 "--> Ayuda general.                             " "--> General help.                          "
     txt 10 "--> Salir de omv-regen.                       " "--> Exit omv-regen.                        "
     [ "${ORA[ActualizacionPendiente]}" ] && txt 11 "          ¡¡ HAY UNA ACTUALIZACION DISPONIBLE DE OMV-REGEN !!\n\n\n" "                AN UPDATE TO OMV-REGEN IS AVAILABLE !!\n\n\n" || txt 11 ""
     Camino=$(dialog \

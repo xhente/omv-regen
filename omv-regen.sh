@@ -2020,7 +2020,7 @@ fi
 case "$1" in
   backup)
     Cli="si"
-    EjecutarBackup 2>&1 | tee /var/log/omv-regen.log; exit
+    EjecutarBackup 2>&1 | tee -a /var/log/omv-regen.log; exit
     ;;
   regenera)
     Camino="EjecutarRegenera"

@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.11
+# omv-regen 7.0.12
 # Utilidad para restaurar la configuración de openmediavault en otro sistema
 
-ORVersion="7.0.11"
+ORVersion="7.0.12"
 
 # Definicion de Variables
 . /etc/default/openmediavault
@@ -339,7 +339,7 @@ txt AyudaComoUsar \
 \n          - NO incluye cualquier configuración realizada en CLI fuera de la GUI de OMV. Usa otros medios para respaldar eso. \
 \n          - NO incluye contenedores configurados en Portainer. Deberás recrearlos tu mismo. \
 \n          - Los complementos Filebrowser y Photoprism son contenedores podman. No se respaldarán, usa otros medios.
-\n          - Puedes consultar el registro de la última regeneración o del último backup en el archivo /var/log/omv-regen.log" \
+\n          - Puedes consultar los registros del último mes en el archivo /var/log/omv-regen.log" \
 "\n \
 \n          HOW TO USE OMV-REGEN \
 \n \
@@ -371,7 +371,7 @@ txt AyudaComoUsar \
 \n          - It does NOT include any configuration done in CLI outside of the OMV GUI. Use other means to support that. \
 \n          - Does NOT include containers configured in Portainer. You will have to recreate them yourself. \
 \n          - Filebrowser and Photoprism plugins are podman containers. They will not be backed up, use other means. \
-\n          - You can check the log of the last regeneration or last backup in the file /var/log/omv-regen.log" \
+\n          - You can check the logs for the last month in the file /var/log/omv-regen.log" \
 
 txt AyudaFunciones \
 "\n \

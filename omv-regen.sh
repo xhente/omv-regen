@@ -2020,7 +2020,7 @@ fi
 case "$1" in
   backup)
     Cli="si"
-    EjecutarBackup | tee /var/log/omv-regen.log; exit
+    EjecutarBackup 2>&1 | tee /var/log/omv-regen.log; exit
     ;;
   regenera)
     Camino="EjecutarRegenera"
@@ -2113,10 +2113,10 @@ while true; do
       clear; exit
       ;;
     EjecutarBackup)
-      EjecutarBackup | tee -a /var/log/omv-regen.log; Camino="MenuPrincipal"
+      EjecutarBackup 2>&1 | tee -a /var/log/omv-regen.log; Camino="MenuPrincipal"
       ;;
     EjecutarRegenera)
-      EjecutarRegenera | tee -a /var/log/omv-regen.log; Camino="MenuPrincipal"
+      EjecutarRegenera 2>&1 | tee -a /var/log/omv-regen.log; Camino="MenuPrincipal"
       ;;
     *)
       Camino="MenuPrincipal"

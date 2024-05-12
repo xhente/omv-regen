@@ -1519,7 +1519,7 @@ EjecutarBackup () {
     echoe "\n>>>    Eliminando backups de hace más de ${ORA[Dias]} días...\n" "\n>>>    Deleting backups larger than ${ORA[Dias]} days...\n"
     find "${ORA[RutaBackup]}/" -maxdepth 1 -type f -name "ORB_*" -mtime "+${ORA[Dias]}" -exec rm -v {} +
     # Nota:   -mmin = minutos  ///  -mtime = dias
-    [ "${Cli}" ] && Salir "\n       ¡Backup completado!\n" "\n       Backup completed!\n"
+    [ "${Cli}" ] && echoe "\n       ¡Backup completado!\n" "\n       Backup completed!\n"
     Continuar
   fi
   [ "${Camino}" = "EjecutarBackup" ] && Info 3 "\n¡Backup completado!\n" "\nBackup completed!\n"
@@ -1954,6 +1954,19 @@ if [ ! "$0" = "${Omvregen}" ]; then
   Salir ayuda "\n  Se ha instalado omv-regen ${ORVersion}\n" "\n  omv-regen ${ORVersion} has been installed.\n"
 fi
 
+# Configurar logrotate
+if [ ! -f "/etc/logrotate.d/omv-regen" ]; then
+  touch "/etc/logrotate.d/omv-regen"
+  echo "/var/log/omv-regen.log {
+  weekly
+  missingok
+  rotate 4
+  compress
+  delaycompress
+  notifempty
+}" | tee "/etc/logrotate.d/omv-regen"
+fi
+
 # Generar/recuperar configuraciones de omv-regen
 if [ ! -f "${ORAjustes}" ]; then
   [ ! -d "/etc/regen" ] && mkdir -p "/etc/regen"
@@ -2007,7 +2020,7 @@ fi
 case "$1" in
   backup)
     Cli="si"
-    EjecutarBackup | tee /var/log/omv-regen.log
+    EjecutarBackup | tee /var/log/omv-regen.log; exit
     ;;
   regenera)
     Camino="EjecutarRegenera"
@@ -2100,10 +2113,10 @@ while true; do
       clear; exit
       ;;
     EjecutarBackup)
-      EjecutarBackup | tee /var/log/omv-regen.log; Camino="MenuPrincipal"
+      EjecutarBackup | tee -a /var/log/omv-regen.log; Camino="MenuPrincipal"
       ;;
     EjecutarRegenera)
-      EjecutarRegenera | tee /var/log/omv-regen.log; Camino="MenuPrincipal"
+      EjecutarRegenera | tee -a /var/log/omv-regen.log; Camino="MenuPrincipal"
       ;;
     *)
       Camino="MenuPrincipal"

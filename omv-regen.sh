@@ -6,11 +6,11 @@
 # warranty of any kind, whether express or implied.
 
 # omv-regen 7.0.12
-# Utilidad para restaurar la configuración de openmediavault en otro sistema
+# Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
 ORVersion="7.0.12"
 
-# Definicion de Variables
+# Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
 OmvVersion=$(dpkg -l openmediavault | awk '$2 == "openmediavault" { print substr($3,1,1) }')
 Codename="$(lsb_release --codename --short)"
@@ -52,7 +52,7 @@ ResetearAjustes () {
 
 ResetearAjustes
 
-# Actualizar Archivos de Ajustes existentes
+# Actualizar Archivos de Ajustes existentes - Update Existing Settings Files
 Idioma="${ORA[Idioma]}"
 
 declare -a RUTAS=""
@@ -120,15 +120,15 @@ ResetD="\Zn"
 Abortar=""
 Ahora=""
 
-# NODOS DE LA BASE DE DATOS
-# El primer valor es la ruta del nodo en la base de datos (nulo = no hay nodo en la base de datos)
-# Los siguientes valores son los módulos que debe actualizar salt
+# NODOS DE LA BASE DE DATOS                                                          - DATABASE NODES
+# El primer valor es la ruta del nodo en la base de datos (nulo = el nodo no existe) - The first value is the path of the node in the database (null = node does not exist)
+# Los siguientes valores son los módulos que debe actualizar salt                    - The following values ​​are the modules that salt should update
 
-# Interfaz GUI
+# Interfaz GUI - GUI interface
 declare -A CONFIG
 CONFIG[webadmin]="/config/webadmin monit nginx"
 CONFIG[time]="/config/system/time chrony cron timezone"
-# Nota: El estado de salt cronapt solo existe en OMV6.
+# Nota: El estado de salt cronapt solo existe en OMV6. - Note: The cronapt salt state only exists in OMV6.
 if [ "${OmvVersion}" = "6" ]; then
   CONFIG[email]="/config/system/email cronapt mdadm monit postfix smartmontools"
   CONFIG[notification]="/config/system/notification cronapt mdadm monit smartmontools zfszed"
@@ -158,7 +158,7 @@ CONFIG[users]="/config/system/usermanagement/users postfix rsync rsyncd samba sy
 CONFIG[groups]="/config/system/usermanagement/groups rsync rsyncd samba sharedfolders systemd"
 CONFIG[syslog]="/config/system/syslog rsyslog"
 
-# Complementos
+# Complementos - Plugins
 CONFIG[openmediavault-omvextras]="/config/system/omvextras"
 CONFIG[openmediavault-anacron]="/config/services/anacron anacron"
 CONFIG[openmediavault-apttool]="/config/services/apttool"
@@ -214,10 +214,10 @@ CONFIG[openmediavault-zfs]="nulo zfszed collectd fstab monit quota nfs samba sha
 
 export DEBIAN_FRONTEND=noninteractive
 export APT_LISTCHANGES_FRONTEND=none
-# Nota: Evita que los cuadros de diálogo fallen
+# Nota: Evita que los cuadros de diálogo fallen - Note: Prevent dialog boxes from crashing
 export NCURSES_NO_UTF8_ACS=1
 
-############################################# TRADUCCIONES ####################################################
+############################################# TRADUCCIONES - TRANSLATIONS ####################################################
 
 txt () {
   if [ "$3" ] && [ "${ORA[Idioma]}" = "en" ]; then
@@ -509,7 +509,7 @@ Ayuda () {
   done
 }
 
-# MENU BACKUP
+# MENU BACKUP - BACKUP MENU
 MenuBackup () {
   while [ "${Camino}" = "MenuBackup" ]; do
     ValidarBackup
@@ -584,7 +584,7 @@ MenuBackup () {
   done
 }
 
-# MENU DE AJUSTES DE BACKUP
+# MENU DE AJUSTES DE BACKUP - BACKUP SETTINGS MENU
 BackupAjustes () {
 
   # Ruta Backup
@@ -629,7 +629,7 @@ BackupAjustes () {
     esac
   done
 
-  # Opciones Backup
+  # Opciones Backup - Backup Options
   while [ "${Camino}" = "BackupAjustes2" ]; do
     txt 1 "Opciones de Backup" "Backup options"
     txt 2 "Configura las siguientes opciones para Backup:" "Set the following options for Backup:     "
@@ -670,7 +670,7 @@ BackupAjustes () {
     esac
   done
 
-  # Carpetas adicionales Backup
+  # Carpetas adicionales Backup - Additional folders Backup
   if [ "${Camino}" = "BackupAjustes3" ]; then
     unset RUTAS
     cont=0
@@ -711,7 +711,7 @@ BackupAjustes () {
   fi
 }
 
-# MENU AÑADIR CARPETA OPCIONAL A BACKUP 
+# MENU AÑADIR CARPETA OPCIONAL A BACKUP - MENU ADD OPTIONAL FOLDER TO BACKUP
 AñadirCarpeta () {
   Carpeta=$1
   txt 1 "Ruta de carpeta adicional a incluir en el backup" "Additional folder path to include in the backup"
@@ -747,7 +747,7 @@ AñadirCarpeta () {
   esac
 }
 
-# MENU REGENERA
+# MENU REGENERA - REGENERA MENU
 MenuRegenera () {
   while [ "${Camino}" = "MenuRegenera" ]; do
     ValidarRegenera
@@ -857,7 +857,7 @@ MenuRegenera () {
   done
 }
 
-# MENU DE AJUSTES REGENERA
+# MENU DE AJUSTES REGENERA - REGENERA SETTINGS MENU
 RegeneraAjustes () {
   while [ "${Camino}" = "RegeneraAjustes" ]; do
     txt 1 "Escribe la ruta del backup del sistema original" "Write the original system backup path"
@@ -917,7 +917,7 @@ RegeneraAjustes () {
   Camino="MenuRegenera"
 }
 
-# MENU DE OPCIONES DE ACTUALIZACION DE OMV-REGEN
+# MENU DE OPCIONES DE ACTUALIZACION DE OMV-REGEN - OMV-REGEN UPDATE OPTIONS MENU
 OpcionesActualizacion () {
   txt 1 "Opciones de Actualización" "Update options"
   txt 2 "Buscar actualizaciones al iniciar omv-regen. " "Check for updates when starting omv-regen."
@@ -954,7 +954,7 @@ OpcionesActualizacion () {
   Camino="MenuPrincipal"
 }
 
-# MENU PARA CAMBIAR EL IDIOMA ESPAÑOL/INGLES
+# MENU PARA CAMBIAR EL IDIOMA ESPAÑOL/INGLES - MENU TO CHANGE THE SPANISH/ENGLISH LANGUAGE
 CambiarIdioma () {
   txt 1 "Cambiar idioma" "Change language"
   txt 2 "Español  Spanish" "Spanish  Español"
@@ -981,14 +981,14 @@ CambiarIdioma () {
   esac
 }
 
-################################### FUNCIONES #######################################
+################################### FUNCIONES - FUNCTIONS #######################################
 
-# Validar ajustes de Backup.
-# Devuelve ValidarBackup="" si todo es correcto y ValidarBackup="si" si no es correcto.
-# Sale si se ha entrado desde CLI y los ajustes no son correctos.
+# Validar ajustes de Backup                                                   - Validate Backup settings
+# Devuelve ValidarBackup="" si todo es correcto y ValidarBackup="si" si falla - Returns ValidarBackup="" if everything is correct and ValidarBackup="si" if it fails
+# Sale si se ha entrado desde CLI y los ajustes no son correctos              - Exits if it was entered from CLI and the settings are not correct.
 ValidarBackup () {
   ValidarBackup=""; ValBacRuta=""; ValRutaEsc="" ValDias=""; ValCarpetas=""
-  # Comprueba si existe la ruta para el backup
+  # Comprueba si existe la ruta para el backup - Check if the backup path exists
   if [ ! "${ORA[RutaBackup]}" = "/ORBackup" ]; then
     if [ ! -d "${ORA[RutaBackup]}" ]; then
       ValBacRuta="si"; ValidarBackup="si"
@@ -1001,13 +1001,13 @@ ValidarBackup () {
       fi
     fi
   fi
-  # Comprueba rutas de Carpetas opcionales
+  # Comprueba rutas de Carpetas opcionales - Check Optional Folder paths
   for i in "${CARPETAS[@]}"; do
     if [ ! -d "$i" ]; then
       ValCarpetas="si"
     fi
   done
-  # Comprueba formatos de valores
+  # Comprueba formatos de valores - Check value formats
   if [[ "${ORA[Dias]}" =~ ^[0-9]+$ ]]; then
     ValDias=""
   else
@@ -1016,23 +1016,23 @@ ValidarBackup () {
   SiNo "${ORA[Actualizar]}"
   ORA[Actualizar]="${SiNo}"
   [ ! "${ORA[Actualizar]}" ] && ValidarBackup="si"
-  # Salida CLI
+  # Salida CLI - CLI exit
   if [ "${ValidarBackup}" ] && [ "${Cli}" ]; then
     Salir "${Rojo}Los ajustes establecidos no son válidos${Reset}. Ejecuta ${Verde}omv-regen${Reset} sin argumentos para modificarlos.\nSaliendo..." "${Rojo}The established settings are not valid${Reset}. Run ${Verde}omv-regen${Reset} with no arguments to adjust them.\nExiting..."
   fi
 }
 
-# Validar ajustes de Regenera.
-# Devuelve ValidarRegenera="" si todo es correcto y ValidarRegenera="si" si falla.
+# Validar ajustes de Regenera                                                     - Validate Regenera settings
+# Devuelve ValidarRegenera="" si todo es correcto y ValidarRegenera="si" si falla - Returns ValidarRegenera="" if everything is correct and ValidarRegenera="si" if it fails.
 ValidarRegenera () {
   ValidarRegenera=""; ValRegRuta=""; ValFechaBackup=""; TarRegen=""; ValDpkg=""; ValRegCont=""; ValRegDiscos=""; ValRegRootfs=""; IpOR=""; IpAC=""; KernelOR=""; FechaBackup=""; TarUserNumero=""; Discos=""; Dev=""; RootfsAC=""; RootfsOR=""; DiscosAC=""; DiscosOR=""; Serial=""; DpkgAC=""
 
-  # Validar Ruta de Backup de origen
+  # Validar Ruta de Backup de origen - Validate Source Backup Path
   TarRegen="$(find "${ORA[RutaOrigen]}" -name 'ORB_*_regen.tar.gz' | sort -r | awk -F "/" 'NR==1{print $NF}')"
   if [ "${TarRegen}" = "" ]; then
     ValidarRegenera="si"; ValRegRuta="si"
   else
-    # Comprobar si el backup contiene todos los archivos
+    # Comprobar si el backup contiene todos los archivos - Check if the backup contains all the files
     for i in "${ORB[@]}"; do
       if [ "$(tar -tzvf "${ORA[RutaOrigen]}/${TarRegen}" | grep "$i")" = "" ]; then
         ValidarRegenera="si"; ValRegCont="si"
@@ -1043,14 +1043,14 @@ ValidarRegenera () {
         ValidarRegenera="si"; ValRegCont="si"
       fi
     done
-    # Comprobar si hay carpetas opcionales en el backup
+    # Comprobar si hay carpetas opcionales en el backup - Check if there are optional folders in the backup
     FechaBackup="$(echo "${TarRegen}" | awk -F "_" 'NR==1{print $2"_"$3}')"
     TarUserNumero="$(find "${ORA[RutaOrigen]}" -name "ORB_${FechaBackup}"'_user*.tar.gz' | awk 'END {print NR}')"
     [ "${TarUserNumero}" = 0 ] && TarUserNumero=""
-    # Comprobar si el sistema original tenía kernel proxmox
+    # Comprobar si el sistema original tenía kernel proxmox - Check if the original system had proxmox kernel
     tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Unamea" >/dev/null
     KernelOR=$(awk '{print $3}' "/tmp/regen_${FechaBackup}/${ORB[Unamea]}" | awk -F "." '/pve$/ {print $1"."$2}')
-    # Comprobar si están conectados los discos del sistema original
+    # Comprobar si están conectados los discos del sistema original - Check if the original system disks are connected
     tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Rootfs" >/dev/null
     tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_Lsblk" >/dev/null
     Discos="$(lsblk --nodeps -o name,serial)"
@@ -1076,17 +1076,17 @@ ValidarRegenera () {
     elif [ ! "${DiscosOR}" = "${DiscosAC}" ]; then
       ValRegDiscos="si"
     fi
-    # Comprobar valores de red
+    # Comprobar valores de red - Check network settings
     tar -C /tmp -xvf "${ORA[RutaOrigen]}/${TarRegen}" "regen_${FechaBackup}/ORB_HostnameI" >/dev/null
     IpAC=$(hostname -I | awk '{print $1}')
     IpOR=$(awk '{print $1}' "/tmp/regen_${FechaBackup}/${ORB[HostnameI]}")
-    # Limpiar tmp
+    # Limpiar tmp - Clear tmp
     rm -rf "/tmp/regen_${FechaBackup}"
   fi
   if [ ! "${FASE[1]}" = "iniciar" ] && [ ! "${ORA[FechaBackup]}" = "${FechaBackup}" ]; then
     ValidarRegenera="si"; ValFechaBackup="si"
   fi
-  # Comprobar sistema actual
+  # Comprobar sistema actual - Check current system
   if [ "${FASE[1]}" = "iniciar" ]; then
     DpkgAC=$(dpkg -l | grep openmediavault | awk '{print $2}')
     if [ "$(echo "${DpkgAC}" | awk 'NR==1{print $1}')" = "openmediavault" ] && [ "$(echo "${DpkgAC}" | awk 'NR==2{print $1}')" = "openmediavault-keyring" ] && [ "$(echo "${DpkgAC}" | awk 'NR==3{print $1}')" = "" ]; then
@@ -1097,14 +1097,14 @@ ValidarRegenera () {
       ValDpkg="si"; ValidarRegenera="si"
     fi
   fi
-  # Comprobar formatos
+  # Comprobar formatos - Check formats
   SiNo "${ORA[Kernel]}"
   [ ! "${SiNo}" ] && ValidarRegenera="si"
   SiNo "${ORA[Red]}"
   [ ! "${SiNo}" ] && ValidarRegenera="si"
 }
 
-# Comprueba si un valor es si/on o no/off 
+# Comprueba si un valor es si/on o no/off - Checks if a value is yes/on or no/off
 SiNo () {
   SiNo=""
   case $1 in
@@ -1117,7 +1117,7 @@ SiNo () {
   esac
 }
 
-# Escribir ajustes actuales en disco
+# Escribir ajustes actuales en disco - Write current settings to disk
 GuardarAjustes () {
   [ -f "${ORTemp}" ] && rm -f "${ORTemp}"
   touch "${ORTemp}"
@@ -1136,7 +1136,7 @@ GuardarAjustes () {
   rm -f "${ORTemp}"
 }
 
-# Buscar nueva versión de omv-regen y actualizar si existe.
+# Buscar nueva versión de omv-regen y actualizar si existe - Check for new version of omv-regen and update if it exists
 BuscarOR () {
   txt 1 "\n\nBuscando actualizaciones de omv-regen..." "\n\nChecking for omv-regen updates..."
   txt 2 "No se ha podido descargar el archivo." "The file could not be downloaded."
@@ -1174,10 +1174,10 @@ BuscarOR () {
   [ "${Camino}" = "Salir" ] && exit
 }
 
-# Funciones omv
+# Funciones OMV - OMV functions
 . /usr/share/openmediavault/scripts/helper-functions
 
-# Muestra el mensaje en español o inglés según el sistema.
+# Muestra el mensaje en español o inglés según el sistema - Displays the message in Spanish or English depending on the system
 echoe () {
   if [ "$2" ] && [ "${ORA[Idioma]}" = "en" ]; then
     echo -e "$2"
@@ -1186,7 +1186,7 @@ echoe () {
   fi
 }
 
-# Parada del programa hasta que se pulse una tecla.
+# Parada del programa hasta que se pulse una tecla - Program stop until a key is pressed
 Continuar () {
   if [ ! "${Cli}" ]; then
     echoe "\nPULSA CUALQUIER TECLA PARA CONTINUAR\n" "\nPRESS ANY KEY TO CONTINUE\n"
@@ -1196,7 +1196,7 @@ Continuar () {
   fi
 }
 
-# Mostrar mensaje y salir. Si $1=ayuda sale con ayuda.
+# Mostrar mensaje y salir. Si $1=ayuda sale con ayuda - Show message and exit. If $1=ayuda exit with help
 Salir () {
   if [ "$1" = "ayuda" ]; then
     [ "${ORA[Idioma]}" = "es" ] && echo -e "$2" || echo -e "$3"
@@ -1207,9 +1207,9 @@ Salir () {
   exit
 }
 
-# Mensaje con tiempo de espera y posibilidad de abortar
-# $1=segundos de espera. $2 y $3 texto. $4 y $5 texto opcional mensaje si se aborta.
-# Si se ha abortado devuelve Abortar="si"
+# Mensaje con tiempo de espera y posibilidad de abortar                             - Message with waiting time and possibility to abort
+# $1=segundos de espera. $2 y $3 texto. $4 y $5 texto opcional mensaje si se aborta - $1=waiting seconds. $2 and $3 text. $4 and $5 optional text message if aborted
+# Si se ha abortado devuelve Abortar="si"                                           - If it has been aborted, it returns Abort="si"
 Abortar () {
   Abortar=""
   txt 1 "$2" "$3"
@@ -1232,9 +1232,9 @@ Abortar () {
   fi
 }
 
-# Informacion con tiempo de espera para leer.
-# $1=segundos de espera
-# $2 y $3 es el texto
+# Informacion con tiempo de espera para leer - Information with waiting time to read
+# $1=segundos de espera                      - $1=waiting seconds
+# $2 y $3 es el texto                        - $2 and $3 is the text
 Info () {
   txt 1 "$2" "$3"
   dialog --title "omv-regen ${ORVersion}" --backtitle "omv-regen ${ORVersion}" --colors --infobox "\n${txt[1]}\n " 0 0
@@ -1253,9 +1253,9 @@ Pregunta () {
   [ $? -eq 0 ] && Pregunta="" || Pregunta="si"
 }
 
-# Habilitar o deshabilitar backports
-# $1=YES --> Habilitar
-# $1=NO --> Deshabilitar
+# Habilitar o deshabilitar backports - Enable or disable backports
+# $1=YES --> Habilitar               - $1=YES --> Enable
+# $1=NO --> Deshabilitar             - $1=NO --> Disable
 Backports () {
   if [ ! "${Backports}" = "$1" ]; then
     if [ "$1" = "YES" ] || [ "$1" = "NO" ]; then
@@ -1274,7 +1274,7 @@ Backports () {
   fi
 }
   
-# Analizar estado de paquete. Instalación y versiones.
+# Analizar estado de paquete. Instalación y versiones. - Analyze package status. Installation and versions.
 Analizar () {
   VersionOR=""; VersionDI=""; InstII=""
 
@@ -1284,10 +1284,10 @@ Analizar () {
   [ "${InstII}" == "ii" ] && InstII="si" || InstII=""
 }
 
-# Control de versiones.
-# $1=esencial -> Si no es la misma versión se detiene la regeneración.
-# $1=noesencial -> Si no es la misma versión se avisa y se almacena en una variable.
-# $2 es el paquete que se analiza.
+# Control de versiones                                                          - Version control
+# $1=esencial -> Si no es la misma versión se detiene la regeneración.          - $1=esencial -> If it is not the same version, the regeneration stops.
+# $1=noesencial -> Si no es la misma versión avisa y almacena en una variable.  - $1=noesencial -> If it is not the same version, it warns and stores it in a variable.
+# $2 es el paquete que se analiza.                                              - $2 is the package being analyzed.
 ControlVersiones () {
   ControlVersiones=""; Esencial=$1; Paquete=$2
 
@@ -1314,7 +1314,7 @@ ControlVersiones () {
   fi
 }
 
-# Instalar paquete
+# Instalar paquete - Install package
 Instalar () {
   echoe "\nInstalando $1\n" "\nInstall $1 \n"
   if ! apt-get --yes install "$1"; then
@@ -1328,7 +1328,7 @@ Instalar () {
   echoe "\nSe ha instalado $1\n" "\n$1 has been installed\n"
 }
 
-# Extraer valor de una entrada de la base de datos
+# Extraer valor de una entrada de la base de datos - Extract value from a database entry
 LeerValor () {
   ValorOR=""; ValorAC=""; NumVal=""
 
@@ -1340,8 +1340,8 @@ LeerValor () {
   echoe "El número de valores es ${NumVal}" "The number of values is ${NumVal}"
 }
 
-# Sustituye nodo de la base de datos actual por el existente en la base de datos original y aplica cambios en módulos salt
-# El argumento de entrada debe ser un elemento de la matriz CONFIG[]
+# Sustituye nodo de la base de datos actual por el existente en la base de datos original y aplica cambios en módulos salt - Replaces the current database node with the existing one in the original database and applies changes in salt modules
+# El argumento de entrada debe ser un elemento de la matriz CONFIG[] - The input argument must be an element of the CONFIG[] array
 Regenera () {
   local Nodo Padre Etiqueta Salt NodoOR NodoAC Modulo Resto
   
@@ -1410,7 +1410,7 @@ Regenera () {
   fi
 }
 
-# Ejecuta salt en modulos pendientes de aplicar cambios. 
+# Ejecuta salt en modulos pendientes de aplicar cambios - Run salt on modules pending application of changes 
 Limpiar (){
   Resto="$(jq -r .[] "${Listasucia}" | tr '\n' ' ')"
   if [ "${Resto}" ]; then
@@ -1928,7 +1928,7 @@ RegeneraFase7 () {
   reboot; sleep 5; exit
 }
 
-############################## INICIO ##################################
+############################## INICIO - START ##################################
 
 # Root
 [[ $(id -u) -ne 0 ]] && Salir ayuda "Ejecuta omv-regen con sudo o como root.  Saliendo..." "Run omv-regen with sudo or as root.  Exiting..."
@@ -1942,7 +1942,7 @@ else
   Salir "Versión no soportada.   Solo está soportado OMV 6.x. y OMV 7.x.  Saliendo..." "Unsupported version.  Only OMV 6.x. and OMV 7.x. are supported.  Exiting..."
 fi
 
-# Comprobar si omv-regen está instalado
+# Comprobar si omv-regen está instalado - Check if omv-regen is installed
 if [ ! "$0" = "${Omvregen}" ]; then
   [ -f "${Omvregen}" ] && rm "${Omvregen}"
   touch "${Omvregen}"
@@ -1951,7 +1951,7 @@ if [ ! "$0" = "${Omvregen}" ]; then
   Salir ayuda "\n  Se ha instalado omv-regen ${ORVersion}\n" "\n  omv-regen ${ORVersion} has been installed.\n"
 fi
 
-# Configurar logrotate
+# Configurar logrotate - Configure logrotate
 if [ ! -f "/etc/logrotate.d/omv-regen" ]; then
   touch "/etc/logrotate.d/omv-regen"
   echo "/var/log/omv-regen.log {
@@ -1964,7 +1964,7 @@ if [ ! -f "/etc/logrotate.d/omv-regen" ]; then
 }" | tee "/etc/logrotate.d/omv-regen"
 fi
 
-# Generar/recuperar configuraciones de omv-regen
+# Generar/recuperar configuraciones de omv-regen - Generate/recover omv-regen configurations
 if [ ! -f "${ORAjustes}" ]; then
   [ ! -d "/etc/regen" ] && mkdir -p "/etc/regen"
   touch "${ORAjustes}"
@@ -1987,7 +1987,7 @@ else
       FASE[i]="${linea:8}"
     fi
   done < "${ORAjustes}"
-  # Actualizar Archivos de Ajustes existentes
+  # Actualizar Archivos de Ajustes existentes - Update Existing Settings Files
   if [ "${ORA[Idioma]}" = "" ]; then
     ORA[Idioma]="${Idioma}"
     GuardarAjustes
@@ -1995,9 +1995,9 @@ else
   Traducir
 fi
 
-# Comprobar estado de regenera
+# Comprobar estado de regenera - Check regenera status
 if [ "${FASE[1]}" = "iniciar" ]; then
-  # Buscar actualizaciones de omv-regen
+  # Buscar actualizaciones de omv-regen - Check for omv-regen updates
   [ "${ORA[Buscar]}" = "on" ] && BuscarOR
 elif [ "${FASE[1]}" = "" ]; then
   Info 3 "El archivo de ajustes de omv-regen no se puede leer o ha sido manipulado." "The omv-regen settings file cannot be read or has been tampered with."
@@ -2012,7 +2012,7 @@ else
   GuardarAjustes
 fi
 
-# Comprobar que no hay mas de un argumento y procesar
+# Comprobar que no hay mas de un argumento y procesar - Check that there is not more than one argument and process
 [ "$2" ] && Salir ayuda "\nArgumento inválido. Si has actualizado desde una versión anterior consulta la ayuda. Saliendo..." "\nInvalid argument. If you have updated from a previous version, consult the help. Exiting..."
 case "$1" in
   backup)
@@ -2033,7 +2033,7 @@ case "$1" in
     ;;
 esac
 
-# MENU PRINCIPAL
+# MENU PRINCIPAL - MAIN MENU
 while true; do
   if [ "${Camino}" = "MenuPrincipal" ]; then
     txt 1 "                      MENU PRINCIPAL OMV-REGEN " "                        OMV-REGEN MAIN MENU"

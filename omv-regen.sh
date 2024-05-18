@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.12
+# omv-regen 7.0.13
 # Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
-ORVersion="7.0.12"
+ORVersion="7.0.13"
 
 # Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
@@ -75,7 +75,8 @@ Passdb="/var/lib/samba/private/passdb.tdb"
 Default="/etc/default/openmediavault"
 ORAjustes="/etc/regen/omv-regen.settings"
 Omvregen="/usr/sbin/omv-regen"
-declare -a ARCHIVOS=("$Configxml" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" "$Default" "$ORAjustes" "$Omvregen")
+Crypttab="/etc/crypttab" 
+declare -a ARCHIVOS=("$Configxml" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" "$Default" "$ORAjustes" "$Omvregen" "$Crypttab")
 ValidarBackup=""
 ValBacRuta=""
 ValRutaEsc=""
@@ -104,7 +105,7 @@ declare -a COMPLEMENTOS
 Plugin=""
 KernelOR=""
 KernelIN=""
-declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-md" "openmediavault-remotemount" "openmediavault-mounteditor")
+declare -a SISTEMA_ARCHIVOS=("openmediavault-zfs" "openmediavault-lvm2" "openmediavault-mergerfs" "openmediavault-snapraid" "openmediavault-md" "openmediavault-remotemount" "openmediavault-mounteditor" "openmediavault-luksencryption")
 OrdenarComplementos=""
 VersionOR=""
 VersionDI=""
@@ -1463,6 +1464,12 @@ EjecutarBackup () {
       [ ! -d "$(dirname "${CarpetaRegen}$i")" ] && mkdir -p "$(dirname "${CarpetaRegen}$i")"
       cp -apv "$i" "${CarpetaRegen}$i"
     done
+    if [ -f /etc/crypttab ]; then
+      for i in $(awk 'NR>1{print $3}' /etc/crypttab); do
+        [ ! -d "$(dirname "${CarpetaRegen}$i")" ] && mkdir -p "$(dirname "${CarpetaRegen}$i")"
+        cp -apv "$i" "${CarpetaRegen}$i"
+      done
+    fi
     xmlstarlet fo "${Configxml}" | tee "${CarpetaRegen}${Configxml}" >/dev/null
     if [ "$(xmlstarlet val "${CarpetaRegen}${Configxml}" | awk '{print $3}')" = "invalid" ]; then
       Salir "\nLa base de datos de openmediavault es inutilizable, no se puede hacer un backup para regenerar este sistema. Saliendo..." "\nopenmediavault database is unusable, a backup cannot be made to regenerate this system. Exiting..."
@@ -1482,7 +1489,7 @@ EjecutarBackup () {
     echoe "\n>>>    Extrayendo información del sistema (uname -a)...\n" "\n>>>    Extracting system info (uname -a)...\n"
     uname -a | tee "${CarpetaRegen}${ORB[Unamea]}"
     echoe "\n>>>    Extrayendo información de zfs (zpool list)...\n" "\n>>>    Extracting zfs info (zpool list)...\n"
-    [ "$(dpkg -l | grep openmediavault-zfs)" ] && zpool list | tee "${CarpetaRegen}${ORB[Zpoollist]}"
+    [ "$(dpkg -l | grep openmediavault-zfs)" ] && zpool list | tee "${CarpetaRegen}${ORB[Zpoollist]}" || echo "--" | tee "${CarpetaRegen}${ORB[Zpoollist]}"
     echoe "\n>>>    Extrayendo información de systemd (systemctl)...\n" "\n>>>    Extracting information from systemd (systemctl)...\n"
     systemctl list-unit-files | tee "${CarpetaRegen}${ORB[Systemctl]}"
     echoe "\n>>>    Extrayendo información de red (hostname -I)...\n" "\n>>>    Retrieving network information (hostname -I)...\n"
@@ -1641,6 +1648,13 @@ RegeneraFase1 () {
   echoe "\n>>>   >>>    FASE Nº1: REGENERAR CONFIGURACIONES BÁSICAS.\n" "\n>>>   >>>    PHASE Nº1: REGENERATE BASIC SETTINGS.\n"
   cp -apv "${ORA[RutaRegen]}${Passwd}" "${Passwd}"
   cp -apv "${ORA[RutaRegen]}${Default}" "${Default}"
+  cp -apv "${ORA[RutaRegen]}${Crypttab}" "${Crypttab}"
+  if [ -f /etc/crypttab ]; then
+    for i in $(awk 'NR>1{print $3}' /etc/crypttab); do
+      [ ! -d "$(dirname "$i")" ] && mkdir -p "$(dirname "$i")"
+      cp -apv "${ORA[RutaRegen]}$i" "$i"
+    done
+  fi
   echoe "\nRegenerando Configuraciones básicas del sistema...\n" "\nRegenerating basic system settings...\n"
   Regenera "${CONFIG[time]}"
   Regenera "${CONFIG[certificates]}"
@@ -1748,6 +1762,14 @@ RegeneraFase4 () {
   fi
 
   echoe "Regenerar complementos requeridos para los sistemas de archivos." "Regenerate plugins required for file systems."
+  Analizar "openmediavault-luksencryption"
+  if [ ! "${VersionOR}" ]; then
+    echoe "openmediavault-luksencryption no estaba instalado en el sistema original." "openmediavault-luksencryption was not installed on the original system."
+  elif [ ! "${InstII}" ]; then
+    ControlVersiones esencial "openmediavault-luksencryption"
+    Instalar "openmediavault-luksencryption"
+    Regenera "${CONFIG[openmediavault-luksencryption]}"
+  fi
   for a in "${SISTEMA_ARCHIVOS[@]}"; do
     Analizar "$a"
     if [ ! "${VersionOR}" ]; then

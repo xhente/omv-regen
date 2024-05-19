@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.13
+# omv-regen 7.0.14
 # Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
-ORVersion="7.0.13"
+ORVersion="7.0.14"
 
 # Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
@@ -75,8 +75,8 @@ Passdb="/var/lib/samba/private/passdb.tdb"
 Default="/etc/default/openmediavault"
 ORAjustes="/etc/regen/omv-regen.settings"
 Omvregen="/usr/sbin/omv-regen"
-Crypttab="/etc/crypttab" 
-declare -a ARCHIVOS=("$Configxml" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" "$Default" "$ORAjustes" "$Omvregen" "$Crypttab")
+declare -a ARCHIVOS=("$Configxml" "$Passwd" "$Shadow" "$Group" "$Subuid" "$Subgid" "$Passdb" "$Default" "$ORAjustes" "$Omvregen")
+Reinicio=""
 ValidarBackup=""
 ValBacRuta=""
 ValRutaEsc=""
@@ -1464,7 +1464,8 @@ EjecutarBackup () {
       [ ! -d "$(dirname "${CarpetaRegen}$i")" ] && mkdir -p "$(dirname "${CarpetaRegen}$i")"
       cp -apv "$i" "${CarpetaRegen}$i"
     done
-    if [ -f /etc/crypttab ]; then
+    if [ -f "/etc/crypttab" ]; then
+      cp -apv "/etc/crypttab" "${CarpetaRegen}/etc/crypttab"
       for i in $(awk 'NR>1{print $3}' /etc/crypttab); do
         [ ! -d "$(dirname "${CarpetaRegen}$i")" ] && mkdir -p "$(dirname "${CarpetaRegen}$i")"
         cp -apv "$i" "${CarpetaRegen}$i"
@@ -1648,8 +1649,9 @@ RegeneraFase1 () {
   echoe "\n>>>   >>>    FASE Nº1: REGENERAR CONFIGURACIONES BÁSICAS.\n" "\n>>>   >>>    PHASE Nº1: REGENERATE BASIC SETTINGS.\n"
   cp -apv "${ORA[RutaRegen]}${Passwd}" "${Passwd}"
   cp -apv "${ORA[RutaRegen]}${Default}" "${Default}"
-  cp -apv "${ORA[RutaRegen]}${Crypttab}" "${Crypttab}"
-  if [ -f /etc/crypttab ]; then
+  if [ -f "${ORA[RutaRegen]}/etc/crypttab" ]; then
+    cp -apv "${ORA[RutaRegen]}/etc/crypttab" "/etc/crypttab"
+    Reinicio="si"
     for i in $(awk 'NR>1{print $3}' /etc/crypttab); do
       [ ! -d "$(dirname "$i")" ] && mkdir -p "$(dirname "$i")"
       cp -apv "${ORA[RutaRegen]}$i" "$i"
@@ -1736,9 +1738,12 @@ RegeneraFase3 () {
       "\n\nKernel proxmox ${KernelOR} installed.\nThe system will be rebooted to use the new kernel.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
       echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
       FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
-      reboot
-      sleep 3; exit
+      Reinicio="si"
     fi
+  fi
+  if [ "${Reinicio}"]; then
+    reboot
+    sleep 3; exit
   fi
   echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
   FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes

@@ -1741,9 +1741,9 @@ RegeneraFase3 () {
       Reinicio="si"
     fi
   fi
-  if [ "${Reinicio}"]; then
+  if [ "${Reinicio}" ]; then
     Info 5 "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
-      "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
+    "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
     reboot
     sleep 3; exit
   fi

@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.14
+# omv-regen 7.0.15
 # Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
-ORVersion="7.0.14"
+ORVersion="7.0.15"
 
 # Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
@@ -412,7 +412,8 @@ txt AyudaConsejos \
 \n \
 \n    ${AzulD}- UNIDAD DE SISTEMA DIFERENTE:${ResetD}    Es muy recomendable utilizar una unidad de sistema diferente a la original para instalar OMV en el sistema nuevo. Es muy sencillo usar un pendrive para instalar openmediavault. Si tienes la mala suerte de que se publique una actualización de un paquete esencial entre el momento del backup y el momento de la regeneración no podrás terminar la regeneración, y necesitarás el sistema original para hacer un nuevo backup actualizado. \
 \n \
-\n    ${AzulD}- CONTENEDORES DOCKER:${ResetD}    Toda la información que hay en el disco de sistema original va a desaparecer. Para conservar los contenedores docker en el mismo estado asegúrate de hacer algunas cosas antes. Cambia la ruta de instalación por defecto de docker desde la carpeta /var/lib/docker a una carpeta en alguno de los discos de datos. Configura todos los volumenes de los contenedores fuera del disco de sistema, en alguno de los discos de datos. Estas son recomendaciones generales, pero en este caso con mas motivo, si no lo haces perderás esos datos. Alternativamente puedes añadir carpetas opcionales al backup." \
+\n    ${AzulD}- CONTENEDORES DOCKER:${ResetD}    Toda la información que hay en el disco de sistema original va a desaparecer. Para conservar los contenedores docker en el mismo estado asegúrate de hacer algunas cosas antes. Cambia la ruta de instalación por defecto de docker desde la carpeta /var/lib/docker a una carpeta en alguno de los discos de datos. Configura todos los volumenes de los contenedores fuera del disco de sistema, en alguno de los discos de datos. Estas son recomendaciones generales, pero en este caso con mas motivo, si no lo haces perderás esos datos. Alternativamente puedes añadir carpetas opcionales al backup. \
+\n    ${AzulD}- DISCOS DUROS ENCRIPTADOS:${ResetD}    Si tienes discos duros encriptados mediante el complemento openmediavault-luksencryption omv-regen necesitará desencriptarlos para poder hacer la regeneración sin errores. Para ello debes crear un archivo /etc/crypttab siguiendo el manual de Debian y establecer las rutas a los archivos con las claves de descifrado. omv-regen transferirá estos archivos al backup y después al nuevo sistema. Durante la regeneración será necesario un reinicio para poder desencriptar esos discos duros, omv-regen te avisará, después del reinicio debes ejecutar omv-regen de nuevo para continuar el proceso." \
 "\n \
 \n          SOME ADVICES \
 \n \
@@ -428,7 +429,8 @@ txt AyudaConsejos \
 \n \
 \n    ${AzulD}- DIFFERENT SYSTEM UNIT:${ResetD}    It is highly recommended to use a different system drive than the original one to install OMV on the new system. It is very easy to use a pendrive to install openmediavault. If you are unlucky enough that an update to an essential package is released between the time of the backup and the time of the rebuild, you will not be able to finish the rebuild, and you will need the original system to make a new updated backup. \
 \n \
-\n    ${AzulD}- DOCKER CONTAINERS:${ResetD}    All the information on the original system disk will disappear. To keep your docker containers in the same state make sure you do a few things first. Change the default docker installation path from the /var/lib/docker folder to a folder on one of the data disks. Configure all container volumes off the system disk, on one of the data disks. These are general recommendations, but in this case even more so, if you don't do it you will lose that data. Alternatively you can add optional folders to the backup."
+\n    ${AzulD}- DOCKER CONTAINERS:${ResetD}    All the information on the original system disk will disappear. To keep your docker containers in the same state make sure you do a few things first. Change the default docker installation path from the /var/lib/docker folder to a folder on one of the data disks. Configure all container volumes off the system disk, on one of the data disks. These are general recommendations, but in this case even more so, if you don't do it you will lose that data. Alternatively you can add optional folders to the backup. \
+\n    ${AzulD}- ENCRYPTED HARD DRIVES:${ResetD}    If you have hard drives encrypted using the openmediavault-luksencryption omv-regen plugin will need to decrypt them to be able to do the regeneration without errors. To do this you must create a /etc/crypttab file following the Debian manual and establish the paths to the files with the decryption keys. omv-regen will transfer these files to the backup and then to the new system. During the regeneration, a reboot will be necessary to decrypt those hard drives, omv-regen will notify you, after the reboot you must run omv-regen again to continue the process."
 
 txt AyudaBackup \
 "\n \
@@ -1736,19 +1738,18 @@ RegeneraFase3 () {
       rm -f /tmp/installproxmox
       Info 5 "\n\nKernel proxmox ${KernelOR} instalado.\n " \
       "\n\nKernel proxmox ${KernelOR} installed.\n "
-      echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
-      FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
-      Reinicio="si"
+      Analizar "openmediavault-luksencryption"
+      [ ! "${VersionOR}" ] && Reinicio="si"
     fi
   fi
+  echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
+  FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
   if [ "${Reinicio}" ]; then
     Info 5 "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
     "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
     reboot
     sleep 3; exit
   fi
-  echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
-  FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
 }
 
 RegeneraFase4 () {
@@ -1776,6 +1777,11 @@ RegeneraFase4 () {
     ControlVersiones esencial "openmediavault-luksencryption"
     Instalar "openmediavault-luksencryption"
     Regenera "${CONFIG[openmediavault-luksencryption]}"
+    Info 5 "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
+    "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
+    FASE[4]="iniciar"; GuardarAjustes
+    reboot
+    sleep 3; exit
   fi
   for a in "${SISTEMA_ARCHIVOS[@]}"; do
     Analizar "$a"

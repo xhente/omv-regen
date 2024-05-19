@@ -1734,14 +1734,16 @@ RegeneraFase3 () {
       sed -i 's/^exit 0.*$/echo "Completado"/' /tmp/installproxmox
       . /tmp/installproxmox "${KernelOR}"
       rm -f /tmp/installproxmox
-      Info 5 "\n\nKernel proxmox ${KernelOR} instalado.\nSe va a reiniciar el sistema para utilizar el nuevo kernel.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
-      "\n\nKernel proxmox ${KernelOR} installed.\nThe system will be rebooted to use the new kernel.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
+      Info 5 "\n\nKernel proxmox ${KernelOR} instalado.\n " \
+      "\n\nKernel proxmox ${KernelOR} installed.\n "
       echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
       FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
       Reinicio="si"
     fi
   fi
   if [ "${Reinicio}"]; then
+    Info 5 "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
+      "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
     reboot
     sleep 3; exit
   fi

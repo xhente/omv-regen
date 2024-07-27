@@ -146,6 +146,11 @@ El procedimiento básico se resume en tres pasos, crear un backup, instalar OMV,
 Nota: Ver mas abajo un esquema de la configuración de ejecución
 
 AGRADECIMIENTOS: Gracias a Aaron Murray por sus consejos en el desarrollo de omv-regen.
+
+Espero que omv-regen te haya resultado útil, si quieres puedes invitarme a un café. ¡Muchas gracias!
+
+[<img alt="buy me  a coffee" width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" />](https://www.buymeacoffee.com/xhente)
+
 _____________________________________________________________________________________________________________________
 
 # omv-regen
@@ -286,6 +291,11 @@ The basic procedure is summarized in three steps, create a backup, install OMV, 
   - Selective installation of omv-extras depending on the Openmediavault version.
 
 ACKNOWLEDGMENTS: Thanks to Aaron Murray for his advice in developing omv-regen.
+
+I hope that omv-regen has been useful to you, if you want you can buy me a coffee. Thank you so much!
+
+[<img alt="buy me  a coffee" width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" />](https://www.buymeacoffee.com/xhente)
+
 ______________________________________________________________________________________________________________________
 
 

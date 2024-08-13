@@ -36,7 +36,7 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
 
 ## QUÉ NO ES OMV-REGEN
 
-   - omv-regen no es una utilidad para backup programado y restauración del sistema operativo encualquier momento. Si necesitas un backup de openmediavault que puedas restaurar en cualquier momento utiliza el complemento openmediavault-backup. La razón de esto se explican detalladamente en el apartado "Limitaciones de omv-regen", pero el resumen es que necesitas un backup actualizado para poder restaurar con omv-regen.
+   - omv-regen no es una utilidad para backup programado y restauración del sistema operativo en cualquier momento. Si necesitas un backup de openmediavault que puedas restaurar en cualquier momento utiliza el complemento openmediavault-backup. La razón de esto se explican detalladamente en el apartado "Limitaciones de omv-regen", pero el resumen es que necesitas un backup actualizado para poder restaurar con omv-regen.
    - Alternativamente puedes regenerar el sistema en otra unidad, por ejemplo un pendrive y seguir utilizando el disco/pendrive original, eso te proporcionaría un backup utilizable en cualquier momento.
 
 ## OMV-REGEN ES ÚTIL PARA

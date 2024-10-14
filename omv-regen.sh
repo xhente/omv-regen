@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.15
+# omv-regen 7.0.16
 # Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
-ORVersion="7.0.15"
+ORVersion="7.0.16"
 
 # Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
@@ -443,7 +443,7 @@ txt AyudaBackup \
 \n \
 \n    ${AzulD}- DIAS QUE SE CONSERVAN LOS BACKUPS:${ResetD}    Esta opción establece el número de días máximo para conservar backups. Cada vez que hagas un backup se eliminarán todos aquellos existentes en la misma ruta con mas antigüedad de la configurada, mediante el escaneo de fechas de todos los archivos con el prefijo ORB_ Se establece un valor en días. El valor por defecto son 7 días. \
 \n \
-\n    ${AzulD}- ACTUALIZAR EL SISTEMA:${ResetD}    Esta opción hará que el sistema se actualice automáticamente justo antes de realizar el backup. Asegúrate que esté activa si tu intención es hacer un backup para proceder a una regeneración inmediatamente después. Desactívala si estás haciendo backups programados. El valor establecido debe ser Si/on o No/off. \
+\n    ${AzulD}- ACTUALIZAR EL SISTEMA:${ResetD}    Esta opción hará que el sistema se actualice automáticamente justo antes de realizar el backup. Asegúrate que esté activa si tu intención es hacer un backup para proceder a una regeneración inmediatamente después. Desactívala si estás haciendo backups programados. El valor establecido debe ser Si/on o No/off. Nota: Puedes usar esta opción de forma programada para actualizar el sistema automáticamente en cada ejecución del backup, esto garantizará que el backup es utilizable en ese momento, pero ten en cuenta que no estarás presente durante la actualización si hay algún problema. \
 \n \
 \n    ${AzulD}- CARPETAS ADICIONALES:${ResetD}    Puedes definir tantas carpetas opcionales como quieras que se incluirán en el backup. Útil si tienes información que quieres transferir al nuevo sistema que vas a regenerar. Si copias carpetas con configuraciones del sistema podrías romperlo. Estas carpetas se devolverán a su ubicación original en la parte final del proceso de regeneración. Se crea un archivo tar comprimido para cada carpeta etiquetado de la misma forma que el resto del backup. Puedes incluir carpetas que estén ubicadas en los discos de datos. Puesto que la restauración de estas carpetas se hace al final del proceso, en ese momento todos los sistemas de archivos ya están montados y funcionando. La carpeta /root se incluirá por defecto en el backup." \
 "\n \
@@ -456,7 +456,7 @@ txt AyudaBackup \
 \n \
 \n    ${AzulD}- DAYS BACKUPS ARE KEPT:${ResetD}    This option establishes the maximum number of days to keep backups. Every time you make a backup, all those existing in the same path that are older than the configured one will be eliminated, by scanning the files of all the files with the ORB_ prefix. A value is established in days. The default value is 7 days. \
 \n \
-\n    ${AzulD}- UPDATE SYSTEM:${ResetD}  This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off. \
+\n    ${AzulD}- UPDATE SYSTEM:${ResetD}  This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off. Note: You can use this option on a scheduled basis to update the system automatically with each backup run, this will ensure that the backup is usable at that time, but keep in mind that you will not be present during the update if there is a problem. \
 \n \
 \n    ${AzulD}- ADDITIONAL FOLDERS:${ResetD}    You can define as many optional folders as you want that will be included in the backup. Useful if you have information that you want to transfer to the new system that you are going to regenerate. If you copy folders with system settings you could break it. These folders will be returned to their original location in the final part of the regeneration process. A compressed tar file is created for each folder labeled the same as the rest of the backup. You can include folders that are located on the data disks. Since the restoration of these folders is done at the end of the process, at that point all file systems are already mounted and working. The /root folder is included by default in the backup."
 
@@ -1417,6 +1417,7 @@ Regenera () {
 Limpiar (){
   Resto="$(jq -r .[] "${Listasucia}" | tr '\n' ' ')"
   if [ "${Resto}" ]; then
+    echoe "Limpiando módulos sucios..." "Cleaning dirty modules..."
     /usr/sbin/omv-rpc -u admin "Config" "applyChanges" "{\"modules\": $(cat /var/lib/openmediavault/dirtymodules.json), \"force\": false}"
   fi
 }
@@ -1650,7 +1651,7 @@ OrdenarComplementos () {
 RegeneraFase1 () {
   echoe "\n>>>   >>>    FASE Nº1: REGENERAR CONFIGURACIONES BÁSICAS.\n" "\n>>>   >>>    PHASE Nº1: REGENERATE BASIC SETTINGS.\n"
   cp -apv "${ORA[RutaRegen]}${Passwd}" "${Passwd}"
-  cp -apv "${ORA[RutaRegen]}${Default}" "${Default}"
+  cp -apv "${ORA[RutaRegen]}${Default}" "${Default}"; . /etc/default/openmediavault
   if [ -f "${ORA[RutaRegen]}/etc/crypttab" ]; then
     cp -apv "${ORA[RutaRegen]}/etc/crypttab" "/etc/crypttab"
     Reinicio="si"
@@ -1745,7 +1746,7 @@ RegeneraFase3 () {
   echoe "Fase Nº3 terminada." "Phase No.3 completed."; sleep 1
   FASE[3]="hecho"; FASE[4]="iniciar"; GuardarAjustes
   if [ "${Reinicio}" ]; then
-    Info 5 "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
+    Mensaje "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
     "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
     reboot
     sleep 3; exit
@@ -1777,9 +1778,9 @@ RegeneraFase4 () {
     ControlVersiones esencial "openmediavault-luksencryption"
     Instalar "openmediavault-luksencryption"
     Regenera "${CONFIG[openmediavault-luksencryption]}"
-    Info 5 "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
-    "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
     FASE[4]="iniciar"; GuardarAjustes
+    Mensaje "\n\nSe va a reiniciar el sistema.\nLa regeneración aún no ha finalizado.\n\n\n${RojoD}Después del reinicio EJECUTA DE NUEVO OMV-REGEN para completar la regeneración.\n\n ${ResetD}\nEl proceso continuará de forma automática.\n " \
+    "\n\nThe system will be rebooted.\nThe regeneration is not finished yet.\n\n\n${RojoD}After reboot RUN OMV-REGEN AGAIN to complete the regeneration.\n\n ${ResetD}\nThe process will continue automatically.\n "
     reboot
     sleep 3; exit
   fi

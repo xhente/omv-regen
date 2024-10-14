@@ -36,7 +36,7 @@ sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-reg
 
 ## QUÉ NO ES OMV-REGEN
 
-   - omv-regen no es una utilidad para backup programado y restauración del sistema operativo encualquier momento. Si necesitas un backup de openmediavault que puedas restaurar en cualquier momento utiliza el complemento openmediavault-backup. La razón de esto se explican detalladamente en el apartado "Limitaciones de omv-regen", pero el resumen es que necesitas un backup actualizado para poder restaurar con omv-regen.
+   - omv-regen no es una utilidad para backup programado y restauración del sistema operativo en cualquier momento. Si necesitas un backup de openmediavault que puedas restaurar en cualquier momento utiliza el complemento openmediavault-backup. La razón de esto se explican detalladamente en el apartado "Limitaciones de omv-regen", pero el resumen es que necesitas un backup actualizado para poder restaurar con omv-regen.
    - Alternativamente puedes regenerar el sistema en otra unidad, por ejemplo un pendrive y seguir utilizando el disco/pendrive original, eso te proporcionaría un backup utilizable en cualquier momento.
 
 ## OMV-REGEN ES ÚTIL PARA
@@ -104,7 +104,7 @@ El procedimiento básico se resume en tres pasos, crear un backup, instalar OMV,
     - ORB_231001_103828_user1.tar.gz    <-- Archivo con la carpeta opcional 1 de usuario
     - ORB_231001_103828_user2.tar.gz    <-- Archivo con la carpeta opcional 2 de usuario
   - DIAS QUE SE CONSERVAN LOS BACKUPS: Esta opción establece el número de días máximo para conservar backups. Cada vez que hagas un backup se eliminarán todos aquellos existentes en la misma ruta con mas antigüedad de la configurada, mediante el escaneo de fechas de todos los archivos con el prefijo ORB_ Se establece un valor en días. El valor por defecto son 7 días.
-  - ACTUALIZAR EL SISTEMA: Esta opción hará que el sistema se actualice automáticamente justo antes de realizar el backup. Asegúrate que esté activa si tu intención es hacer un backup para proceder a una regeneración inmediatamente después. Desactívala si estás haciendo backups programados. El valor establecido debe ser Si/on o No/off.
+  - ACTUALIZAR EL SISTEMA: Esta opción hará que el sistema se actualice automáticamente justo antes de realizar el backup. Asegúrate que esté activa si tu intención es hacer un backup para proceder a una regeneración inmediatamente después. Desactívala si estás haciendo backups programados. El valor establecido debe ser Si/on o No/off. Nota: Puedes usar esta opción de forma programada para actualizar el sistema automáticamente en cada ejecución del backup, esto garantizará que el backup es utilizable en ese momento, pero ten en cuenta que no estarás presente durante la actualización si hay algún problema.
   - CARPETAS ADICIONALES: Puedes definir tantas carpetas opcionales como quieras que se incluirán en el backup. Útil si tienes información que quieres transferir al nuevo sistema que vas a regenerar. Si copias carpetas con configuraciones del sistema podrías romperlo. Estas carpetas se devolverán a su ubicación original en la parte final del proceso de regeneración. Se crea un archivo tar comprimido para cada carpeta etiquetado de la misma forma que el resto del backup. Puedes incluir carpetas que estén ubicadas en los discos de datos. Puesto que la restauración de estas carpetas se hace al final del proceso, en ese momento todos los sistemas de archivos ya están montados y funcionando. La carpeta /root se incluirá por defecto en el backup.
 
 ## OPCIONES DE OMV-REGEN REGENERA
@@ -146,6 +146,11 @@ El procedimiento básico se resume en tres pasos, crear un backup, instalar OMV,
 Nota: Ver mas abajo un esquema de la configuración de ejecución
 
 AGRADECIMIENTOS: Gracias a Aaron Murray por sus consejos en el desarrollo de omv-regen.
+
+Espero que omv-regen te haya resultado útil, si quieres puedes invitarme a un café. ¡Muchas gracias!
+
+[<img alt="buy me  a coffee" width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" />](https://www.buymeacoffee.com/xhente)
+
 _____________________________________________________________________________________________________________________
 
 # omv-regen
@@ -246,7 +251,7 @@ The basic procedure is summarized in three steps, create a backup, install OMV, 
     - ORB_231001_103828_user1.tar.gz    <-- File with optional user folder 1
     - ORB_231001_103828_user2.tar.gz    <-- File with optional user folder 2
   - DAYS BACKUPS ARE KEPT: This option establishes the maximum number of days to keep backups. Every time you make a backup, all those existing in the same path that are older than the configured one will be eliminated, by scanning the files of all the files with the ORB_ prefix. A value is established in days. The default value is 7 days.
-  - UPDATE SYSTEM: This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off.
+  - UPDATE SYSTEM: This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off. Note: You can use this option on a scheduled basis to update the system automatically with each backup run, this will ensure that the backup is usable at that time, but keep in mind that you will not be present during the update if there is a problem.
   - ADDITIONAL FOLDERS: You can define as many optional folders as you want that will be included in the backup. Useful if you have information that you want to transfer to the new system that you are going to regenerate. If you copy folders with system settings you could break it. These folders will be returned to their original location in the final part of the regeneration process. A compressed tar file is created for each folder labeled the same as the rest of the backup. You can include folders that are located on the data disks. Since the restoration of these folders is done at the end of the process, at that point all file systems are already mounted and working. The /root folder is included by default in the backup.
 
 ## OMV-REGEN REGENERA OPTIONS
@@ -286,6 +291,11 @@ The basic procedure is summarized in three steps, create a backup, install OMV, 
   - Selective installation of omv-extras depending on the Openmediavault version.
 
 ACKNOWLEDGMENTS: Thanks to Aaron Murray for his advice in developing omv-regen.
+
+I hope that omv-regen has been useful to you, if you want you can buy me a coffee. Thank you so much!
+
+[<img alt="buy me  a coffee" width="200px" src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" />](https://www.buymeacoffee.com/xhente)
+
 ______________________________________________________________________________________________________________________
 
 

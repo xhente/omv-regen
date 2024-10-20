@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.16
+# omv-regen 7.0.17
 # Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
-ORVersion="7.0.16"
+ORVersion="7.0.17"
 
 # Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
@@ -270,6 +270,7 @@ txt AyudaOmvregen \
 \n    - Migrar openmediavault entre diferentes arquitecturas, por ejemplo de una Raspberry a un sistema x86 o viceversa, pero cuidado, no todos los complementos son compatibles con todas las arquitecturas. \
 \n    - Conseguir una instalación limpia de openmediavault tras un cambio de versiones de openmediavault. Si por ejemplo actualizas OMV5 a OMV6 y la actualización da problemas omv-regen puede trasladar la configuración a un sistema limpio.\
 \n    - Reinstalar el sistema si se ha vuelto inestable por algún motivo, siempre que la base de datos esté en buen estado y el sistema pueda actualizarse a la última versión disponible. \
+\n    - Configurar actualizaciones automáticas del sistema. Consulta las opciones de omv-regen backup. \
 \n \
 \n \
 \n          LIMITACIONES DE OMV-REGEN \
@@ -301,6 +302,7 @@ txt AyudaOmvregen \
 \n    - Migrate openmediavault between different architectures, for example from a Raspberry to an x86 system or vice versa, but be careful, not all plugins are compatible with all architectures. \
 \n    - Get a clean installation of openmediavault after a change of openmediavault versions. If, for example, you update OMV5 to OMV6 and the update causes problems, omv-regen can move the configuration to a clean system.\
 \n    - Reinstall the system if it has become unstable for any reason, as long as the database is healthy and the system can be updated to the latest available version. \
+\n    - Configure automatic system updates. See omv-regen backup options. \
 \n \
 \n \
 \n          LIMITATIONS OF OMV-REGEN \
@@ -443,7 +445,7 @@ txt AyudaBackup \
 \n \
 \n    ${AzulD}- DIAS QUE SE CONSERVAN LOS BACKUPS:${ResetD}    Esta opción establece el número de días máximo para conservar backups. Cada vez que hagas un backup se eliminarán todos aquellos existentes en la misma ruta con mas antigüedad de la configurada, mediante el escaneo de fechas de todos los archivos con el prefijo ORB_ Se establece un valor en días. El valor por defecto son 7 días. \
 \n \
-\n    ${AzulD}- ACTUALIZAR EL SISTEMA:${ResetD}    Esta opción hará que el sistema se actualice automáticamente justo antes de realizar el backup. Asegúrate que esté activa si tu intención es hacer un backup para proceder a una regeneración inmediatamente después. Desactívala si estás haciendo backups programados. El valor establecido debe ser Si/on o No/off. Nota: Puedes usar esta opción de forma programada para actualizar el sistema automáticamente en cada ejecución del backup, esto garantizará que el backup es utilizable en ese momento, pero ten en cuenta que no estarás presente durante la actualización si hay algún problema. \
+\n    ${AzulD}- ACTUALIZAR EL SISTEMA:${ResetD}    Esta opción hará que el sistema se actualice automáticamente justo antes de realizar el backup. Asegúrate que esté activa si tu intención es hacer un backup para proceder a una regeneración inmediatamente después. Desactívala si estás haciendo backups programados. El valor establecido debe ser Si/on o No/off. Nota: Puedes usar esta opción de forma programada para actualizar el sistema automáticamente en cada ejecución del backup, esto garantizará que el backup es utilizable en ese momento, pero ten en cuenta que no estarás presente durante la actualización si hay algún problema. Si configuras esta opción omv-regen detectará si es necesario un reinicio después de las actualizaciones y reiniciará el servidor. \
 \n \
 \n    ${AzulD}- CARPETAS ADICIONALES:${ResetD}    Puedes definir tantas carpetas opcionales como quieras que se incluirán en el backup. Útil si tienes información que quieres transferir al nuevo sistema que vas a regenerar. Si copias carpetas con configuraciones del sistema podrías romperlo. Estas carpetas se devolverán a su ubicación original en la parte final del proceso de regeneración. Se crea un archivo tar comprimido para cada carpeta etiquetado de la misma forma que el resto del backup. Puedes incluir carpetas que estén ubicadas en los discos de datos. Puesto que la restauración de estas carpetas se hace al final del proceso, en ese momento todos los sistemas de archivos ya están montados y funcionando. La carpeta /root se incluirá por defecto en el backup." \
 "\n \
@@ -456,7 +458,7 @@ txt AyudaBackup \
 \n \
 \n    ${AzulD}- DAYS BACKUPS ARE KEPT:${ResetD}    This option establishes the maximum number of days to keep backups. Every time you make a backup, all those existing in the same path that are older than the configured one will be eliminated, by scanning the files of all the files with the ORB_ prefix. A value is established in days. The default value is 7 days. \
 \n \
-\n    ${AzulD}- UPDATE SYSTEM:${ResetD}  This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off. Note: You can use this option on a scheduled basis to update the system automatically with each backup run, this will ensure that the backup is usable at that time, but keep in mind that you will not be present during the update if there is a problem. \
+\n    ${AzulD}- UPDATE SYSTEM:${ResetD}  This option will cause the system to update automatically just before performing the backup. Make sure it is active if your intention is to make a backup to proceed with a regeneration immediately afterwards. Disable it if you are doing scheduled backups. The set value must be Yes/on or No/off. Note: You can use this option on a scheduled basis to update the system automatically with each backup run, this will ensure that the backup is usable at that time, but keep in mind that you will not be present during the update if there is a problem. If you configure this option omv-regen will detect if a reboot is necessary after updates and restart the server. \
 \n \
 \n    ${AzulD}- ADDITIONAL FOLDERS:${ResetD}    You can define as many optional folders as you want that will be included in the backup. Useful if you have information that you want to transfer to the new system that you are going to regenerate. If you copy folders with system settings you could break it. These folders will be returned to their original location in the final part of the regeneration process. A compressed tar file is created for each folder labeled the same as the rest of the backup. You can include folders that are located on the data disks. Since the restoration of these folders is done at the end of the process, at that point all file systems are already mounted and working. The /root folder is included by default in the backup."
 
@@ -1527,7 +1529,18 @@ EjecutarBackup () {
     echoe "\n>>>    Eliminando backups de hace más de ${ORA[Dias]} días...\n" "\n>>>    Deleting backups larger than ${ORA[Dias]} days...\n"
     find "${ORA[RutaBackup]}/" -maxdepth 1 -type f -name "ORB_*" -mtime "+${ORA[Dias]}" -exec rm -v {} +
     # Nota:   -mmin = minutos  ///  -mtime = dias
-    [ "${Cli}" ] && echoe "\n       ¡Backup completado!\n" "\n       Backup completed!\n"
+    if [ "${Cli}" ]; then
+      echoe "\n       ¡Backup completado!\n" "\n       Backup completed!\n"
+      if [ "${ORA[Actualizar]}" = "${txt[Si]}" ]; then
+        if [ -f /var/run/reboot-required ]; then
+          echoe "\n>>>    Después de las actualizaciones el sistema necesita reiniciarse.\n>>>    omv-regen va a reiniciar el sistema." "\n>>>    After updates the system needs to reboot.\n>>>    omv-regen will reboot the system."
+          reboot
+          sleep 3; exit
+        else
+          echoe "\n>>>    No es necesario reiniciar el sistema." "\n>>>    No need to reboot the system."
+        fi
+      fi
+    fi
     Continuar
   fi
   [ "${Camino}" = "EjecutarBackup" ] && Info 3 "\n¡Backup completado!\n" "\nBackup completed!\n"

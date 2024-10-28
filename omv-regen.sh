@@ -5,13 +5,14 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.17
+# omv-regen 7.0.18
 # Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
-ORVersion="7.0.17"
+ORVersion="7.0.18"
 
 # Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
+Servidor="$(hostname)"
 OmvVersion=$(dpkg -l openmediavault | awk '$2 == "openmediavault" { print substr($3,1,1) }')
 Codename="$(lsb_release --codename --short)"
 Fecha=""
@@ -1434,20 +1435,20 @@ EjecutarBackup () {
   if [ "${Abortar}" ]; then
     Camino="MenuBackup"
   else
-    echoe "\n\n       <<< Backup para regenerar sistema de fecha ${Fecha} >>>\n" "\n\n       <<< Backup to regenerate system dated ${Fecha} >>>\n"
+    echoe "\n\n       <<< Backup para regenerar el servidor ${Servidor} de fecha ${Fecha} >>>\n" "\n\n       <<< Backup to regenerate the ${Servidor} server dated ${Fecha} >>>\n"
     echoe "\n>>>    Los parámetros actuales establecidos para el backup son:\n" "\n>>>    The current parameters set for the backup are:\n"
     echoe "Carpeta para almacenar el backup ==> ${ORA[RutaBackup]}" "Folder to store the backup ==> ${ORA[RutaBackup]}"
     echoe "Actualizar sistema antes de hacer el backup ==> ${ORA[Actualizar]}" "Update system before making the backup ==> ${ORA[Actualizar]}"
-    echoe "Eliminar backups con una antigüedad superior a ==> ${ORA[Dias]} días." "Delete backups older than ==> ${ORA[Dias]} days."
+    echoe "Eliminar backups con una antigüedad superior a ==> ${ORA[Dias]} días" "Delete backups older than ==> ${ORA[Dias]} days"
+    echoe "Carpetas opcionales a incluir en el backup ==> \c" "Optional folders to include in the backup ==> \c"
     if [ "${#CARPETAS[@]}" = 0 ]; then
-      echoe "Carpetas opcionales a incluir en el backup ==> Ninguna" "Optional folders to include in the backup ==> None"
+      echoe "Ninguna" "None"
     else
-      echoe "Carpetas opcionales a incluir en el backup ==>" "Optional folders to include in the backup ==>"
       for i in "${CARPETAS[@]}"; do
         if [ -d "$i" ]; then
-          echoe "$i"
+          echoe "$i \c"
   	    else
-          echoe "${Rojo}$i --> no existe y no se incluirá.${Reset}" "${Rojo}$i --> does not exist and will not be included.${Reset}"
+          echoe "${Rojo}$i --> no existe y no se incluirá.${Reset} \c" "${Rojo}$i --> does not exist and will not be included.${Reset} \c"
         fi
       done
     fi
@@ -1455,7 +1456,7 @@ EjecutarBackup () {
       mkdir /ORBackup
     fi
     if [ "${ORA[Actualizar]}" = "${txt[Si]}" ]; then
-      echoe "\n>>>    Actualizando el sistema.\n" "\n>>>    Updating the system.\n"
+      echoe "\n\n>>>    Actualizando el sistema.\n" "\n\n>>>    Updating the system.\n"
       if ! omv-upgrade; then
         Salir "\nError actualizando el sistema.  Saliendo..." "\nFailed updating system. Exiting..."
       else
@@ -1463,7 +1464,7 @@ EjecutarBackup () {
       fi
     fi
     CarpetaRegen="/regen_${Fecha}"
-    echoe "\n>>>    Copiando archivos a ${CarpetaRegen} ...\n" "\n>>>    Copying files to ${CarpetaRegen} ...\n"
+    echoe "\n>>>    Copiando la base de datos de OMV y otros archivos adicionales a ${CarpetaRegen} ...\n" "\n>>>    Copying the OMV database and other additional files to ${CarpetaRegen} ...\n"
     mkdir "${CarpetaRegen}"
     for i in "${ARCHIVOS[@]}"; do
       [ ! -d "$(dirname "${CarpetaRegen}$i")" ] && mkdir -p "$(dirname "${CarpetaRegen}$i")"
@@ -1540,6 +1541,7 @@ EjecutarBackup () {
           echoe "\n>>>    No es necesario reiniciar el sistema." "\n>>>    No need to reboot the system."
         fi
       fi
+      [ "${ORA[Buscar]}" = "on" ] && BuscarOR
     fi
     Continuar
   fi
@@ -2047,7 +2049,9 @@ fi
 # Comprobar estado de regenera - Check regenera status
 if [ "${FASE[1]}" = "iniciar" ]; then
   # Buscar actualizaciones de omv-regen - Check for omv-regen updates
-  [ "${ORA[Buscar]}" = "on" ] && BuscarOR
+  if [ ! "$1" = "backup" ]; then
+    [ "${ORA[Buscar]}" = "on" ] && BuscarOR
+  fi
 elif [ "${FASE[1]}" = "" ]; then
   Info 3 "El archivo de ajustes de omv-regen no se puede leer o ha sido manipulado." "The omv-regen settings file cannot be read or has been tampered with."
 elif [ ! "${FASE[7]}" = "hecho" ]; then

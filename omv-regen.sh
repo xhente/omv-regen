@@ -5,10 +5,10 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.0.19
+# omv-regen 7.0.20
 # Utilidad para restaurar la configuración de openmediavault en otro sistema - Utility to restore openmediavault configuration to another system
 
-ORVersion="7.0.19"
+ORVersion="7.0.20"
 
 # Definicion de Variables - Definition of variables
 . /etc/default/openmediavault
@@ -805,6 +805,7 @@ MenuRegenera () {
     else
       txt 82 "\n       **** La unidad de sistema actual y la original son diferentes. Correcto." "\n       **** The current and original system unit are different. It's right."
     fi
+    [ ! "${ValidarRegenera}" ] && txt 10 "\n\nRecuerda que los discos duros de datos que estaban en el sistema original\ndeben estar conectados cuando comience la regeneración.\n\nRecuerda que es conveniente usar una unidad diferente para instalar OMV y\nconservar la original." "\n\nRemember that the data hard drives that were in the original system must be\nconnected when the regeneration begins.\n\nRemember that it is advisable to use a different drive to install OMV and keep\nthe original one." || txt 10 "" ""
     txt 9 "\n\nComprobación de estado del sistema actual:" "\n\nCurrent system status check:"
     [ "${ValDpkg}" ] && txt 91 "\n       ${RojoD}**** ESTE SISTEMA YA ESTÁ CONFIGURADO.\n            PARA REGENERAR DEBES HACER ANTES UNA INSTALACION LIMPIA DE OPENMEDIAVAULT.${ResetD}" "\n       ${RojoD}**** THIS SYSTEM IS ALREADY CONFIGURED.\n            TO REGENERATE YOU MUST FIRST DO A CLEAN INSTALLATION OF OPENMEDIAVAULT.${ResetD}" || txt 91 "\n       **** El sistema actual no está configurado. Correcto." "\n       **** The current system is not configured. It's right."
     if [ "${ValidarRegenera}" ]; then
@@ -824,9 +825,8 @@ MenuRegenera () {
       \n    ${AzulD}${txt[Red]}  ==> ${txt[51]}${ResetD} \
       ${txt[52]}${txt[53]} \
       ${txt[6]}${txt[61]}${txt[62]} \
-      ${txt[7]}${txt[71]}${txt[72]} \
-      ${txt[8]}${txt[81]}${txt[82]} \
-      ${txt[9]}${txt[91]} \n\n "
+      ${txt[9]}${txt[91]} \
+      ${txt[10]} \n\n "
     dialog \
       --backtitle "omv-regen regenera ${ORVersion}" \
       --title "${txt[1]}" \
@@ -1080,12 +1080,17 @@ ValidarRegenera () {
   fi
   # Comprobar sistema actual - Check current system
   if [ "${FASE[1]}" = "iniciar" ]; then
-    DpkgAC=$(dpkg -l | grep openmediavault | awk '{print $2}')
-    if [ "$(echo "${DpkgAC}" | awk 'NR==1{print $1}')" = "openmediavault" ] && [ "$(echo "${DpkgAC}" | awk 'NR==2{print $1}')" = "openmediavault-keyring" ] && [ "$(echo "${DpkgAC}" | awk 'NR==3{print $1}')" = "" ]; then
-      ValDpkg=""
-    elif [ "$(echo "${DpkgAC}" | awk 'NR==1{print $1}')" = "openmediavault" ] && [ "$(echo "${DpkgAC}" | awk 'NR==2{print $1}')" = "openmediavault-flashmemory" ] && [ "$(echo "${DpkgAC}" | awk 'NR==3{print $1}')" = "openmediavault-keyring" ] && [ "$(echo "${DpkgAC}" | awk 'NR==4{print $1}')" = "openmediavault-omvextrasorg" ] && [ "$(echo "${DpkgAC}" | awk 'NR==5{print $1}')" = "" ]; then
-      ValDpkg=""
-    else
+    if [ ! "$( dpkg -l openmediavault | awk '/openmediavault/ {print$1}' )" = "ii" ]; then
+        ValDpkg="si"; ValidarRegenera="si"
+    fi
+    if [[ "$( dpkg -l | grep -cq  openmediavault )" -gt 2 ]] && dpkg -l | grep -q omvextrasorg; then
+        ValDpkg="si"; ValidarRegenera="si"
+    fi
+    if [[ "$( dpkg -l | grep -cq  openmediavault )" -gt 4 ]]; then
+        ValDpkg="si"; ValidarRegenera="si"
+    fi
+    valor="$( xmlstarlet select --template --value-of /config/system/shares/sharedfolder/name --nl "${Configxml}" )"
+    if [ "${valor}" ]; then
       ValDpkg="si"; ValidarRegenera="si"
     fi
   fi
@@ -1469,25 +1474,27 @@ EjecutarBackup () {
   awk '{print $2" "$3}' "${CarpetaRegen}${ORB[DpkgOMV]}"
   echoe "\n>>>    Descargando de los repositorios los paquetes de OMV instalados ...\n" "\n>>>    Downloading the installed OMV packages from the repositories ...\n"
   FaltaPaquete=""
+  mkdir -p "${CarpetaRegen}/ORPackages"
+  touch "${CarpetaRegen}/ORPackages/missing"
+  apt-get clean
   while IFS= read -r linea; do
     Plugin="$(echo "$linea" | awk '{print $2}')"
     VersionOR="$(echo "$linea" | awk '{print $3}')"
     VersionDI="$(apt-cache madison "${Plugin}" | awk 'NR==1{print $3}')"
     if [ "${VersionOR}" = "${VersionDI}" ]; then
       echoe "\n\nDescargando ${Plugin} ..." "\n\nDownloading ${Plugin} ..."
-      apt-get clean
       apt-get install --reinstall -y --download-only "${Plugin}"
-      mkdir -p "${CarpetaRegen}/ORPackages/${Plugin}"
-      rsync -av /var/cache/apt/archives/ "${CarpetaRegen}/ORPackages/${Plugin}" --exclude /partial --exclude lock
     else
       echoe "El paquete ${Plugin} no se descarga porque la versión instalada no coincide" "The ${Plugin} package does not download because the installed version does not match"
       FaltaPaquete="si"
+      echo "${Plugin}" >>"${CarpetaRegen}/ORPackages/missing"
     fi
-  done < <(grep -v '^ *#' < "${CarpetaRegen}${ORB[DpkgOMV]}")
+  done < <(grep -v '^ *#:(' < "${CarpetaRegen}${ORB[DpkgOMV]}")
+  rsync -av /var/cache/apt/archives/ "${CarpetaRegen}/ORPackages" --exclude /partial --exclude lock
   echoe "\n>>>    Extrayendo información del sistema (uname -a)...\n" "\n>>>    Extracting system info (uname -a)...\n"
   uname -a | tee "${CarpetaRegen}${ORB[Unamea]}"
   echoe "\n>>>    Extrayendo información de zfs (zpool list)...\n" "\n>>>    Extracting zfs info (zpool list)...\n"
-  [ "$(dpkg -l | grep openmediavault-zfs)" ] && zpool list | tee "${CarpetaRegen}${ORB[Zpoollist]}" || echo "--" | tee "${CarpetaRegen}${ORB[Zpoollist]}"
+  dpkg -l | grep -q openmediavault-zfs && zpool list | tee "${CarpetaRegen}${ORB[Zpoollist]}" || echo "--" | tee "${CarpetaRegen}${ORB[Zpoollist]}"
   echoe "\n>>>    Extrayendo información de systemd (systemctl)...\n" "\n>>>    Extracting information from systemd (systemctl)...\n"
   systemctl list-unit-files | tee "${CarpetaRegen}${ORB[Systemctl]}"
   echoe "\n>>>    Extrayendo información de red (hostname -I)...\n" "\n>>>    Retrieving network information (hostname -I)...\n"
@@ -1522,7 +1529,9 @@ EjecutarBackup () {
   find "${ORA[RutaBackup]}/" -maxdepth 1 -type f -name "ORB_*" -mtime "+${ORA[Dias]}" -exec rm -v {} +
   # Nota:   -mmin = minutos  ///  -mtime = dias
   txt 10 "\n\n       ¡Copia de seguridad completada!\n" "\n       Backup completed!\n"
-  [ "${FaltaPaquete}" ] && txt 20 "\n\n    ¡ATENCIÓN!    ALGUNOS PAQUETES NO SE HAN DESCARGADO PORQUE EL SISTEMA NO ESTÁ ACTUALIZADO. NO SE PODRÁ REALIZAR UNA REGENERACIÓN COMPLETA CON ESTA COPIA DE SEGURIDAD Y ES POSIBLE QUE NO FUNCIONE EN ABSOLUTO.\n" "\n\n    WARNING!    SOME PACKAGES HAVE NOT BEEN DOWNLOADED BECAUSE THE SYSTEM IS NOT UPDATED. A COMPLETE REGENERATION CANNOT BE PERFORMED WITH THIS BACKUP AND IT MAY NOT WORK AT ALL.\n" || txt 20 ""
+  [ "${FaltaPaquete}" ] && echoe "${Rojo}>>>    ¡ATENCIÓN!    ${Reset}El sistema no está actualizado y algunos paquetes no se han podido descargar. No se podrá hacer una regeneración completa con esta copia de seguridad y es posible que no funcione en absoluto.\n>>> Para tener un backup completamente operativo debes configurar la actualización automática del sistema en el backup." \
+    "${Rojo}>>>    WARNING!    ${Reset}The system is not updated and some packages could not be downloaded. A full regeneration will not be possible with this backup and it may not work at all.\n>>> To have a fully operational backup you must configure automatic system update in the backup."
+  [ "${FaltaPaquete}" ] && txt 20 "\n\n    ¡ATENCIÓN!    El sistema no está actualizado y algunos paquetes no se han podido descargar. No se podrá hacer una regeneración completa con esta copia de seguridad y es posible que no funcione en absoluto.\n" "\n\n    WARNING!    The system is not updated and some packages could not be downloaded. A full regeneration will not be possible with this backup and it may not work at all.\n" || txt 20 ""
   echoe "${txt[10]}${txt[20]}"
   if [ "${Cli}" ]; then
     if [ "${ORA[Actualizar]}" = "${txt[Si]}" ]; then

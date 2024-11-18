@@ -17,7 +17,7 @@ ESTADO: Estable. Soporta OMV6 y OMV7.
 Copia y pega la siguiente linea en una terminal y ejecútala como root o con sudo.
 
 ```
-sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash
+wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
 ```
 
    - PASO 1. Crea un backup del sistema original con omv-regen.
@@ -166,7 +166,7 @@ STATE: Stable. Supports OMV6 and OMV7.
 Copy and paste the following line into a terminal and run it as root or with sudo.
 
 ```
-sudo wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | sudo bash
+wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash
 ```
 
    - STEP 1. Create a backup of the original system with omv-regen.

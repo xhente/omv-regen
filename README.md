@@ -184,35 +184,35 @@ Chente
 
 * **Durante la instalación:**
 
-      * Si el sistema es *Debian* y aún no tiene instalado OMV, se instalará *dialog* previamente.
-      * Se desinstala *apparmor* si está presente.
-      * Se configura un hook para capturar en vivo los paquetes instalados por el sistema.
-      * Se configura en cron un trabajo de limpieza semanal del hook que actualiza el repositorio local, si no se ha hecho ya durante la semana.
-      * Se configura el log de *omv-regen*.
-      * Se crea la carpeta `/var/lib/omv-regen` con los archivos de configuración y el repositorio local.
-      * Se configura un trabajo programado diario de backup, configurable desde la GUI de OMV.
-      * Si el sistema tiene el idioma español, `omv-regen` se ajusta el idioma a español. 
+   * Si el sistema es *Debian* y aún no tiene instalado OMV, se instalará *dialog* previamente.
+   * Se desinstala *apparmor* si está presente.
+   * Se configura un hook para capturar en vivo los paquetes instalados por el sistema.
+   * Se configura en cron un trabajo de limpieza semanal del hook que actualiza el repositorio local, si no se ha hecho ya durante la semana.
+   * Se configura el log de *omv-regen*.
+   * Se crea la carpeta `/var/lib/omv-regen` con los archivos de configuración y el repositorio local.
+   * Se configura un trabajo programado diario de backup, configurable desde la GUI de OMV.
+   * Si el sistema tiene el idioma español, `omv-regen` se ajusta el idioma a español. 
 
 * **Durante la ejecución de un backup:**
 
-      * Aunque no es necesario, puedes activar la actualización automática de OMV.
-      * Se actualiza el repositorio local con los paquetes necesarios capturados en el hook y se añaden al backup.
-      * Se eliminan los backups obsoletos según las retenciones configuradas. 
+   * Aunque no es necesario, puedes activar la actualización automática de OMV.
+   * Se actualiza el repositorio local con los paquetes necesarios capturados en el hook y se añaden al backup.
+   * Se eliminan los backups obsoletos según las retenciones configuradas. 
 
 * **Durante la regeneración:**
 
-      * Se permite omitir la instalación de complementos no esenciales.
-      * Se configura un servicio para reanudar la regeneración automáticamente tras cada reinicio.
-         * Puedes ejecutar `omv-regen` en cualquier momento para ver el log en vivo.
-      * Si OMV no está instalado, *omv-regen* instala OMV utilizando el script de instalación de OMV de Aaron Murray.
-         * Esta instalación añade *omv-extras* al sistema, incluso si no estaba en el sistema original.
-      * Se instalan las versiones del sistema original de OMV y complementos y se retienen hasta finalizar.
-      * Se sustituyen partes de la base de datos siguiendo un orden lógico y ejecutando comandos de *SaltStack* para aplicar configuraciones.
-      * Al finalizar, se liberan las retenciones y se actualiza el sistema a la última versión de cada paquete.
+   * Se permite omitir la instalación de complementos no esenciales.
+   * Se configura un servicio para reanudar la regeneración automáticamente tras cada reinicio.
+      * Puedes ejecutar `omv-regen` en cualquier momento para ver el log en vivo.
+   * Si OMV no está instalado, *omv-regen* instala OMV utilizando el script de instalación de OMV de Aaron Murray.
+      * Esta instalación añade *omv-extras* al sistema, incluso si no estaba en el sistema original.
+   * Se instalan las versiones del sistema original de OMV y complementos y se retienen hasta finalizar.
+   * Se sustituyen partes de la base de datos siguiendo un orden lógico y ejecutando comandos de *SaltStack* para aplicar configuraciones.
+   * Al finalizar, se liberan las retenciones y se actualiza el sistema a la última versión de cada paquete.
 
 * **Características especiales:**
 
-      * *omv-regen* impide la ejecución de dos instancias simultáneas, excepto durante la regeneración para poder ver el log en vivo.
+   * *omv-regen* impide la ejecución de dos instancias simultáneas, excepto durante la regeneración para poder ver el log en vivo.
 
 ## NOTAS Y RECOMENDACIONES
 

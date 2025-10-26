@@ -540,10 +540,11 @@ txt AyudaOmvregen \
 \n- Consideraciones para sistemas con tarjeta SD (Raspberry Pi y similares): \
 \n   - Durante la regeneración del sistema, omv-regen realiza operaciones intensivas de lectura y escritura. \
 \n   - En dispositivos que utilizan almacenamiento flash (como tarjetas SD o eMMC), este proceso puede provocar un desgaste significativo y acortar la vida útil del medio. \
+\n   - Sistemas con 2GB de RAM pueden experimentar inestabilidad, especialmente al aplicar múltiples cambios de configuración o reiniciar servicios, ya que el uso de swap aumenta el riesgo de fallos y de desgaste adicional de la tarjeta SD. \
 \n   - Recomendaciones: \
 \n      - Realiza la regeneración sobre un SSD conectado por USB siempre que sea posible. \
-\n      - Si usas una SD, utiliza una de alta calidad. \
-\n      - Evita ejecutar regeneraciones repetidas en la misma tarjeta. \
+\n      - Si usas una SD, utiliza una de alta calidad y evita regeneraciones repetidas en la misma tarjeta. \
+\n      - Considera usar modelos con 4 GB de RAM o más para una mayor estabilidad. \
 \n \
 \n- Soporte: \
 \n   - Para dudas o incidencias, consulta el foro oficial de OpenMediaVault. \
@@ -773,10 +774,11 @@ txt AyudaOmvregen \
 \n- Considerations for systems using SD cards (Raspberry Pi and similar devices): \
 \n   - During the system regeneration process, omv-regen performs intensive read and write operations. \
 \n   - On devices that use flash storage (such as SD or eMMC cards), this process can cause significant wear and shorten the lifespan of the storage medium. \
+\n   - Systems with 2GB of RAM may experience instability, especially when applying multiple configuration changes or restarting services, as using swap increases the risk of failure and additional wear on the SD card. \
 \n   - Recommendations: \
 \n      - Whenever possible, perform the regeneration on a USB-connected SSD. \
-\n      - If you use an SD card, choose a high-quality one. \
-\n      - Avoid running multiple regenerations on the same card. \
+\n      - If you use an SD card, choose a high-quality one and avoid running multiple regenerations on the same card. \
+\n      - Consider using models with 4GB of RAM or more for greater stability. \
 \n \
 \n- Support: \
 \n   - For questions or issues, visit the official OpenMediaVault forum. \

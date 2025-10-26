@@ -2392,8 +2392,9 @@ MigrarAjustes_7_0() {
 }
 
 # Crear o actualizar tarea en cron para limpieza semanal del hook - Create or update cron job for weekly hook cleanup
+# >/dev/null solo envia correo en caso de error - >/dev/null only send email in case of error
 ConfigurarLimpiezaHook() {
-    local cron_tarea="0 5 * * 0 root /usr/sbin/omv-regen limpieza_semanal"
+    local cron_tarea="0 5 * * 0 root /bin/bash /usr/sbin/omv-regen limpieza_semanal" >/dev/null
     local cron_archivo="${OR_cron_file:-/etc/cron.d/omv-regen}"
 
     omv_instalado || { echoe ">>> OMV no está instalado, saltando la configuración de la limpieza del hook ..." \
@@ -2657,26 +2658,39 @@ LimpiezaSemanal() {
     local log_archivo="${OR_log_file:-/var/log/omv-regen.log}"
     local log_rotado="${log_archivo}.1"
     local log_combinado="${OR_tmp_dir}/log_combinado"
-    local ultima_fecha fecha_hoy
+    local ultima_fecha fecha_hoy ts_ultima ts_hoy dias
 
     omv_instalado || { echoe "OMV no está instalado, saltando limpieza semanal." \
                              "OMV not installed, skipping weekly cleanup."; return 0; }
 
+    echoe ">>> Se va a ejecutar la limpieza semanal del hook si procede." \
+          ">>> The hook will be cleaned weekly if applicable."
+
     cat "$log_archivo" "$log_rotado" 2>/dev/null > "$log_combinado"
-    ultima_fecha=$(grep -E ">>> Actualizando el repositorio de omv-regen ...|>>> Updating the omv-regen repository ...)" "$log_combinado" | \
-                 cut -d'[' -f2 | cut -d']' -f1 | sort -r | head -n 1)
+    ultima_fecha=$(grep -E ">>> Actualizando el repositorio de omv-regen ...|>>> Updating the omv-regen repository ..." "$log_combinado" | \
+                   cut -d'[' -f2 | cut -d']' -f1 | cut -d' ' -f1 | sort -r | head -n 1 | tr -d '[:space:]')
     fecha_hoy=$(date '+%Y-%m-%d')
-    if [[ -n "$ultima_fecha" ]] && [[ "$ultima_fecha" -le "$fecha_hoy" ]]; then
-        if [ $(( ( $(date -d "$fecha_hoy" +%s) - $(date -d "$ultima_fecha" +%s) ) / 86400 )) -ge 7 ]; then
-            echoe log ">>> No se encontró ejecución reciente de 'ActualizarRepo'. Ejecutando limpieza semanal." \
+    if [[ -n "$ultima_fecha" ]]; then
+        ts_ultima=$(date -d "$ultima_fecha" +%s 2>/dev/null) || ts_ultima=0
+        ts_hoy=$(date -d "$fecha_hoy" +%s 2>/dev/null) || ts_hoy=0
+        if (( ts_ultima <= ts_hoy )); then
+            dias=$(( (ts_hoy - ts_ultima) / 86400 ))
+            if (( dias >= 7 )); then
+                echoe ">>> No se encontró ejecución reciente de 'ActualizarRepo'. Ejecutando limpieza semanal." \
                       ">>> No recent execution of 'ActualizarRepo' found. Running weekly cleanup."
-            ActualizarRepo &>/dev/null || { error "No se ha podido actualizar el repositorio." \
-                                                  "The repository could not be updated."; return 1; }
-        else
-            echoe log ">>> Limpieza semanal no necesaria. 'ActualizarRepo' ya ejecutado esta semana." \
+                ActualizarRepo &>/dev/null || { error "No se ha podido actualizar el repositorio." \
+                                                      "The repository could not be updated."; return 1; }
+            else
+                echoe ">>> Limpieza semanal no necesaria. 'ActualizarRepo' ya ejecutado esta semana." \
                       ">>> Weekly cleanup not needed. 'ActualizarRepo' already executed this week."
+            fi
         fi
-    fi
+    else
+        echoe ">>> Limpieza semanal ejecutada por primera vez o sin registros previos." \
+              ">>> Weekly cleaning performed for the first time or without previous logs."
+	fi
+    echoe ">>> Limpieza semanal terminada." \
+          ">>> Weekly cleaning completed."
     return 0
 }
 

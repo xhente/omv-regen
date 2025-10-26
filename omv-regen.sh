@@ -5,14 +5,14 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.0
+# omv-regen 7.1.1
 # Utilidad de copia de seguridad de la configuración de openmediavault
 # openmediavault configuration backup utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 #,SC2086
 
-ORVersion="7.1.0"
+ORVersion="7.1.1"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -2218,7 +2218,7 @@ EjecutarReinicioPendiente() {
         txt 2 "SEGUNDOS" "SECONDS"
         for ((i = 10; i >= 1; i--)); do echo -ne "\r${txt[1]} $i ${txt[2]} "; sleep 1; done
         echoe "\n>>> Reiniciando ..." "\n>>> Rebooting ..."
-        reboot
+        sync; sleep 0,5; reboot
         sleep 3; exit
     fi
 }
@@ -4229,7 +4229,7 @@ EjecutarRegenera() {
 
         echoe "\n>>> Se va a reiniciar el servidor. Puedes ejecutar 'omv-regen' en cualquier momento para ver el log en vivo.\n" \
               "\n>>> The server is about to restart. You can run 'omv-regen' at any time to view the live log.\n"
-        sleep 3; reboot; sleep 3; exit 0
+        sync; sleep 3; reboot; sleep 3; exit 0
     fi
     
     echoe ">>> Comprobando si hay un reinicio pendiente ..." \
@@ -4317,7 +4317,7 @@ ReiniciarSiRequerido() {
           "\nRegeneration in progress\n${txt[1]}"
     EnviarCorreo "${txt[2]}" "${txt[3]}"
     echoe "\n>>> Reiniciando ..." "\n>>> Rebooting ..."
-    sleep 3; reboot; sleep 3; exit 0
+    sync; sleep 3; reboot; sleep 3; exit 0
 }
 
 # Descomprimir y actualizar repositorios para la regeneración - Unzip and update repositories for regeneration
@@ -4874,12 +4874,6 @@ RegeneraFase1() {
                        "Failed to apply monitoring changes via Salt"; return 1; }
         LimpiarSalt || { error "No se pudo limpiar completamente Salt." \
                                "Could not fully clean Salt."; return 1; }
-        if systemctl is-active --quiet monit | _orl; then
-            echoe ">>> Deteniendo servicio de monitorización Monit temporalmente ..." \
-                  ">>> Temporarily stopping monitoring service Monit ..."
-            systemctl stop monit
-            systemctl disable monit.service
-        fi
         marcar monitorizacion
     fi
 

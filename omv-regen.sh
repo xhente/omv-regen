@@ -219,6 +219,7 @@ export LANGUAGE=C
 export LC_ALL=C.UTF-8
 export DEBIAN_FRONTEND=noninteractive
 export APT_LISTCHANGES_FRONTEND=none
+export TERM=xterm
 # Configurar librería ncurses para la correcta visualización de menus de dialog
 # Configure ncurses library for the correct display of dialog menus
 export NCURSES_NO_UTF8_ACS=1
@@ -342,6 +343,8 @@ txt AyudaOmvregen \
 \n \
 \n- omv-regen es una utilidad desarrollada en bash que se ejecuta desde línea de comandos (CLI) y dispone de interfaz gráfica mediante dialog. \
 \n- Permite hacer y programar backups de la configuración de OpenMediaVault (OMV) y usar estos backups para migrar o regenerar la configuración en otro sistema limpio de OMV o Debian. \
+\n \
+\n- NOTA: omv-regen no permite actualizar entre versiones principales de OMV (por ejemplo, de OMV6 a OMV7). Para eso, utiliza siempre el procedimiento oficial: 'omv-release-upgrade'. omv-regen solo puede regenerar configuraciones dentro de la misma versión principal de OMV. \
 \n \
 \n    Comandos principales: \
 \n- 'omv-regen'          → Abre la interfaz gráfica principal.  \
@@ -573,6 +576,8 @@ txt AyudaOmvregen \
 \n \
 \n- omv-regen is a bash-based utility that runs from the command line (CLI) and provides a graphical interface through dialog. \
 \n- It allows you to create and schedule backups of your OpenMediaVault (OMV) configuration and use those backups to migrate or regenerate the configuration on a clean OMV or Debian system. \
+\n \
+\n- NOTE: omv-regen does not support upgrading between major OMV versions (e.g., from OMV 6 to OMV 7). For this, always use the official 'omv-release-upgrade' procedure. omv-regen can only regenerate configurations within the same major OMV version. \
 \n \
 \n    Main commands \
 \n \
@@ -2063,7 +2068,7 @@ Mostrar() {
     local proceso=$1 pid_proceso temp_file rc
     temp_file="$(mktemp)"
 
-    clear
+    modo_desatendido || clear
     $proceso |& tee -a "$temp_file" &
     pid_proceso=$!
     wait "$pid_proceso"

@@ -3329,7 +3329,7 @@ EjecutarBackup () {
 
     echoe sil ">>> Empaquetando directorio $basename_regen en ${CFG[RutaBackups]}/ORBackup_${marca_fecha}_regen.tar.gz ..." \
               ">>> Packaging $basename_regen directory in ${CFG[RutaBackups]}/ORBackup_${marca_fecha}_regen.tar.gz ..."
-    tar -czf "${CFG[RutaBackups]}/ORBackup_${marca_fecha}_regen.tar.gz" -C "${CFG[RutaBackups]}" "$basename_regen" | _orl sil || {
+    tar --warning=no-file-ignored -czf "${CFG[RutaBackups]}/ORBackup_${marca_fecha}_regen.tar.gz" -C "${CFG[RutaBackups]}" "$basename_regen" | _orl sil || {
         rm -f "${CFG[RutaBackups]}/ORBackup_${marca_fecha}_regen.tar.gz"
         error "Fallo empaquetando el archivo. Abortando ..." \
               "Failed to package the file. Aborting ..."; return 1; }
@@ -3362,7 +3362,7 @@ EjecutarBackup () {
             if [ -d "$carpeta" ]; then
                 echoe sil ">>> Empaquetando directorio $carpeta en ${CFG[RutaBackups]}/ORBackup_${marca_fecha}_user${n}.tar.gz ..." \
                           ">>> Packaging $carpeta directory in ${CFG[RutaBackups]}/ORBackup_${marca_fecha}_user${n}.tar.gz ..."
-                tar -czf "${CFG[RutaBackups]}/ORBackup_${marca_fecha}_user${n}.tar.gz" -C / "${carpeta:1}" | _orl sil || {
+                tar --warning=no-file-ignored -czf "${CFG[RutaBackups]}/ORBackup_${marca_fecha}_user${n}.tar.gz" -C / "${carpeta:1}" | _orl sil || {
                     rm -f "${CFG[RutaBackups]}/ORBackup_${marca_fecha}_"*
                     error "Fallo empaquetando el archivo. Abortando ..." \
                           "Failed to package the file. Aborting ..."; return 1; }

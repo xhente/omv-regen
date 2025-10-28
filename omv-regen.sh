@@ -5,14 +5,14 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.1
+# omv-regen 7.1.2
 # Utilidad de copia de seguridad de la configuración de openmediavault
 # openmediavault configuration backup utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 #,SC2086
 
-ORVersion="7.1.1"
+ORVersion="7.1.2"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -3399,7 +3399,9 @@ EjecutarBackup () {
 
     echoe "\n>>>\n>>>>>>       <<< ¡Copia de seguridad de $hoy completada! >>>\n>>>\n" \
           "\n>>>\n>>>>>>       <<< $hoy backup completed! >>>\n>>>\n"
-    EjecutarReinicioPendiente || return 1
+    if [ "${CFG[ActualizarOMV]}" = "Si" ]; then
+        EjecutarReinicioPendiente || return 1
+    fi
     backup_desatendido && BuscarOR && echoe sil ">>>"
 
     return 0

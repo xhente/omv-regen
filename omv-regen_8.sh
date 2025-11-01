@@ -5,13 +5,26 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.3
+# omv-regen 8.0
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="7.1.3"
+
+
+
+##################################################
+# VERSION EN DESARROLLO
+##################################################
+# VERSION UNDER DEVELOPMENT
+##################################################
+
+
+
+
+
+ORVersion="8.0"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -1055,6 +1068,52 @@ txt AyudaMenuRegenera \
     AYUDA=("${txt[AyudaOmvregen]}" "${txt[AyudaMenuBackup]}" "${txt[AyudaMenuRegenera]}")
     FormatearSiNo
 }
+
+ActualizarAyuda() {
+    local url_readme="https://raw.githubusercontent.com/xhente/omv-regen/master/README.md"
+    local destino="/var/lib/omv-regen/settings/readme"
+    local tmp="$OR_tmp_dir/omvregen_readme"
+
+    echoe log ">>> Descargando archivo de ayuda desde GitHub ..." \
+              ">>> Downloading help file from GitHub ..."
+    mkdir -p /var/lib/omv-regen/settings
+
+    if wget -q -O "$tmp" "$url_readme"; then
+        echoe ">>> Procesando archivo de ayuda ..." \
+              ">>> Processing help file ..."
+
+        # Extraer secciones (español e inglés) y limpiar Markdown
+        local bloque_es bloque_en
+        bloque_es=$(awk '/^## INTRODUCCIÓN/,/^   * No obstante, úsalo bajo tu/' "$tmp" | \
+                    sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
+                    sed -E "s/\`/'/g" | \
+                    sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
+
+        bloque_en=$(awk '/^## INTRODUCTION/,/^   * However, use it responsibly/' "$tmp" | \
+                    sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
+                    sed -E "s/\`/'/g" | \
+                    sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
+
+        # shellcheck disable=SC2028,SC1003
+        {
+            echo 'txt AyudaOmvregen \'
+            echo '"\n \'
+            echo "$bloque_es"
+            echo '" \'
+            echo '"\n \'
+            echo "$bloque_en"
+            echo '"'
+        } > "$destino"
+
+        echoe ">>> Archivo de ayuda actualizado correctamente." \
+              ">>> Help file updated successfully."
+    else
+        error "Fallo descargando el archivo de ayuda." \
+              "Failed to download help file."
+        return 1
+    fi
+}
+
 
 ########################################## MENUS GRAFICOS ##########################################
 ########################################## GRAPHIC MENUS ###########################################

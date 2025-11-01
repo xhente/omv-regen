@@ -602,12 +602,12 @@ txt AyudaMenuRegenera \
 }
 
 ActualizarAyuda() {
-    local tmp="$OR_tmp_dir/omvregen_readme"
-    local bloque_es bloque_en
+    local tmp bloque_es bloque_en
+    tmp="$(mktemp)"
 
     echoe log ">>> Descargando archivo de ayuda desde GitHub ..." \
               ">>> Downloading help file from GitHub ..."
-    mkdir -p /var/lib/omv-regen/settings
+    mkdir -p "/var/lib/omv-regen/settings"
     wget -q -O "$tmp" "$URL_OMVREGEN_README" || { error "Fallo descargando el archivo de ayuda." \
                                                         "Failed to download help file."; return 1; }
     
@@ -635,6 +635,7 @@ ActualizarAyuda() {
     echoe log ">>> Archivo de ayuda actualizado correctamente." \
               ">>> Help file updated successfully."
     . /var/lib/omv-regen/settings/readme
+    rm -f "$tmp"
 }
 
 
@@ -2029,28 +2030,28 @@ hook_es_ok() {
                              ">>> OMV is not installed, skipping hook check ..."; return 0; }
 
     if [ ! -f "$OR_hook_file" ] || [ ! -s "$OR_hook_file" ]; then
-        error "El archivo del hook no existe o está vacío: $OR_hook_file" \
-              "The hook file does not exist or is empty: $OR_hook_file"
+        echoe log ">>> El archivo del hook no existe o está vacío: $OR_hook_file" \
+                  ">>> The hook file does not exist or is empty: $OR_hook_file"
         return 1
     fi
     if [ "$(stat -c %a "$OR_hook_file")" != "755" ] || [ "$(stat -c %U:%G "$OR_hook_file")" != "root:root" ]; then
-        error "Permisos o propiedad incorrecta en el archivo: $OR_hook_file" \
-              "Incorrect permissions or ownership on the file: $OR_hook_file"
+        echoe log ">>> Permisos o propiedad incorrecta en el archivo: $OR_hook_file" \
+                  ">>> Incorrect permissions or ownership on the file: $OR_hook_file"
         return 1
     fi
     if ! grep -q "# Log the hook execution" "$OR_hook_file"; then
-        error "Contenido del hook incompleto o incorrecto en: $OR_hook_file" \
-              "Hook file content is incomplete or incorrect in: $OR_hook_file"
+        echoe log ">>> Contenido del hook incompleto o incorrecto en: $OR_hook_file" \
+                  ">>>Hook file content is incomplete or incorrect in: $OR_hook_file"
         return 1
     fi
     if [ ! -d "$OR_hook_dir" ]; then
-        error "El directorio del hook no existe: $OR_hook_dir" \
-              "The hook directory does not exist: $OR_hook_dir"
+        echoe log ">>> El directorio del hook no existe: $OR_hook_dir" \
+                  ">>> The hook directory does not exist: $OR_hook_dir"
         return 1
     fi
     if [ "$(stat -c %a "$OR_hook_dir")" != "755" ] || [ "$(stat -c %U:%G "$OR_hook_dir")" != "root:root" ]; then
-        error "Permisos o propiedad incorrecta en el directorio: $OR_hook_dir" \
-              "Incorrect permissions or ownership on the directory: $OR_hook_dir"
+        echoe log ">>> Permisos o propiedad incorrecta en el directorio: $OR_hook_dir" \
+                  ">>> Incorrect permissions or ownership on the directory: $OR_hook_dir"
         return 1
     fi
 }

@@ -117,7 +117,10 @@ NO_OMITIR=("openmediavault" "openmediavault-keyring" "openmediavault-kernel" "op
 NO_OMITIR=( "${NO_OMITIR[@]}" "${SISTEMA_ARCHIVOS[@]}" )
 
 # URLs
-URL_OMVREGEN_SCRIPT="https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh"
+URL_OMVREGEN="https://raw.githubusercontent.com/xhente/omv-regen/master"
+URL_OMVREGEN_SCRIPT="$URL_OMVREGEN/omv-regen_8.sh"
+URL_OMVREGEN_README="$URL_OMVREGEN/README.md"
+URL_OMVREGEN_INSTALL="$URL_OMVREGEN/omv-regen-install.sh"
 URL_OPENMEDIAVAULT_PAQUETES="https://packages.openmediavault.org/public/pool/main/o/"
 URL_OMVEXTRAS="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 # shellcheck disable=SC2034
@@ -182,8 +185,6 @@ CONFIG[openmediavault-diskstats]="nulo"
 CONFIG[openmediavault-downloader]="/config/services/downloader"
 CONFIG[openmediavault-fail2ban]="/config/services/fail2ban"
 CONFIG[openmediavault-filebrowser]="/config/services/filebrowser"
-CONFIG[openmediavault-flashmemory]="nulo"
-CONFIG[openmediavault-forkeddaapd]="/config/services/daap" # Only OMV 6
 CONFIG[openmediavault-ftp]="/config/services/ftp"
 CONFIG[openmediavault-hddfanctrl]="/config/system/hddfanctrl"
 CONFIG[openmediavault-hosts]="/config/system/network/hosts"
@@ -335,477 +336,6 @@ AjustarIdioma() {
 
 txt salirayuda "\n\n${Logo_omvregen}\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<${Reset}\n\n${Verde}omv-regen          → Abre la interfaz gráfica principal.${Reset}\n${Verde}omv-regen backup   → Realiza un backup de la configuración de OMV.${Reset}\n${Verde}omv-regen ayuda    → Accede a los cuadros de diálogo con la ayuda completa.${Reset}\n\n" \
 "\n\n${Logo_omvregen}\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<${Reset}\n\n${Verde}omv-regen          → Opens the main graphical interface.\n${Verde}omv-regen backup   → Back up your OMV configuration.${Reset}\n${Verde}omv-regen help     → Access dialog boxes with complete help.${Reset}\n\n"
-
-txt AyudaOmvregen \
-"\n \
-\n______ INTRODUCCIÓN \
-\n \
-\nDesde su nacimiento en abril de 2023, omv-regen ha sido una herramienta concebida para migrar configuraciones de OpenMediaVault entre sistemas. \
-\nSin embargo, su alcance estaba limitado por la disponibilidad en línea de las versiones de los paquetes. \
-\nHoy, con la llegada de la versión 7.1, esa limitación queda atrás. \
-\nEsta versión introduce la capacidad de almacenar y reutilizar los paquetes desde un repositorio local, \
-\nhaciendo posible una regeneración completa y fiel al sistema original, incluso meses después. \
-\n \
-\nomv-regen deja así de ser una simple utilidad de migración y se convierte en una auténtica solución de backup y restauración sin límites de tiempo. \
-\nLa inestimable ayuda de Aaron Murray y ChatGPT —a quienes expreso mi sincero agradecimiento— ha sido fundamental para alcanzar este hito. \
-\n \
-\nChente \
-\n(Octubre de 2025) \
-\n \
-\n______ QUÉ ES OMV-REGEN \
-\n \
-\n- omv-regen es una utilidad desarrollada en bash que se ejecuta desde línea de comandos (CLI) y dispone de interfaz gráfica mediante dialog. \
-\n- Permite hacer y programar backups de la configuración de OpenMediaVault (OMV) y usar estos backups para migrar o regenerar la configuración en otro sistema limpio de OMV o Debian. \
-\n \
-\n- NOTA: omv-regen no permite actualizar entre versiones principales de OMV (por ejemplo, de OMV6 a OMV7). Para eso, utiliza siempre el procedimiento oficial: 'omv-release-upgrade'. omv-regen solo puede regenerar configuraciones dentro de la misma versión principal de OMV. \
-\n \
-\n    Comandos principales: \
-\n- 'omv-regen'          → Abre la interfaz gráfica principal.  \
-\n- 'omv-regen backup'   → Realiza un backup de la configuración de OMV. \
-\n- 'omv-regen ayuda'    → Accede a los cuadros de diálogo con la ayuda completa. \
-\n \
-\n______ VENTAJAS RESPECTO A UN BACKUP CONVENCIONAL \
-\n \
-\n- Capacidad de recuperar un sistema corrupto si los archivos esenciales están en buen estado y puedes generar un backup. \
-\n- El backup es muy ligero, solo ocupa algunos megas de capacidad, lo que permite conservar múltiples versiones con facilidad. \
-\n- Permite regenerar un sistema amd64 en uno ARM o viceversa, teniendo en cuenta las limitaciones de arquitectura de algunos complementos. \
-\n- Una regeneración proporciona un sistema limpio, puesto que parte de un sistema limpio. \
-\n- Permite migrar de hardware sin limitaciones manteniendo las configuraciones de OpenMediaVault. \
-\n \
-\n______ LIMITACIONES DE OMV-REGEN \
-\n \
-\n- Las configuraciones realizadas en CLI no se trasladarán al nuevo sistema, solo se respaldan las configuraciones de la GUI de OMV. \
-\n- No se trasladan las configuraciones internas de los complementos basados en podman, como Filebrowser o Photoprism — respáldalos por otros medios. \
-\n- omv-regen no es un sistema de backup de datos. Su objetivo es preservar la configuración del sistema, no el contenido de los discos de datos. \
-\n \
-\n______ CÓMO HACER BACKUPS CON OMV-REGEN \
-\n \
-\n- Conéctate por SSH a tu servidor o con un monitor y teclado, instala y ejecuta 'omv-regen' \
-\n- Configura la carpeta de almacenamiento de backups; por defecto es '/ORBackup' \
-\n- Por defecto, se programa un backup diario a las 03:00 h. Puedes modificarlo en la GUI de OMV, en Tareas Programadas. \
-\n- También puedes ejecutar un backup manual desde la GUI de omv-regen. \
-\n- Puedes añadir carpetas adicionales al backup, configúralo en la GUI de omv-regen. \
-\n- Utiliza las carpetas adicionales para conservar carpetas existentes fuera del entorno de OMV. \
-\n- Desactiva el modo silencio para notificaciones detalladas. \
-\n- Siempre recibirás una notificación si se produce un error. \
-\n- Cada backup está formado por varios archivos etiquetados con la fecha y hora de su creación y contiene: \
-\n   - Un archivo '.regen.tar'  con los elementos necesarios para la regeneración. \
-\n   - Un archivo '.sha56'      para verificar la integridad del backup. \
-\n   - Un archivo '.user#.tar'  por cada carpeta de usuario incluida en el backup. \
-\n \
-\n______ CÓMO REGENERAR UN SISTEMA \
-\n \
-\n- Conéctate por SSH o con un monitor y teclado, instala y ejecuta 'omv-regen' \
-\n- Haz un backup del sistema actual y cópialo fuera del servidor (por ejemplo, con WinSCP o a un pendrive). \
-\n- Para regenerar, necesitas una instalación limpia de OMV. Dos opciones: \
-\n   - Usar la ISO de OMV: instala OMV sin actualizar el sistema; omv-regen actualizará a la versión correcta del backup. \
-\n   - Instalar Debian mínimo (64 bits) y dejar que omv-regen instale OMV en la versión del backup. \
-\n- Se recomienda usar un disco nuevo para la instalación y conservar el original como copia de seguridad. \
-\n- Copia el backup a una carpeta del servidor. \
-\n- Configura la ruta del backup e inicia la regeneración. \
-\n   - Si quieres omitir la instalación de algún complemento selecciónalo en la GUI de omv-regen regenera antes de iniciar. \
-\n- El sistema se reiniciará automáticamente, puedes ejecutar 'omv-regen' en cualquier momento para ver el log en vivo. \
-\n- Al finalizar, recibirás un correo con el resultado y podrás comprobar en la GUI de OMV que todo se ha restaurado correctamente. \
-\n \
-\n______ INSTALACIÓN Y REGENERACIÓN DESDE LA ISO DE OPENMEDIAVAULT \
-\n \
-\n- Instala OpenMediaVault con la ISO correspondiente a la versión (6.0/7.0) que necesites. \
-\n- No actualices el sistema, deja que lo haga omv-regen para adecuar las versiones a las del sistema original. \
-\n- Instala omv-regen: \
-\n \
-\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
-\n \
-\n- Copia el backup al servidor, inicia 'omv-regen' y ejecuta la regeneración. \
-\n \
-\n______ INSTALACIÓN Y REGENERACIÓN DESDE DEBIAN \
-\n \
-\n- Si tu hardware es ARM o no puedes instalar desde la ISO, usa este procedimiento. \
-\n- Instala la versión de Debian Lite de 64 bits (sin entorno gráfico) que necesites: \
-\n   - Para OMV6 → Debian 11 (Bullseye) \
-\n   - Para OMV7 → Debian 12 (Bookworm) \
-\n- Durante la instalación, selecciona únicamente el paquete SSH para instalar. \
-\n- Una vez finalizada la instalación, inicia sesión con tu usuario y activa root: \
-\n \
-\n     'sudo -i' \
-\n     'passwd root'   # Establece una contraseña segura para root \
-\n \
-\n- Activa el acceso SSH para el usuario root: \
-\n \
-\n     'nano /etc/ssh/sshd_config' \
-\n \
-\n- Busca y modifica las siguientes líneas: \
-\n \
-\n     'PermitRootLogin yes' \
-\n     'PasswordAuthentication yes' \
-\n \
-\n- Guarda los cambios y reinicia el servicio: \
-\n \
-\n     'systemctl restart ssh' \
-\n \
-\n- Ahora puedes conectarte al servidor desde otro equipo con root, por ejemplo con PuTTY o WinSCP. \
-\n- Instala wget y omv-regen: \
-\n \
-\n     'apt-get update' \
-\n     'apt-get upgrade -y'  \
-\n     'apt-get install wget -y' \
-\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
-\n \
-\n- Copia el backup al servidor (WinSCP), inicia 'omv-regen' y ejecuta la regeneración. omv-regen instalará OMV y continuará la regeneración. \
-\n \
-\n______ ALGUNOS CONSEJOS Y NOVEDADES PRÁCTICAS \
-\n \
-\n- SISTEMA DE BACKUPS: \
-\n   - Los backups ahora se gestionan mediante un sistema de retenciones automáticas: semanal, mensual y anual. \
-\n   - Podrás mantener copias históricas sin llenar el disco; las más antiguas se eliminarán de forma segura según tus ajustes. \
-\n \
-\n- HOOK AUTOMÁTICO: \
-\n   - omv-regen instala un hook que garantiza que todos los paquetes necesarios se descarguen junto al backup. \
-\n   - Una primera actualización del sistema tras instalar omv-regen asegurará que todos los paquetes estén disponibles a partir de ese momento. \
-\n \
-\n- PROGRAMACIÓN AUTOMÁTICA: \
-\n   - omv-regen crea por defecto una tarea diaria de backup, que puedes modificar desde la GUI de OMV. \
-\n   - Además, se ejecuta una limpieza semanal automática del hook para mantener el sistema ordenado. \
-\n \
-\n- CARPETAS OPCIONALES: \
-\n   - Evita incluir carpetas de sistema en los backups opcionales. \
-\n   - Asegúrate de que no contengan archivos críticos que puedan afectar al nuevo sistema. \
-\n \
-\n- COMPLEMENTOS BASADOS EN CONTENEDORES: \
-\n   - omv-regen solo respalda las configuraciones visibles en la GUI de OMV. \
-\n   - Complementos basados en podman como Filebrowser o Photoprism deben respaldarse manualmente. \
-\n \
-\n- OPENMEDIAVAULT-APTTOOL: \
-\n   - Si utilizas el complemento apttool, los paquetes instalados mediante él se instalarán automáticamente durante la regeneración. \
-\n \
-\n- SYMLINKS Y CONFIGURACIONES MANUALES: \
-\n   - Los enlaces creados con omv-symlinks se regenerarán automáticamente. \
-\n   - Los creados manualmente desde CLI deberán volver a configurarse. \
-\n \
-\n- DOCKER: \
-\n   - Guarda los datos y volúmenes de Docker fuera del disco de sistema, \
-\n   - preferiblemente en un disco de datos, para evitar pérdidas durante la regeneración. \
-\n   - Después de la regeneración levanta los contenedores en la GUI de OMV. \
-\n \
-\n- DISCOS ENCRIPTADOS: \
-\n   - Si utilizas omv-luksencryption, asegúrate de tener configurado '/etc/crypttab' y las claves de descifrado accesibles. \
-\n   - omv-regen las transferirá al nuevo sistema y gestionará los reinicios necesarios. \
-\n \
-\n- UNIDAD DE SISTEMA: \
-\n   - Instala el nuevo sistema en una unidad diferente a la original. \
-\n   - Así podrás conservar el disco anterior como copia de seguridad ante cualquier imprevisto. \
-\n \
-\n______ FUNCIONAMIENTO INTERNO \
-\n \
-\n- Durante la instalación: \
-\n \
-\n      - Si el sistema es Debian y aún no tiene instalado OMV, se instalará dialog previamente. \
-\n      - Se desinstala apparmor si está presente. \
-\n      - Se configura un hook para capturar en vivo los paquetes instalados por el sistema. \
-\n      - Se configura en cron un trabajo de limpieza semanal del hook que actualiza el repositorio local, si no se ha hecho ya durante la semana. \
-\n      - Se configura el log de omv-regen. \
-\n      - Se crea la carpeta '/var/lib/omv-regen' con los archivos de configuración y el repositorio local. \
-\n      - Se configura un trabajo programado diario de backup, configurable desde la GUI de OMV. \
-\n      - Si el sistema tiene el idioma español, 'omv-regen' se ajusta el idioma a español. \
-\n \
-\n- Durante la ejecución de un backup: \
-\n \
-\n      - Aunque no es necesario, puedes activar la actualización automática de OMV. \
-\n      - Se actualiza el repositorio local con los paquetes necesarios capturados en el hook y se añaden al backup. \
-\n      - Se eliminan los backups obsoletos según las retenciones configuradas. \
-\n \
-\n- Durante la regeneración: \
-\n \
-\n      - Se permite omitir la instalación de complementos no esenciales. \
-\n      - Se configura un servicio para reanudar la regeneración automáticamente tras cada reinicio. \
-\n         - Puedes ejecutar 'omv-regen' en cualquier momento para ver el log en vivo. \
-\n      - Si OMV no está instalado, omv-regen instala OMV utilizando el script de instalación de OMV de Aaron Murray. \
-\n         - Esta instalación añade omv-extras al sistema, incluso si no estaba en el sistema original. \
-\n      - Se instalan las versiones del sistema original de OMV y complementos y se retienen hasta finalizar. \
-\n      - Se sustituyen partes de la base de datos siguiendo un orden lógico y ejecutando comandos de SaltStack para aplicar configuraciones. \
-\n      - Al finalizar, se liberan las retenciones y se actualiza el sistema a la última versión de cada paquete. \
-\n \
-\n- Características especiales: \
-\n \
-\n      - omv-regen impide la ejecución de dos instancias simultáneas, excepto durante la regeneración para poder ver el log en vivo. \
-\n \
-\n______ NOTAS Y RECOMENDACIONES \
-\n \
-\n- Requisitos mínimos: Sistema Debian u OMV de 64 bits y conexión a Internet estable. \
-\n   - Se recomienda ejecutar 'omv-regen' como root. \
-\n \
-\n- Logs y seguimiento: \
-\n   - Los registros de ejecución se guardan en '/var/log/omv-regen.log' \
-\n   - Si la regeneración se interrumpe, puedes reanudarla ejecutando de nuevo 'omv-regen' \
-\n \
-\n- Compatibilidad de versiones: \
-\n   - 'omv-regen regenera' requiere que la versión de OMV sea igual o inferior a la del sistema original. \
-\n      - No actualices OMV, deja que lo haga omv-regen, o deja que omv-regen instale OMV desde Debian. \
-\n      - Una vez completado el proceso, omv-regen actualizará el sistema con seguridad. \
-\n \
-\n- Copias de seguridad: \
-\n   - Guarda siempre una copia del backup fuera del servidor antes de iniciar la regeneración. \
-\n   - No borres el backup original hasta confirmar que el nuevo sistema funciona correctamente. \
-\n \
-\n- Seguridad: \
-\n   - omv-regen no realiza modificaciones en los discos de datos; solo en el sistema. \
-\n   - Verifica que todos los discos originales estén conectados antes de iniciar la regeneración. \
-\n   - Recuperación manual: Si una regeneración se detiene con algún problema de instalación. \
-\n      - Limpia la regeneración actual desde la GUI de omv-regen para desbloquear las versiones de paquetes. \
-\n      - A partir de ese momento el sistema queda en tus manos. \
-\n \
-\n- Consideraciones para sistemas con tarjeta SD (Raspberry Pi y similares): \
-\n   - Durante la regeneración del sistema, omv-regen realiza operaciones intensivas de lectura y escritura. \
-\n   - En dispositivos que utilizan almacenamiento flash (como tarjetas SD o eMMC), este proceso puede provocar un desgaste significativo y acortar la vida útil del medio. \
-\n   - Sistemas con 2GB de RAM pueden experimentar inestabilidad, especialmente al aplicar múltiples cambios de configuración o reiniciar servicios, ya que el uso de swap aumenta el riesgo de fallos y de desgaste adicional de la tarjeta SD. \
-\n   - Recomendaciones: \
-\n      - Realiza la regeneración sobre un SSD conectado por USB siempre que sea posible. \
-\n      - Si usas una SD, utiliza una de alta calidad y evita regeneraciones repetidas en la misma tarjeta. \
-\n      - Considera usar modelos con 4 GB de RAM o más para una mayor estabilidad. \
-\n \
-\n- Soporte: \
-\n   - Para dudas o incidencias, consulta el foro oficial de OpenMediaVault. \
-\n   - Recuerda incluir los últimos registros del log para obtener ayuda más rápida. \
-\n \
-\n- Nota final: \
-\n   - omv-regen ha sido diseñado para ofrecer una restauración fiable y automatizada. \
-\n   - No obstante, úsalo bajo tu responsabilidad y revisa siempre los mensajes antes de confirmar cada paso. \
-\n" \
-"\n \
-\n______ INTRODUCTION \
-\n \
-\nSince its creation in April 2023, omv-regen has been a tool designed to migrate OpenMediaVault configurations between systems. \
-\nHowever, its scope was limited by the online availability of package versions. \
-\nToday, with the arrival of version 7.1, that limitation is gone. \
-\nThis version introduces the ability to store and reuse packages from a local repository, \
-\nmaking it possible to fully and faithfully regenerate a system — even months later. \
-\n \
-\nThus, omv-regen is no longer just a migration utility but a true backup and restoration solution without time limits. \
-\nThe invaluable help of Aaron Murray and ChatGPT —to whom I extend my deepest gratitude— has been essential in achieving this milestone. \
-\n \
-\nChente \
-\n(October 2025) \
-\n \
-\n______ WHAT IS OMV-REGEN \
-\n \
-\n- omv-regen is a bash-based utility that runs from the command line (CLI) and provides a graphical interface through dialog. \
-\n- It allows you to create and schedule backups of your OpenMediaVault (OMV) configuration and use those backups to migrate or regenerate the configuration on a clean OMV or Debian system. \
-\n \
-\n- NOTE: omv-regen does not support upgrading between major OMV versions (e.g., from OMV 6 to OMV 7). For this, always use the official 'omv-release-upgrade' procedure. omv-regen can only regenerate configurations within the same major OMV version. \
-\n \
-\n    Main commands \
-\n \
-\n- 'omv-regen'          → Opens the main graphical interface. \
-\n- 'omv-regen backup'   → Creates a backup of the OMV configuration. \
-\n- 'omv-regen ayuda'    → Opens the help dialogs with full documentation. \
-\n \
-\n______ ADVANTAGES OVER A CONVENTIONAL BACKUP \
-\n \
-\n- Can recover a corrupted system as long as essential files are intact and a backup can be created. \
-\n- The backup is lightweight, usually only a few megabytes, allowing you to keep multiple versions easily. \
-\n- Can regenerate a system from amd64 to ARM or vice versa, taking into account plugin architecture limitations. \
-\n- A regeneration produces a clean system, since it starts from a clean installation. \
-\n- Allows hardware migration without limitations while preserving all OpenMediaVault configurations. \
-\n \
-\n______ LIMITATIONS OF OMV-REGEN \
-\n \
-\n- Custom configurations made from the CLI will not be transferred; only settings made through the OMV GUI are included. \
-\n- Internal configurations of podman-based plugins (such as Filebrowser or Photoprism) are not included — back them up separately. \
-\n- omv-regen is not a data backup system. Its purpose is to preserve system configuration, not data content. \
-\n \
-\n______ HOW TO MAKE BACKUPS WITH OMV-REGEN \
-\n \
-\n- Connect via SSH to your server or use a monitor and keyboard, then install and run 'omv-regen'. \
-\n- Configure the backup storage folder; the default is '/ORBackup'. \
-\n- By default, a daily backup is scheduled at 03:00 AM. You can modify this in the OMV GUI under Scheduled Tasks. \
-\n- You can also manually execute a backup from the omv-regen GUI. \
-\n- You can add additional folders to the backup; configure them in the omv-regen GUI. \
-\n- Use additional folders to keep existing folders outside the OMV environment. \
-\n- Turn off silent mode for detailed notifications. \
-\n- You will always receive a notification if an error occurs. \
-\n- Each backup consists of several files labeled with the creation date and time and contains: \
-\n   - A '.regen.tar'  file with the elements needed for regeneration. \
-\n   - A '.sha56'      file to verify backup integrity. \
-\n   - A '.user#.tar'  file for each user folder included in the backup. \
-\n \
-\n______ HOW TO REGENERATE A SYSTEM \
-\n \
-\n- Connect via SSH or use a monitor and keyboard, install and run 'omv-regen'. \
-\n- Create a backup of the current system and copy it outside the server (e.g., using WinSCP or to a USB drive). \
-\n- To regenerate, you need a clean installation of OMV. Two options: \
-\n   - Use the OMV ISO: install OMV without updating the system; omv-regen will adjust to the correct backup version. \
-\n   - Install minimal Debian (64-bit) and let omv-regen install OMV in the version from the backup. \
-\n- It is recommended to use a new disk for installation and keep the original as a safety copy. \
-\n- Copy the backup to a folder on the server. \
-\n- Configure the backup path and start regeneration. \
-\n   - If you want to skip installing certain plugins, select them in the omv-regen regenera GUI before starting. \
-\n- The system will reboot automatically. You can run 'omv-regen' at any time to view the live log. \
-\n- When finished, you will receive an email with the results and can verify in the OMV GUI that everything has been restored correctly. \
-\n \
-\n______ INSTALLATION AND REGENERATION FROM THE OPENMEDIAVAULT ISO \
-\n \
-\n- Install OpenMediaVault with the ISO corresponding to the version (6.0/7.0) you need. \
-\n- Do not update the system; let omv-regen handle it to match the original versions. \
-\n- Install omv-regen: \
-\n \
-\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
-\n \
-\n- Copy the backup to the server, start 'omv-regen', and run regeneration. \
-\n \
-\n______ INSTALLATION AND REGENERATION FROM DEBIAN \
-\n \
-\n- If your hardware is ARM or you cannot install from the ISO, use this procedure. \
-\n- Install the minimal 64-bit Debian Lite version you need: \
-\n   - For OMV6 → Debian 11 (Bullseye) \
-\n   - For OMV7 → Debian 12 (Bookworm) \
-\n- During installation, select only the SSH package to install. \
-\n- Once installation is complete, log in with your user and enable root: \
-\n \
-\n     'sudo -i' \
-\n     'passwd root'   # Set a secure password for root \
-\n \
-\n- Enable SSH access for the root user: \
-\n \
-\n     'nano /etc/ssh/sshd_config' \
-\n \
-\n- Find and modify the following lines: \
-\n \
-\n     'PermitRootLogin yes' \
-\n     'PasswordAuthentication yes' \
-\n \
-\n- Save changes and restart the service: \
-\n \
-\n     'systemctl restart ssh' \
-\n \
-\n- You can now connect to the server from another machine as root, using PuTTY or WinSCP. \
-\n- Install wget and omv-regen: \
-\n \
-\n     'apt-get update' \
-\n     'apt-get upgrade -y' \
-\n     'apt-get install wget -y' \
-\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
-\n \
-\n- Copy the backup to the server (WinSCP), start 'omv-regen', and run regeneration. omv-regen will install OMV and continue regeneration. \
-\n \
-\n______ SOME PRACTICAL TIPS AND NEW FEATURES \
-\n \
-\n- BACKUP SYSTEM: \
-\n   - Backups are now managed through an automatic retention system: weekly, monthly, and yearly. \
-\n   - You can keep historical copies without filling your disk; older ones are safely deleted according to your settings. \
-\n \
-\n- AUTOMATIC HOOK: \
-\n   - omv-regen installs a hook that ensures all required packages are downloaded together with the backup. \
-\n   - An initial system update after installing omv-regen guarantees that all packages are available from that point on. \
-\n \
-\n- AUTOMATIC SCHEDULING: \
-\n   - omv-regen creates a default daily backup task, which can be modified from the OMV GUI. \
-\n   - A weekly automatic cleanup of the hook is also scheduled to keep the system tidy. \
-\n \
-\n- OPTIONAL FOLDERS: \
-\n   - Avoid including system folders in optional backups. \
-\n   - Ensure they do not contain critical files that might affect the new system. \
-\n \
-\n- CONTAINER-BASED PLUGINS: \
-\n   - omv-regen only backs up configurations visible in the OMV GUI. \
-\n   - Podman-based plugins such as Filebrowser or Photoprism should be backed up manually. \
-\n \
-\n- OPENMEDIAVAULT-APTTOOL: \
-\n   - If you use the apttool plugin, packages installed through it \
-\n   - will be automatically installed during regeneration. \
-\n \
-\n- SYMLINKS AND MANUAL CONFIGURATIONS: \
-\n   - Links created with omv-symlinks will be automatically regenerated. \
-\n   - Links created manually from the CLI will need to be reconfigured. \
-\n \
-\n- DOCKER: \
-\n   - Store Docker data and volumes outside the system drive, \
-\n   - preferably on a data disk, to prevent loss during regeneration. \
-\n   - After regeneration, bring the containers back up through the OMV GUI. \
-\n \
-\n- ENCRYPTED DRIVES: \
-\n   - If you use omv-luksencryption, make sure '/etc/crypttab' and decryption keys are accessible. \
-\n   - omv-regen will transfer them to the new system and handle necessary reboots. \
-\n \
-\n- SYSTEM DRIVE: \
-\n   - Install the new system on a different drive than the original. \
-\n   - This way, you can keep the old drive as a backup in case of issues. \
-\n \
-\n______ INTERNAL OPERATION \
-\n \
-\n- During installation: \
-\n \
-\n   - If the system is Debian and OMV is not yet installed, dialog will be installed first. \
-\n   - AppArmor will be uninstalled if present. \
-\n   - A hook is set up to capture installed packages in real-time. \
-\n   - A weekly cron job is configured to clean the hook that updates the local repository, if not already done that week. \
-\n   - The omv-regen log is configured. \
-\n   - The '/var/lib/omv-regen' folder is created with configuration files and the local repository. \
-\n   - A daily scheduled backup task is configured, editable from the OMV GUI. \
-\n   - If the system language is Spanish, omv-regen automatically adjusts to Spanish. \
-\n \
-\n- During backup execution: \
-\n \
-\n   - Although not required, you can enable automatic OMV updates. \
-\n   - The local repository is updated with the necessary packages captured in the hook and added to the backup. \
-\n   - Obsolete backups are deleted according to retention settings. \
-\n \
-\n- During regeneration: \
-\n \
-\n   - You can skip installing non-essential plugins. \
-\n   - A service is configured to automatically resume regeneration after each reboot. \
-\n      - You can run 'omv-regen' at any time to view the live log. \
-\n   - If OMV is not installed, it is installed using Aaron Murray’s OMV installation script. \
-\n      - This installation includes omv-extras even if it was not part of the original system. \
-\n   - The original versions of OMV and plugins are installed and held until completion. \
-\n   - Parts of the database are replaced in logical order, executing SaltStack commands to apply configurations. \
-\n   - At the end, holds are released and the system is safely updated to the latest package versions. \
-\n \
-\n- Special features: \
-\n \
-\n   - omv-regen prevents multiple instances from running simultaneously, except during regeneration to allow viewing the live log. \
-\n \
-\n______ NOTES AND RECOMMENDATIONS \
-\n \
-\n- Minimum requirements: Debian or OMV 64-bit system and stable Internet connection. \
-\n   - It is recommended to run 'omv-regen' as root. \
-\n \
-\n- Logs and monitoring: \
-\n   - Execution logs are saved in '/var/log/omv-regen.log'. \
-\n   - If regeneration is interrupted, you can resume it by running 'omv-regen' again. \
-\n \
-\n- Version compatibility: \
-\n   - omv-regen regenera requires the OMV version to be equal to or lower than the original system’s version. \
-\n   - Do not update OMV; let omv-regen do it, or let it install OMV from Debian. \
-\n   - Once the process is complete, omv-regen will safely update the system. \
-\n \
-\n- Backups: \
-\n   - Always store a copy of the backup outside the server before starting regeneration. \
-\n   - Do not delete the original backup until confirming the new system works properly. \
-\n \
-\n- Security: \
-\n   - omv-regen does not modify data disks; it only affects the system. \
-\n   - Verify that all original disks are connected before starting regeneration. \
-\n \
-\n- Manual recovery: If regeneration stops due to installation issues: \
-\n   - Clean the current regeneration from the omv-regen GUI to unlock package versions. \
-\n   - From that point, the system is in your hands. \
-\n \
-\n- Considerations for systems using SD cards (Raspberry Pi and similar devices): \
-\n   - During the system regeneration process, omv-regen performs intensive read and write operations. \
-\n   - On devices that use flash storage (such as SD or eMMC cards), this process can cause significant wear and shorten the lifespan of the storage medium. \
-\n   - Systems with 2GB of RAM may experience instability, especially when applying multiple configuration changes or restarting services, as using swap increases the risk of failure and additional wear on the SD card. \
-\n   - Recommendations: \
-\n      - Whenever possible, perform the regeneration on a USB-connected SSD. \
-\n      - If you use an SD card, choose a high-quality one and avoid running multiple regenerations on the same card. \
-\n      - Consider using models with 4GB of RAM or more for greater stability. \
-\n \
-\n- Support: \
-\n   - For questions or issues, visit the official OpenMediaVault forum. \
-\n   - Include the latest log entries to get faster help. \
-\n \
-\n- Final note: \
-\n   - omv-regen is designed to provide reliable and automated restoration. \
-\n   - However, use it responsibly and always review the messages before confirming each step. \
-\n"
 
 txt AyudaMenuBackup \
 "\n \
@@ -1065,53 +595,46 @@ txt AyudaMenuRegenera \
 \n                >>> New IP: __________. Reconnect after reboot. \
 \n"
 
+    [ -f "/var/lib/omv-regen/settings/readme" ] || ActualizarAyuda
+    . /var/lib/omv-regen/settings/readme
     AYUDA=("${txt[AyudaOmvregen]}" "${txt[AyudaMenuBackup]}" "${txt[AyudaMenuRegenera]}")
     FormatearSiNo
 }
 
 ActualizarAyuda() {
-    local url_readme="https://raw.githubusercontent.com/xhente/omv-regen/master/README.md"
-    local destino="/var/lib/omv-regen/settings/readme"
     local tmp="$OR_tmp_dir/omvregen_readme"
+    local bloque_es bloque_en
 
     echoe log ">>> Descargando archivo de ayuda desde GitHub ..." \
               ">>> Downloading help file from GitHub ..."
     mkdir -p /var/lib/omv-regen/settings
-
-    if wget -q -O "$tmp" "$url_readme"; then
-        echoe ">>> Procesando archivo de ayuda ..." \
+    wget -q -O "$tmp" "$URL_OMVREGEN_README" || { error "Fallo descargando el archivo de ayuda." \
+                                                        "Failed to download help file."; return 1; }
+    
+    echoe log ">>> Procesando archivo de ayuda ..." \
               ">>> Processing help file ..."
-
-        # Extraer secciones (español e inglés) y limpiar Markdown
-        local bloque_es bloque_en
-        bloque_es=$(awk '/^## INTRODUCCIÓN/,/^   * No obstante, úsalo bajo tu/' "$tmp" | \
-                    sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
-                    sed -E "s/\`/'/g" | \
-                    sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
-
-        bloque_en=$(awk '/^## INTRODUCTION/,/^   * However, use it responsibly/' "$tmp" | \
-                    sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
-                    sed -E "s/\`/'/g" | \
-                    sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
-
-        # shellcheck disable=SC2028,SC1003
-        {
-            echo 'txt AyudaOmvregen \'
-            echo '"\n \'
-            echo "$bloque_es"
-            echo '" \'
-            echo '"\n \'
-            echo "$bloque_en"
-            echo '"'
-        } > "$destino"
-
-        echoe ">>> Archivo de ayuda actualizado correctamente." \
+    bloque_es=$(awk '/^## INTRODUCCIÓN/,/^   * No obstante, úsalo bajo tu/' "$tmp" | \
+                sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
+                sed -E "s/\`/'/g" | \
+                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
+    bloque_en=$(awk '/^## INTRODUCTION/,/^   * However, use it responsibly/' "$tmp" | \
+                sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
+                sed -E "s/\`/'/g" | \
+                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
+    # shellcheck disable=SC2028,SC1003
+    {
+        echo '#!/bin/bash'
+        echo 'txt AyudaOmvregen \'
+        echo '"\n \'
+        echo "$bloque_es"
+        echo '" \'
+        echo '"\n \'
+        echo "$bloque_en"
+        echo '"'
+    } > "/var/lib/omv-regen/settings/readme"
+    echoe log ">>> Archivo de ayuda actualizado correctamente." \
               ">>> Help file updated successfully."
-    else
-        error "Fallo descargando el archivo de ayuda." \
-              "Failed to download help file."
-        return 1
-    fi
+    . /var/lib/omv-regen/settings/readme
 }
 
 
@@ -2317,43 +1840,6 @@ ArchivoBloqueo() {
     fi
     # Dejar el descriptor de archivo abierto para mantener el bloqueo - Leave file descriptor open to maintain lock
     echo "$$" > "$OR_lock_file"
-}
-
-# Detecta la ejecución desde github, descarga e instala el archivo, y reinicia - Detect the execution from github, download and install the file, and reboot
-InstalarOmvregen() {
-    local APT_UPDATED=0
-
-    echoe nolog ">>> Instalando omv-regen ..." \
-                ">>> Installing omv-regen ..."
-    instalar_paquete() {
-        local paquete="$1"
-        if ! command -v "$paquete" >/dev/null 2>&1; then
-            echoe ">>> Dependencia faltante, instalando $paquete ..." \
-                  ">>> Missing dependency, installing $paquete ..."
-            if [[ $APT_UPDATED -eq 0 ]]; then
-                apt-get update || { echoe nolog ">>> ERROR: Fallo actualizando repositorios." \
-                                                ">>> ERROR: Failure updating repositories."; return 1; }
-                APT_UPDATED=1
-            fi
-            apt-get --yes install "$paquete" || { echoe nolog ">>> ERROR: Fallo instalando $paquete." \
-                                                              ">>> ERROR: Error installing $paquete."; return 1; }
-        fi
-    }
-
-    instalar_paquete dialog || return 1
-    instalar_paquete wget || return 1
-    [ -f "$OR_script_file" ] && rm "$OR_script_file"
-    wget -q -O - "$URL_OMVREGEN_SCRIPT" >"$OR_script_file" || { 
-        echoe nolog ">>> ERROR: Fallo descargando omv-regen. Verifica la conexión a internet." \
-                    ">>> ERROR: Failure downloading omv-regen. Check your internet connection."; return 1; }
-    grep -q "InstalarOmvregen" "$OR_script_file" || { 
-        echoe nolog ">>> ERROR: Error al descargar o validar omv-regen. Archivo inválido." \
-                    ">>> ERROR: Failed to download or validate omv-regen. Invalid file."; return 1; }
-    chmod +x "$OR_script_file"
-    OmvregenReset
-    echoe nolog ">>> omv-regen $ORVersion se ha instalado. Reiniciando omv-regen ..." \
-                ">>> omv-regen $ORVersion has been installed. Restarting omv-regen ..."
-    sleep 3; exec bash "$OR_script_file"
 }
 
 ResetearOmvregen() {
@@ -5587,6 +5073,7 @@ case "$1" in
     limpieza_semanal)                   VIA=11; LimpiezaProgramada=0 ;;
     regenera_auto)                      VIA=10; ModoAuto=0 ;;
     desinstalar|uninstall)              DesinstalarOmvregen ;;
+    reset)                              OmvregenReset ;;
     "")                                 VIA=0 ;;
     *)                                  Salir nolog "\n>>> Argumento inválido $1 ${txt[salirayuda]}" \
                                                     "\n>>> Invalid argument $1 ${txt[salirayuda]}" ;;
@@ -5624,24 +5111,24 @@ fi
 # Configurar Trap global - Configure Global Trap
 trap TrapSalir EXIT INT TERM
 
-# Versiones soportadas 6.x. o 7.x. - Supported versions 6.x. or 7.x.
-[[ ! "$DEBIAN_CODENAME__or" =~ ^(bullseye|bookworm)$ ]] \
-    && Salir nolog ">>> Versión no soportada: ${DEBIAN_CODENAME__or}.   Solo está soportado Debian 11 y Debian 12.  Saliendo ..." \
-                   ">>> Unsupported version: ${DEBIAN_CODENAME__or}.   Only Debian 11 and Debian 12 are supported.  Exiting ..."
+# Versiones soportadas 8.x - Supported versions 8.x
+[[ "$DEBIAN_CODENAME__or" =~ ^(trixie)$ ]] || \
+    Salir nolog ">>> Versión no soportada: ${DEBIAN_CODENAME__or}.   Solo está soportado Debian 13 (OMV 8.x).  Saliendo ..." \
+                ">>> Unsupported version: ${DEBIAN_CODENAME__or}.   Only Debian 13 (OMV 8.x) is supported.  Exiting ..."
 
 # Instalar omv-regen si no está instalado - Install omv-regen if not installed
-if [[ "$0" != "$OR_script_file" ]]; then
-    InstalarOmvregen || Salir nolog ">>> ERROR: No se pudo instalar omv-regen." \
-                                    ">>> ERROR: Could not install omv-regen."
-fi
+[[ "$0" == "$OR_script_file" ]] || {
+    echoe nolog ">>> omv-regen no está instalado. Descargando e instalando..." \
+                ">>> omv-regen is not installed. Downloading and installing..."
+    wget -O - "$URL_OMVREGEN_INSTALL" | bash || Salir nolog ">>> ERROR: No se pudo instalar omv-regen." \
+                                                            ">>> ERROR: Could not install omv-regen."; }
 
 # Crear archivo de log - Create log file
-if [ ! -f "$OR_log_file" ]; then
+[ -f "$OR_log_file" ] || {
     echoe nolog ">>> El archivo de log no existe. Creando $OR_log_file." \
                 ">>> The log file does not exist. Creating $OR_log_file."
     touch "$OR_log_file" || Salir nolog ">>> ERROR: No se pudo crear el archivo de log." \
-                                        ">>> ERROR: Could not create log file."
-fi
+                                        ">>> ERROR: Could not create log file."; }
 
 # Crear carpeta temporal - Create temporary folder
 [ -d "$OR_tmp_dir" ] && rm -rf "$OR_tmp_dir"

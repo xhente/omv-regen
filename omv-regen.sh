@@ -5528,6 +5528,7 @@ case "$1" in
     limpieza_semanal)                   VIA=11; LimpiezaProgramada=0 ;;
     regenera_auto)                      VIA=10; ModoAuto=0 ;;
     desinstalar|uninstall)              DesinstalarOmvregen ;;
+    reset)                              OmvregenReset ;;
     "")                                 VIA=0 ;;
     *)                                  Salir nolog "\n>>> Argumento inválido $1 ${txt[salirayuda]}" \
                                                     "\n>>> Invalid argument $1 ${txt[salirayuda]}" ;;

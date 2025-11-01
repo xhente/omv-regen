@@ -96,14 +96,14 @@ echoe "\n$Logo_omvregen \n"
 # Select script according to version
 case "$DEBIAN_CODENAME__or" in
     bullseye|bookworm)
-        SCRIPT_NAME="omv-regen_7x.sh"
+        SCRIPT_NAME="omv-regen_6x_7x.sh"
         ;;
     trixie)
         SCRIPT_NAME="omv-regen_8x.sh"
         ;;
     *)
-        echoe ">>> Versión no soportada: ${DEBIAN_CODENAME__or}.   Solo está soportado Debian 11, Debian 12 y Debian 13.  Saliendo ..." \
-              ">>> Unsupported version: ${DEBIAN_CODENAME__or}.   Only Debian 11, Debian 12 and Debian 13 are supported.  Exiting ..."
+        echoe ">>> Versión no soportada: ${DEBIAN_CODENAME__or}.   Solo está soportado Debian 11 (OMV 6.x), Debian 12 (OMV 7.x) y Debian 13 (OMV 8.x).  Saliendo ..." \
+              ">>> Unsupported version: ${DEBIAN_CODENAME__or}.   Only Debian 11 (OMV 6.x), Debian 12 (OMV 7.x) and Debian 13 (OMV 8.x) are supported.  Exiting ..."
         exit 1
         ;;
 esac

@@ -2718,9 +2718,10 @@ ProgramarBackup() {
                              ">>> OMV is not installed, skipping backup scheduling ..."; return 0; }
 
     case "$accion" in
-        "")   if existe_tarea_backup; then accion="eliminar"; else accion="crear"; fi ;;
-        crear|eliminar) : ;;
-        *) error "Acción no válida: $accion" "Invalid action: $accion"; return 1 ;;
+        "")         if existe_tarea_backup; then accion="eliminar"; else accion="crear"; fi ;;
+        crear)      : ;;
+        eliminar)   ! existe_tarea_backup && return 0 ;;
+        *)          error "Acción no válida: $accion" "Invalid action: $accion"; return 1 ;;
     esac
 
     if [ "$accion" = "crear" ]; then

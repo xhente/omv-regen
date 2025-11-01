@@ -41,7 +41,7 @@ Logo_omvregen="\
 \n└───────────────┘                                         "
 
 # Variables
-OR_script_file="/usr/local/bin/omv-regen"
+OR_script_file="/usr/sbin/omv-regen"
 URL_BASE="https://raw.githubusercontent.com/xhente/omv-regen/master"
 Apt_updated=0
 # shellcheck disable=SC2016

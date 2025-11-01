@@ -613,14 +613,14 @@ ActualizarAyuda() {
     
     echoe log ">>> Procesando archivo de ayuda ..." \
               ">>> Processing help file ..."
-    bloque_es=$(awk '/^## INTRODUCCIÓN/,/^   * No obstante, úsalo bajo tu/' "$tmp" | \
+    bloque_es=$(awk '/^## INTRODUCCIÓN/,/No obstante, úsalo bajo tu/' "$tmp" | \
                 sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
                 sed -E "s/\`/'/g" | \
-                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
-    bloque_en=$(awk '/^## INTRODUCTION/,/^   * However, use it responsibly/' "$tmp" | \
+                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\/')
+    bloque_en=$(awk '/^## INTRODUCTION/,/However, use it responsibly/' "$tmp" | \
                 sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
                 sed -E "s/\`/'/g" | \
-                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\\\/')
+                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\/')
     # shellcheck disable=SC2028,SC1003
     {
         echo '#!/bin/bash'

@@ -347,6 +347,7 @@ txt AyudaOmvregen \
 \n- NOTA: omv-regen no permite actualizar entre versiones principales de OMV (por ejemplo, de OMV6 a OMV7). Para eso, utiliza siempre el procedimiento oficial: 'omv-release-upgrade'. omv-regen solo puede regenerar configuraciones dentro de la misma versión principal de OMV. \
 \n \
 \n    Comandos principales: \
+\n \
 \n- 'omv-regen'          → Abre la interfaz gráfica principal.  \
 \n- 'omv-regen backup'   → Realiza un backup de la configuración de OMV. \
 \n- 'omv-regen ayuda'    → Accede a los cuadros de diálogo con la ayuda completa. \
@@ -579,7 +580,7 @@ txt AyudaOmvregen \
 \n \
 \n- NOTE: omv-regen does not support upgrading between major OMV versions (e.g., from OMV 6 to OMV 7). For this, always use the official 'omv-release-upgrade' procedure. omv-regen can only regenerate configurations within the same major OMV version. \
 \n \
-\n    Main commands \
+\n    Main commands: \
 \n \
 \n- 'omv-regen'          → Opens the main graphical interface. \
 \n- 'omv-regen backup'   → Creates a backup of the OMV configuration. \

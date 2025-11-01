@@ -613,24 +613,24 @@ ActualizarAyuda() {
     
     echoe log ">>> Procesando archivo de ayuda ..." \
               ">>> Processing help file ..."
-    bloque_es=$(awk '/^## INTRODUCCIÓN/,/No obstante, úsalo bajo tu/' "$tmp" | \
+    bloque_es=$(awk '/^## INTRODUCCIÓN/,/[[:space:]]*No obstante, úsalo bajo tu/' "$tmp" | \
                 sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
-                sed -E "s/\`/'/g" | \
-                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\/')
-    bloque_en=$(awk '/^## INTRODUCTION/,/However, use it responsibly/' "$tmp" | \
+                sed -E "s/\`/'/g; s/'''//g" | \
+                sed -E 's/^/\\n /; s/"/\\"/g')
+    bloque_en=$(awk '/^## INTRODUCTION/,/[[:space:]]*However, use it responsibly/' "$tmp" | \
                 sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
-                sed -E "s/\`/'/g" | \
-                sed -E 's/^/\\n /; s/"/\\"/g; s/$/ \\/')
+                sed -E "s/\`/'/g; s/'''//g" | \
+                sed -E 's/^/\\n /; s/"/\\"/g')
     # shellcheck disable=SC2028,SC1003
     {
         echo '#!/bin/bash'
         echo 'txt AyudaOmvregen \'
-        echo '"\n \'
+        echo '"\n'
         echo "$bloque_es"
-        echo '" \'
-        echo '"\n \'
+        echo '\n" \'
+        echo '"\n'
         echo "$bloque_en"
-        echo '"'
+        echo '\n"'
     } > "/var/lib/omv-regen/settings/readme"
     echoe log ">>> Archivo de ayuda actualizado correctamente." \
               ">>> Help file updated successfully."

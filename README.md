@@ -38,7 +38,7 @@ Hoy, con la llegada de la versión 7.1, esa limitación queda atrás.
 Esta versión introduce la capacidad de almacenar y reutilizar los paquetes desde un repositorio local,
 haciendo posible una regeneración completa y fiel al sistema original, incluso meses después.
 
-*omv-regen* deja así de ser una simple utilidad de migración y se convierte en una auténtica **solución de backup y restauración** sin límites de tiempo.
+omv-regen deja así de ser una simple utilidad de migración y se convierte en una auténtica **solución de backup y restauración** sin límites de tiempo.
 La inestimable ayuda de Aaron Murray y ChatGPT —a quienes expreso mi sincero agradecimiento— ha sido fundamental para alcanzar este hito.
 
 Chente
@@ -51,8 +51,8 @@ Chente
 
 * NOTA: omv-regen **no permite actualizar entre versiones principales de OMV** (por ejemplo, de OMV 6 a OMV 7). Para eso, utiliza siempre el procedimiento oficial: `omv-release-upgrade`. omv-regen solo puede regenerar configuraciones dentro de la **misma versión principal** de OMV.
 
+Comandos principales:
 
-### Comandos principales:
 * `omv-regen`          → Abre la interfaz gráfica principal. 
 * `omv-regen backup`   → Realiza un backup de la configuración de OMV.
 * `omv-regen ayuda`    → Accede a los cuadros de diálogo con la ayuda completa.
@@ -320,7 +320,7 @@ Chente
 
 * NOTE: omv-regen does **not support upgrading between major OMV versions** (e.g., from OMV 6 to OMV 7). For this, always use the official `omv-release-upgrade` procedure. omv-regen can only regenerate configurations within **the same major OMV version**.
 
-### Main commands
+Main commands:
 
 * `omv-regen`          → Opens the main graphical interface.
 * `omv-regen backup`   → Creates a backup of the OMV configuration.

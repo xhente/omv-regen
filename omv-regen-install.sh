@@ -42,7 +42,9 @@ Logo_omvregen="\
 
 # Variables
 OR_script_file="/usr/sbin/omv-regen"
-URL_BASE="https://raw.githubusercontent.com/xhente/omv-regen/master"
+OR_dir="/var/lib/omv-regen"
+OR_ajustes_file="${OR_dir}/settings/omv-regen.settings"
+URL_OMVREGEN="https://raw.githubusercontent.com/xhente/omv-regen/master"
 Apt_updated=0
 # shellcheck disable=SC2016
 DEBIAN_CODENAME__or=$(env -i bash -c '. /etc/os-release; echo $VERSION_CODENAME')
@@ -96,10 +98,10 @@ echoe "\n$Logo_omvregen \n"
 # Select script according to version
 case "$DEBIAN_CODENAME__or" in
     bullseye|bookworm)
-        SCRIPT_NAME="omv-regen_6_7.sh"
+        SCRIPT="omv-regen_6_7.sh"
         ;;
     trixie)
-        SCRIPT_NAME="omv-regen_8.sh"
+        SCRIPT="omv-regen_8.sh"
         ;;
     *)
         echoe ">>> Versión no soportada: ${DEBIAN_CODENAME__or}.   Solo está soportado Debian 11 (OMV 6.x), Debian 12 (OMV 7.x) y Debian 13 (OMV 8.x).  Saliendo ..." \
@@ -115,13 +117,10 @@ InstalarPaquete wget
 
 # Descargar e instalar
 # Download and install
-URL="$URL_BASE/$SCRIPT_NAME"
-echoe ">>> Instalando omv-regen desde $URL ..." \
-      ">>> Installing omv-regen from $URL ..."
-
-[ -f "$OR_script_file" ] && rm -f "$OR_script_file"
-
-if wget -q -O - "$URL" >"$OR_script_file"; then
+echoe ">>> Instalando omv-regen desde $URL_OMVREGEN/$SCRIPT ..." \
+      ">>> Installing omv-regen from $URL_OMVREGEN/$SCRIPT ..."
+rm -f "$OR_script_file" "$OR_ajustes_file" 2>/dev/null || true
+if wget -q -O "$OR_script_file" "$URL_OMVREGEN/$SCRIPT"; then
     grep -q "omv-regen" "$OR_script_file" || {
         echoe ">>> ERROR: Archivo descargado inválido o corrupto." \
               ">>> ERROR: Invalid or corrupted file downloaded."
@@ -129,14 +128,10 @@ if wget -q -O - "$URL" >"$OR_script_file"; then
         exit 1
     }
     chmod +x "$OR_script_file"
-    echoe ">>> omv-regen se ha instalado correctamente." \
-          ">>> omv-regen has been successfully installed."
-    echoe ">>> Iniciando omv-regen ..." \
-          ">>> Starting omv-regen ..."
-    sleep 2
-    exec bash "$OR_script_file" reset
+    echoe "\n>>> Instalación completada. Puedes ejecutar 'omv-regen' en cualquier momento.\n" \
+          "\n>>> Installation completed. You can now run 'omv-regen' at any time.\n"
 else
-    echoe ">>> ERROR: Fallo descargando omv-regen desde $URL." \
-          ">>> ERROR: Failed to download omv-regen from $URL."
+    echoe ">>> ERROR: Fallo descargando omv-regen desde $URL_OMVREGEN/$SCRIPT." \
+          ">>> ERROR: Failed to download omv-regen from $URL_OMVREGEN/$SCRIPT."
     exit 1
 fi

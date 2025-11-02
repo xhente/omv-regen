@@ -1794,31 +1794,34 @@ OmitirComplementos() {
 }
 
 Ayuda() {
-    local i=0 salida_menu=0
-    
-    if [ ! "$1" ]; then
-        while [[ -n "${AYUDA[i]}" ]]; do
-            dialog --backtitle "omv-regen $ORVersion" --title "omv-regen $ORVersion ${txt[Ayuda]}" \
-                   --colors \
-                   --extra-button \
-                   --yes-label "${txt[B_Siguiente]}" \
-                   --no-label "${txt[B_Salir]}" \
-                   --extra-label "${txt[B_Anterior]}" \
-                   --yesno "${AYUDA[i]}\n " 0 0
-            salida_menu=$?
-            case $salida_menu in
-                0) ((i++)) ;;
-                3) ((i--)) ;;
-                1|255) break ;;
-            esac
-        done
-    else
-        for i in "$@"; do
-            dialog --backtitle "omv-regen ${ORVersion}" --title "omv-regen ${ORVersion} ${txt[Ayuda]}" \
-                   --colors \
-                   --msgbox "${txt[$i]}\n " 0 0 || break
+    local salida_menu=0 i=0 n_paginas=${#AYUDA[@]}
+    local clave="$1"
+
+    if [ -n "$clave" ]; then
+        for j in "${!AYUDA[@]}"; do
+            if [ "${AYUDA[j]}" = "${txt[$clave]}" ]; then
+                i=$j
+                break
+            fi
         done
     fi
+
+    while true; do
+        dialog --backtitle "omv-regen $ORVersion" --title "omv-regen $ORVersion ${txt[Ayuda]}" \
+               --colors \
+               --extra-button \
+               --yes-label "${txt[B_Siguiente]}" \
+               --no-label "${txt[B_Salir]}" \
+               --extra-label "${txt[B_Anterior]}" \
+               --yesno "${AYUDA[i]}\n " 0 0
+        salida_menu=$?
+        case $salida_menu in
+            0)      ((i++)) ;;
+            3)      ((i--)) ;;
+            1|255)  break ;;
+        esac
+        ((i = (i + n_paginas) % n_paginas))
+    done
 }
 
 ###################################### FUNCIONES AUXILIARES ########################################
@@ -1868,13 +1871,7 @@ FormatearSiNo() {
 }
 
 # Devuelve Si o No traducido al idioma actual - # Returns Yes or No translated to the current language
-TraducirSiNo() {
-    if [ "$1" = "Si" ]; then
-        echo "${txt[Si]}"
-    else
-        echo "No"
-    fi
-}
+TraducirSiNo() { [ "$1" = "Si" ] && echo "${txt[Si]}" || echo "No"; }
 
 # Alterna entre "Si" y "No" el valor de una clave en CFG - Toggle between "Yes" and "No" the value of a key in CFG
 AlternarOpcion() {
@@ -1939,11 +1936,8 @@ txtm() {
     txt[$2]="$(margen "$1" "${txt[$2]}")"
 }
 
-# Vaciar valores de txt del 1 al 100
-# Empty txt values from 1 to 100
-LimpiarTxt() {
-    for i in {1..100}; do txt[$i]=""; done
-}
+# Vaciar valores de txt del 1 al 100 - Empty txt values from 1 to 100
+LimpiarTxt() { for i in {1..100}; do txt[$i]=""; done; }
 
 # echoe [sil|info $1|nolog|error] "Mensaje en español" "Message in English"
 # Devuelve el mensaje en el idioma configurado. Envía la salida estándar y de error a diferentes destinos → Ver _orl()

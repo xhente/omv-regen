@@ -48,11 +48,12 @@ BackupProgramado=1; LimpiezaProgramada=1; ModoAuto=1
 OR_dir="/var/lib/omv-regen"
 OR_hook_dir="${OR_dir}/hook"
 OR_repo_dir="${OR_dir}/repo"
+OR_ajustes_dir="${OR_dir}/settings"
 OR_hook_file="/etc/apt/post-invoke.d/01omv-regen"
 OR_lock_file="/var/run/omv-regen.lock"
 OR_logRotate_file="/etc/logrotate.d/omv-regen"
 OR_cron_file="/etc/cron.d/omv-regen"
-OR_ajustes_file="${OR_dir}/settings/omv-regen.settings"
+OR_ajustes_file="${OR_ajustes_dir}/omv-regen.settings"
 OR_script_file="/usr/sbin/omv-regen"
 OR_log_file="/var/log/omv-regen.log"
 
@@ -2603,8 +2604,19 @@ BuscarOR() {
     local version_disp
     local or_file="${OR_tmp_dir}/or_file"
     local busqueda_anterior="${CFG[UltimaBusqueda]}"
+    local version_nueva="${OR_ajustes_dir}/new_version"
     [ -f "$or_file" ] && rm -f "$or_file"
     trap 'rm -f "$or_file"' EXIT
+
+    NotificarVersion() {
+        if [ ! -f "$version_nueva" ] || ! grep -Fxq "$version_disp" "$version_nueva"; then
+            txt cabecera "NEW VERSION"
+            txt cuerpo "Hay una nueva version disponible de omv-regen: $version_disp" \
+                       "A new version of omv-regen is available: $version_disp"
+            echo "${txt[cuerpo]}" > "$version_nueva"
+            EnviarCorreo "${txt[cabecera]}" "${txt[cuerpo]}"
+        fi
+    }
 
     # Buscar solo si no se ha buscado hoy - Search only if not searched today
     [[ "${CFG[UltimaBusqueda]}" -eq $(date +%y%m%d) ]] && return 0
@@ -2629,21 +2641,27 @@ BuscarOR() {
 
     version_disp="$(awk -F "regen " 'NR==8 {print $2}' "$or_file")"
     [ "$version_disp" = "$ORVersion" ] && { echoe log ">>> No hay versiones nuevas de omv-regen." \
-                                                      ">>> There are no new versions of omv-regen."; return 0; }
+                                                      ">>> There are no new versions of omv-regen."
+                                            [ -f "$version_nueva" ] && rm -f "$version_nueva"; return 0; }
 
     Info 2 ">>> ¡Hay una nueva versión de omv-regen!" \
            ">>> There is a new version of omv-regen!"
     salvar_cfg UltimaBusqueda 1 || return 1
 
     if [ "${CFG[ActualizarOmvregen]}" = "No" ]; then
-        modo_desatendido && { echoe ">>> Actualización automática de omv-regen desactivada, NO se va a actualizar." \
-                                    ">>> Omv-regen auto-update disabled, it will NOT be updated."; return 0; }
-        ! Pregunta ">>> Actualización automática de omv-regen desactivada.\n\n>>> ¿Quieres actualizar ahora?" \
-                   ">>> Omv-regen auto-update disabled.\n\n>>> Do you want to update now?" && return 0
+        modo_desatendido && { 
+            echoe ">>> Actualización automática de omv-regen desactivada, NO se va a actualizar." \
+                  ">>> Omv-regen auto-update disabled, it will NOT be updated."
+            NotificarVersion; return 0; }
+        Pregunta ">>> Actualización automática de omv-regen desactivada.\n\n>>> ¿Quieres actualizar ahora?" \
+                 ">>> Omv-regen auto-update disabled.\n\n>>> Do you want to update now?" || { 
+            NotificarVersion; return 0; }
     fi
     
     cat "$or_file" >"$OR_script_file"
+    [ -f "$version_nueva" ] && rm -f "$version_nueva"
     salvar_cfg UltimaBusqueda "$(date +%y%m%d)" || return 1
+    ActualizarAyuda || return 1
     modo_desatendido && { sleep 3; Salir ">>> omv-regen se ha actualizado. Saliendo ..." \
                                          ">>> omv-regen has been updated. Exiting ..."; }
     Info 3 ">>> omv-regen se ha actualizado. Reiniciando omv-regen ..." \

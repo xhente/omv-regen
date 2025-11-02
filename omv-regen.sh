@@ -480,7 +480,6 @@ txt AyudaOmvregen \
 \n- Durante la instalación: \
 \n \
 \n      - Si el sistema es Debian y aún no tiene instalado OMV, se instalará dialog previamente. \
-\n      - Se desinstala apparmor si está presente. \
 \n      - Se configura un hook para capturar en vivo los paquetes instalados por el sistema. \
 \n      - Se configura en cron un trabajo de limpieza semanal del hook que actualiza el repositorio local, si no se ha hecho ya durante la semana. \
 \n      - Se configura el log de omv-regen. \
@@ -499,6 +498,7 @@ txt AyudaOmvregen \
 \n      - Se permite omitir la instalación de complementos no esenciales. \
 \n      - Se configura un servicio para reanudar la regeneración automáticamente tras cada reinicio. \
 \n         - Puedes ejecutar 'omv-regen' en cualquier momento para ver el log en vivo. \
+\n      - Se desinstala apparmor si está presente. \
 \n      - Si OMV no está instalado, omv-regen instala OMV utilizando el script de instalación de OMV de Aaron Murray. \
 \n         - Esta instalación añade omv-extras al sistema, incluso si no estaba en el sistema original. \
 \n      - Se instalan las versiones del sistema original de OMV y complementos y se retienen hasta finalizar. \
@@ -715,7 +715,6 @@ txt AyudaOmvregen \
 \n- During installation: \
 \n \
 \n   - If the system is Debian and OMV is not yet installed, dialog will be installed first. \
-\n   - AppArmor will be uninstalled if present. \
 \n   - A hook is set up to capture installed packages in real-time. \
 \n   - A weekly cron job is configured to clean the hook that updates the local repository, if not already done that week. \
 \n   - The omv-regen log is configured. \
@@ -734,6 +733,7 @@ txt AyudaOmvregen \
 \n   - You can skip installing non-essential plugins. \
 \n   - A service is configured to automatically resume regeneration after each reboot. \
 \n      - You can run 'omv-regen' at any time to view the live log. \
+\n   - AppArmor will be uninstalled if present. \
 \n   - If OMV is not installed, it is installed using Aaron Murray’s OMV installation script. \
 \n      - This installation includes omv-extras even if it was not part of the original system. \
 \n   - The original versions of OMV and plugins are installed and held until completion. \
@@ -1975,6 +1975,8 @@ echoe() {
     esac
 }
 
+# Muestra el error con echoe. Si es modo desatendido envía correo.
+# Display the error using echoe. If it's unattended mode, send an email.
 error() {
     [ "$1" = "log" ] && echoe log ">>> ERROR: $2" ">>> ERROR: $3" && return 0
 
@@ -1989,9 +1991,7 @@ error() {
     EnviarCorreo "${txt[cabecera]}" "${txt[cuerpo]}"
 }
 
-alerta() {
-    echoe error "ATENCIÓN: $1" "WARNING: $2"
-}
+alerta() { echoe error "ATENCIÓN: $1" "WARNING: $2"; }
 
 # Desvía la salida estándar y de error en dos direcciones, sin buffering (asegura el orden correcto de los mensajes)
 #   - Salida 1: Al registro    - Se añade marca de hora. Además, la marca '[ERROR]' si el mensaje procede de la salida de error
@@ -2032,7 +2032,7 @@ _orl() {
     return "${PIPESTATUS[0]}"
 }
 
-# echoe + exit
+# echoe [+ error] + exit
 Salir() {
     if [ "$1" = "error" ]; then
         error "$2" "$3"
@@ -2051,8 +2051,8 @@ TrapSalir() {
     [ -f "$OR_lock_file" ] && rm -f "$OR_lock_file"
 }
 
-# Muestra el desarrollo de un proceso en consola y al finalizar muestra el resultado en una ventana explorable.
-# It shows the development of a process in the console and at the end shows the result in an explorable window.
+# Muestra el desarrollo de un proceso en consola. Si no es modo desatendido al finalizar muestra el resultado en una ventana explorable.
+# Displays the progress of a process in the console. If it is not in unattended mode, it displays the result in a searchable window upon completion.
 Mostrar() {
     local proceso=$1 pid_proceso temp_file rc
     temp_file="$(mktemp)"
@@ -2062,8 +2062,8 @@ Mostrar() {
     pid_proceso=$!
     wait "$pid_proceso"
     rc=$?
-    sleep 2
     if ! modo_desatendido; then
+        sleep 2
         dialog --title "omv-regen $ORVersion" --no-shadow --textbox "$temp_file" "$(tput lines)" "$(tput cols)"
     fi
     rm -f "$temp_file"
@@ -2088,7 +2088,8 @@ Continuar() {
     return $res
 }
 
-# Información con $1=segundos de espera para leer - Information with waiting $1=seconds to read
+# Información con $1=segundos de espera para leer. En modo desatendido solo echoe().
+# Information with waiting $1=seconds to read. In unattended mode, only echoe().
 Info() {
     txt mensaje "$2" "$3"
     [ "$2" = "cancelado" ] && txt mensaje ">>> Operación cancelada." ">>> Operation cancelled."
@@ -2098,7 +2099,8 @@ Info() {
     sleep "$1"
 }
 
-# Información en espera hasta pulsar - Information waiting until pressed
+# Información en espera hasta pulsar. En modo desatendido solo echoe().
+# Information waiting until pressed. In unattended mode, only echoe().
 Mensaje() {
     case "$1" in
         error)  error  "$2" "$3"
@@ -2116,7 +2118,8 @@ Mensaje() {
     dialog --backtitle "omv-regen $ORVersion" --title "omv-regen $ORVersion" --no-collapse --colors --msgbox "\n${txt[mensaje]}\n " 0 0
 }
 
-# Pregunta al usuario. Devuelve 0 si es afirmativo - Ask the user. Returns 0 if yes
+# Pregunta al usuario y devuelve 0 si es afirmativo o 1 si es negativo. En modo desatendido siempre devuelve 0.
+# Ask the user and return 0 if yes or 1 if no. In unattended mode it always returns 0.
 Pregunta() {
     modo_desatendido && return 0
     txt mensaje "$1" "$2"
@@ -2152,8 +2155,8 @@ definir_ventana() {
     echo "$ventana $altoPantalla $anchoPantalla $linea"
 }
 
-# Aplicar el margen a un texto - Apply the margin to a text
-# 'desplaz' y 'margen' deben estar en el ámbito de margen() - 'desplaz' and 'margen' must be in scope of margen()
+# Aplicar el margen a un texto. 'desplaz' y 'margen' deben estar en el ámbito de margen()
+# Apply the margin to a text. 'desplaz' and 'margen' must be in scope of margen()
 margen() {
     local margenAd=$1 texto="$2" texto_desplazado=""
     local margenTot=$(( desplaz + margen + margenAd ))
@@ -2163,8 +2166,8 @@ margen() {
     echo "$texto_desplazado"
 }
 
-# Centrar el texto en una ventana - Center text in a window
-# 'ancho' debe estar en el ámbito de centrar() - 'ancho' must be in scope of centrar()
+# Centrar el texto en una ventana. 'ancho' debe estar en el ámbito de centrar()
+# Center text in a window. 'ancho' must be in scope of centrar()
 centrar() {
     local texto="$1" espacios texto_centrado=""
     while IFS= read -r linea; do
@@ -2178,6 +2181,8 @@ centrar() {
     echo "$texto_centrado"
 }
 
+# Devuelve 0 si todos los paquetes de OMV están en buen estado (ii o hi). Si no devuelve 1.
+# Returns 0 if all MVNO packages are in good condition (ii or hi). If it does not return 1.
 estado_correcto_omv() {
     local estado paquete
     while IFS=' ' read -r estado paquete; do
@@ -2189,6 +2194,8 @@ estado_correcto_omv() {
     return 0
 }
 
+# Genera archivo que marca un reinicio pendiente '/var/run/reboot-required'
+# Generates a file that marks a pending reboot '/var/run/reboot-required'
 GenerarReinicio() {
     echoe "\n>>> Generando el archivo '/var/run/reboot-required' para marcar un reinicio pendiente ..." \
           "\n>>> Generating '/var/run/reboot-required' file to mark a pending reboot ..."
@@ -2203,6 +2210,8 @@ GenerarReinicio() {
     fi
 }
 
+# Si hay un reinicio pendiente aplica cambios pendientes de Saltstack y reinicia.
+# If there is a pending reboot, apply pending Saltstack changes and reboot.
 EjecutarReinicioPendiente() {
     if [ -f "/var/run/reboot-required" ]; then
         LimpiarSalt || { error "No se pueden aplicar los cambios pendientes en la configuración de OMV. El sistema no se puede actualizar." \
@@ -2314,7 +2323,8 @@ DesinstalarOmvregen() {
     fi
 }
 
-# Eliminar los archivos de configuración de omv-regen y la tarea programada -
+# Elimina los archivos de configuración de omv-regen y la tarea programada. Libera paquetes retenidos.
+# Remove the omv-regen configuration files and the scheduled task. Release held packages.
 OmvregenReset() {
     regen_en_progreso && LimpiarRegeneracion
     [ -f "$OR_ajustes_file" ] && rm -f "$OR_ajustes_file"
@@ -2351,6 +2361,7 @@ LeerAjustes() {
     fi
 }
 
+# Migrar ajustes desde versiones 7.0.x o anterior - Migrate settings from versions 7.0.x or earlier
 MigrarAjustes_7_0() {
     local ajuste
     local ajustes_antiguo="/etc/regen/omv-regen.settings"
@@ -2367,7 +2378,6 @@ MigrarAjustes_7_0() {
     cat "$ajustes_antiguo"
     echo ">>> ${txt[2]} <<<"; } >> "$OR_log_file"
 
-    # Migrar ajustes desde versiones 7.0.x o anterior - Migrate settings from versions 7.0.x or earlier
     ajuste="$(grep "^Actualizar : " "$ajustes_antiguo")" || error "No se encontró 'Actualizar' en los ajustes antiguos: $ajustes_antiguo " \
                                                                   "'Actualizar' not found in old settings: $ajustes_antiguo"
     CFG[ActualizarOMV]="${ajuste#Actualizar : }"
@@ -2591,9 +2601,12 @@ SalvarAjustes() {
     return 0
 }
 
-# Buscar nueva versión de omv-regen y actualizar si existe - Check for new version of omv-regen and update if it exists
-# CFG[UltimaBusqueda] guarda el día en que se hizo la última búsqueda (formato yymmdd) - CFG[LastSearch] saves the day the last search was performed (yymmdd format).
-# Si vale "1", significa que hay una actualización pendiente que no se aplicó todavía - If it is "1", it means there is a pending update that has not been applied yet.
+# Buscar nueva versión de omv-regen y actualizar si existe
+# CFG[UltimaBusqueda] guarda el día en que se hizo la última búsqueda (formato yymmdd)
+# Si vale "1", significa que hay una actualización pendiente que no se aplicó todavía
+# Check for new version of omv-regen and update if it exists
+# CFG[LastSearch] saves the day the last search was performed (yymmdd format).
+# If it is "1", it means there is a pending update that has not been applied yet.
 BuscarOR() {
     local version_disp
     local or_file="${OR_tmp_dir}/or_file"
@@ -2612,7 +2625,6 @@ BuscarOR() {
         fi
     }
 
-    # Buscar solo si no se ha buscado hoy - Search only if not searched today
     [[ "${CFG[UltimaBusqueda]}" -eq $(date +%y%m%d) ]] && return 0
     salvar_cfg UltimaBusqueda "$(date +%y%m%d)" || return 1
     
@@ -2669,7 +2681,8 @@ BuscarOR() {
 # Validar la ruta de los backups - Validate backups path
 dir_backups_es_ok() { [[ "${CFG[RutaBackups]}" == "/ORBackup" ]] || [[ -d "${CFG[RutaBackups]}" && -w "${CFG[RutaBackups]}" ]]; }
 
-# Actualizar repositorio si no se ha hecho en la ultima semana - Update repository if it has not been done in the last week
+# Actualizar repositorio si no se ha hecho ningún backup la ultima semana
+# Update repository if no backup has been made in the last week
 LimpiezaSemanal() {
     local log_archivo="${OR_log_file:-/var/log/omv-regen.log}"
     local log_rotado="${log_archivo}.1"
@@ -2710,7 +2723,7 @@ LimpiezaSemanal() {
     return 0
 }
 
-# Comprobar si hay una tarea configurada de backup - Check if a backup task is configured
+# Comprobar si hay una tarea programada de backup - Check if there is a scheduled backup task
 existe_tarea_backup() { [[ $(xmlstarlet sel -t -v "count(/config/system/crontab/job[command='omv-regen backup'])" "$Config_xml_file") -ge 1 ]]; }
 
 # Crea/elimina una tarea programada de backup en la GUI de OMV
@@ -2828,8 +2841,8 @@ ValidarCrontabBD() {
 -->"
     bloque_xml=$(awk '/<crontab>/,/<\/crontab>/' "$xml_file" | awk '/<!--/,/-->/' | sed 's/^[[:space:]]*//')
 
-    # Arreglar error de formato del ejemplo de la base de datos. No quitar esto para compatibilidad con versiones anteriores.
-    # Fix formatting error in database example. Do not remove this for backward compatibility.
+    # Arreglar error de formato del ejemplo de la base de datos de OMV. No quitar esto para compatibilidad con versiones anteriores de OMV.
+    # Fix formatting error in the OMV database example. Do not remove this for backward compatibility with OMV versions.
     bloque_xml=$(echo "$bloque_xml" | sed -E 's#<sendemail>0\|1</?sendemail>#<sendemail>0|1</sendemail>#g')
 
     if [[ "$job_ejemplo" != "$bloque_xml" ]]; then

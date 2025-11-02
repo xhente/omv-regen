@@ -192,7 +192,6 @@ Comandos principales:
 * **Durante la instalación:**
 
    * Si el sistema es *Debian* y aún no tiene instalado OMV, se instalará *dialog* previamente.
-   * Se desinstala *apparmor* si está presente.
    * Se configura un hook para capturar en vivo los paquetes instalados por el sistema.
    * Se configura en cron un trabajo de limpieza semanal del hook que actualiza el repositorio local, si no se ha hecho ya durante la semana.
    * Se configura el log de *omv-regen*.
@@ -211,6 +210,7 @@ Comandos principales:
    * Se permite omitir la instalación de complementos no esenciales.
    * Se configura un servicio para reanudar la regeneración automáticamente tras cada reinicio.
       * Puedes ejecutar `omv-regen` en cualquier momento para ver el log en vivo.
+   * Se desinstala *apparmor* si está presente.
    * Si OMV no está instalado, *omv-regen* instala OMV utilizando el script de instalación de OMV de Aaron Murray.
       * Esta instalación añade *omv-extras* al sistema, incluso si no estaba en el sistema original.
    * Se instalan las versiones del sistema original de OMV y complementos y se retienen hasta finalizar.
@@ -462,7 +462,6 @@ Main commands:
 * **During installation:**
 
    * If the system is Debian and OMV is not yet installed, *dialog* will be installed first.
-   * *AppArmor* will be uninstalled if present.
    * A hook is set up to capture installed packages in real-time.
    * A weekly cron job is configured to clean the hook that updates the local repository, if not already done that week.
    * The *omv-regen* log is configured.
@@ -481,6 +480,7 @@ Main commands:
    * You can skip installing non-essential plugins.
    * A service is configured to automatically resume regeneration after each reboot.
       * You can run `omv-regen` at any time to view the live log.
+   * *AppArmor* will be uninstalled if present.
    * If OMV is not installed, it is installed using Aaron Murray’s OMV installation script.
       * This installation includes *omv-extras* even if it was not part of the original system.
    * The original versions of OMV and plugins are installed and held until completion.

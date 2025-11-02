@@ -14,7 +14,7 @@
 
 **Utilidad de Backup y Restauración de la configuración de OpenMediaVault**
 
-## INSTALACIÓN
+## 📥 INSTALACIÓN
 
 Copia y pega la siguiente linea en una terminal y ejecútala como *root* o con *sudo*.
 
@@ -283,7 +283,7 @@ ________________________________________________________________________________
 
 **Backup and Restoration Utility for OpenMediaVault Configuration**
 
-## INSTALLATION
+## 📥 INSTALLATION
 
 Copy and paste the following line into a terminal and run it as root or with sudo:
 

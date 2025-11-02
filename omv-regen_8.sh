@@ -140,35 +140,34 @@ ResetD="\Zn"
 
 # Interfaz GUI - GUI interface
 declare -A CONFIG
-CONFIG[webadmin]="/config/webadmin"
-CONFIG[time]="/config/system/time"
+CONFIG[apt]="/config/system/apt"
+CONFIG[btrfs]="/config/system/sharedfoldersnapshotlifecycle"
+CONFIG[certificates]="/config/system/certificates"
+CONFIG[crontab]="/config/system/crontab"
+CONFIG[dns]="/config/system/network/dns"
 CONFIG[email]="/config/system/email"
+CONFIG[fstab]="/config/system/fstab"
+CONFIG[groups]="/config/system/usermanagement/groups"
+CONFIG[hdparm]="/config/system/storage/hdparm"
+CONFIG[homedirectory]="/config/system/usermanagement/homedirectory"
+CONFIG[interfaces]="/config/system/network/interfaces"
+CONFIG[iptables]="/config/system/network/iptables"
+CONFIG[monitoring]="/config/system/monitoring"
+CONFIG[nfs]="/config/services/nfs"
 CONFIG[notification]="/config/system/notification"
 CONFIG[powermanagement]="/config/system/powermanagement"
-CONFIG[monitoring]="/config/system/monitoring"
-CONFIG[crontab]="/config/system/crontab"
-CONFIG[certificates]="/config/system/certificates"
-CONFIG[apt]="/config/system/apt"
-CONFIG[dns]="/config/system/network/dns"
-CONFIG[interfaces]="/config/system/network/interfaces"
 CONFIG[proxy]="/config/system/network/proxy"
-CONFIG[iptables]="/config/system/network/iptables"
-CONFIG[hdparm]="/config/system/storage/hdparm"
-CONFIG[smart]="/config/services/smart"
-CONFIG[fstab]="/config/system/fstab"
-CONFIG[shares]="/config/system/shares"
-CONFIG[nfs]="/config/services/nfs"
 CONFIG[rsync]="/config/services/rsync"
+CONFIG[shares]="/config/system/shares"
+CONFIG[smart]="/config/services/smart"
 CONFIG[smb]="/config/services/smb"
 CONFIG[ssh]="/config/services/ssh"
-CONFIG[homedirectory]="/config/system/usermanagement/homedirectory"
-CONFIG[users]="/config/system/usermanagement/users"
-CONFIG[groups]="/config/system/usermanagement/groups"
 CONFIG[syslog]="/config/system/syslog"
-CONFIG[btrfs]="/config/system/sharedfoldersnapshotlifecycle"
+CONFIG[time]="/config/system/time"
+CONFIG[users]="/config/system/usermanagement/users"
+CONFIG[webadmin]="/config/webadmin"
 
 # Complementos - Plugins
-CONFIG[openmediavault-omvextras]="/config/system/omvextras"
 CONFIG[openmediavault-anacron]="/config/services/anacron"
 CONFIG[openmediavault-apt]="/config/system/apt"
 CONFIG[openmediavault-apttool]="/config/services/apttool"
@@ -200,6 +199,7 @@ CONFIG[openmediavault-mergerfs]="/config/services/mergerfs"
 CONFIG[openmediavault-minidlna]="/config/services/minidlna"
 CONFIG[openmediavault-mounteditor]="nulo"
 CONFIG[openmediavault-nut]="/config/services/nut"
+CONFIG[openmediavault-omvextras]="/config/system/omvextras"
 CONFIG[openmediavault-onedrive]="/config/services/onedrive"
 CONFIG[openmediavault-owntone]="/config/services/owntone"
 CONFIG[openmediavault-photoprism]="/config/services/photoprism"
@@ -290,7 +290,6 @@ InstalarEsp() {
     echoe ">>> Idioma español configurado correctamente."
 }
 
-
 # Establecer idioma local inicial y/o cambiar idioma y cargar textos - Set initial local language and/or change language and load texts
 AjustarIdioma() {
 
@@ -302,40 +301,33 @@ AjustarIdioma() {
     fi
 
     # Textos en Español-Inglés - Texts in Spanish-English
-    txt Actualizar "Actualizar" "Update"
-    txt Activar    "Activar"    "Enable"
-    txt Ajustes    "Ajustes"    "Settings"
     txt Ayuda      "Ayuda"      "Help"
     txt Carpeta    "Carpeta"    "Folder"
-    txt Desactivar "Desactivar" "Disable"
-    txt Diaria     "Diaria"     "Daily"
-    txt Dias       "Días"       "Days"
     txt inicio     "inicio"     "start"
     txt intento    "intento"    "retry"
-    txt Mensual    "Mensual"    "Monthly"
     txt Red        "Red"        "Network"
     txt Ruta       "Ruta"       "Path"
     txt Si         "Si"         "Yes"
-    txt Silencio   "Silencio"   "Silent"
-    txt Semanal    "Semanal"    "Weekly"
-    txt Tarea_programada "Tarea programada" "Scheduled task"
     txt B_Abortar         "     Abortar     " "      Abort      "
     txt B_Anterior        "    Anterior     " "    Previous     "
     txt B_Ayuda           "      Ayuda      " "      Help       "
     txt B_Cancelar        "    Cancelar     " "     Cancel      "
     txt B_Continuar       "    Continuar    " "    Continue     "
-    txt B_Ejecutar        "    Ejecutar     " "       Run       "
     txt B_No              "       No        " "       No        "
     txt B_Menu_Principal  " Menu  principal " "    Main menu    "
-    txt B_Cambiar_ajustes " Cambiar ajustes " " Change settings "
     txt B_Salir           "     Salir       " "      Exit       "
     txt B_Si              "       Si        " "       Yes       "
     txt B_Siguiente       "    Siguiente    " "      Next       "
     txt B_Quitar          "     Quitar      " "     Remove      "
-    txt B_Volver          "     Volver      " "     Go back     "
 
-txt salirayuda "\n\n${Logo_omvregen}\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<${Reset}\n\n${Verde}omv-regen          → Abre la interfaz gráfica principal.${Reset}\n${Verde}omv-regen backup   → Realiza un backup de la configuración de OMV.${Reset}\n${Verde}omv-regen ayuda    → Accede a los cuadros de diálogo con la ayuda completa.${Reset}\n\n" \
-"\n\n${Logo_omvregen}\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<${Reset}\n\n${Verde}omv-regen          → Opens the main graphical interface.\n${Verde}omv-regen backup   → Back up your OMV configuration.${Reset}\n${Verde}omv-regen help     → Access dialog boxes with complete help.${Reset}\n\n"
+txt salirayuda "\n\n${Logo_omvregen}\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n \
+                \n   omv-regen          → Abre la interfaz gráfica principal. \
+                \n   omv-regen backup   → Realiza un backup de la configuración de OMV. \
+                \n   omv-regen ayuda    → Accede a los cuadros de diálogo con la ayuda completa.${Reset}\n\n" \
+               "\n\n${Logo_omvregen}\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersion}   <<<  <<<\n \
+                \n   omv-regen          → Opens the main graphical interface. \
+                \n   omv-regen backup   → Back up your OMV configuration. \
+                \n   omv-regen help     → Access dialog boxes with complete help.${Reset}\n\n"
 
 txt AyudaMenuBackup \
 "\n \
@@ -705,7 +697,7 @@ MenuPrincipal() {
         fi
         case $salida_0 in
             1|255) VIA=8 ;;
-            2) VIA=7 ;;
+            2)     VIA=7 ;;
         esac
         case $VIA in
             1)  MenuBackup ;;
@@ -793,7 +785,8 @@ MenuBackup() {
         if [ -n "$dirs" ]; then
             txtm 4 31 "$dirs"
         else txtm 8 31 ">>> No se han incluido carpetas opcionales." \
-                       ">>> No optional folders have been included."; ((alto_min++)); fi
+                       ">>> No optional folders have been included."; ((alto_min++))
+        fi
         
         if [ -n "$RepoIncompleto" ]; then
             txt 32 "${txt[lin]}"
@@ -1643,6 +1636,7 @@ Salir() {
 TrapSalir() {   
     [ -d "$OR_tmp_dir" ] && rm -rf "$OR_tmp_dir"
     [ -f "$Conf_tmp_file" ] && rm -f "$Conf_tmp_file"
+    [ -f "$OR_lock_file" ] && rm -f "$OR_lock_file"
 }
 
 # Muestra el desarrollo de un proceso en consola y al finalizar muestra el resultado en una ventana explorable.
@@ -1947,21 +1941,22 @@ MigrarAjustes_7_0() {
 # Crear o actualizar tarea en cron para limpieza semanal del hook - Create or update cron job for weekly hook cleanup
 # >/dev/null solo envia correo en caso de error - >/dev/null only send email in case of error
 ConfigurarLimpiezaHook() {
-    local cron_tarea="0 5 * * 0 root /bin/bash /usr/sbin/omv-regen limpieza_semanal" >/dev/null
+    local cron_tarea="0 5 * * 0 root /bin/bash /usr/sbin/omv-regen limpieza_semanal >/dev/null"
     local cron_archivo="${OR_cron_file:-/etc/cron.d/omv-regen}"
 
-    omv_instalado || { echoe ">>> OMV no está instalado, saltando la configuración de la limpieza del hook ..." \
-                             ">>> OMV is not installed, skipping hook cleanup configuration ..."; return 0; }
+    omv_instalado || { echoe log ">>> OMV no está instalado, saltando la configuración de la limpieza del hook ..." \
+                                 ">>> OMV is not installed, skipping hook cleanup configuration ..."; return 0; }
 
-    if [ ! -f "$cron_archivo" ]; then
-        echo "$cron_tarea" > "$cron_archivo" \
-            || { error "No se ha podido configurar cron para limpieza semanal del hook." \
-                       "Could not configure cron for weekly hook cleanup."; return 1; }
-        chmod 644 "$cron_archivo"
-        chown root:root "$cron_archivo"
-        echoe log ">>> Tarea programada para limpieza semanal configurada." \
-                  ">>> Scheduled weekly cleanup task configured."
+    if [ -f "$cron_archivo" ] && grep -Fxq "$cron_tarea" "$cron_archivo"; then
+        return 0
     fi
+
+    echo "$cron_tarea" > "$cron_archivo" || { error "No se ha podido configurar cron para limpieza semanal del hook." \
+                                                    "Could not configure cron for weekly hook cleanup."; return 1; }
+    chmod 644 "$cron_archivo"
+    chown root:root "$cron_archivo"
+    echoe log ">>> Tarea programada para limpieza semanal configurada." \
+              ">>> Scheduled weekly cleanup task configured."
 }
 
 # Configurar la rotación de registros - Set up log rotation
@@ -2195,6 +2190,7 @@ BuscarOR() {
     
     cat "$or_file" >"$OR_script_file"
     salvar_cfg UltimaBusqueda "$(date +%y%m%d)" || return 1
+    ActualizarAyuda || return 1
     modo_desatendido && { sleep 3; Salir ">>> omv-regen se ha actualizado. Saliendo ..." \
                                          ">>> omv-regen has been updated. Exiting ..."; }
     Info 3 ">>> omv-regen se ha actualizado. Reiniciando omv-regen ..." \
@@ -2870,7 +2866,7 @@ EjecutarBackup () {
     if [ "${CFG[OmitirRoot]}" = "No" ]; then
         echoe sil ">>> Copiando carpeta /root a $dir_regen ..." \
                   ">>> Copying /root folder to $dir_regen ..."
-        rsync -a /root/ "${dir_regen}/root" --exclude '**/*.deb' | _orl sil || return 1
+        rsync -a /root/ "${dir_regen}/root" --exclude '*.deb' --exclude '.cache/pip' | _orl sil || return 1
     else
         echoe sil ">>> AVISO: La carpeta /root no está incluida en el backup. Omitir /root puede provocar resultados inesperados al regenerar." \
                   ">>> WARNING: The /root folder is not included in the backup. Omitting /root may cause unexpected results when regenerating."

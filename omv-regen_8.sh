@@ -69,6 +69,7 @@ OR_cron_file="/etc/cron.d/omv-regen"
 OR_ajustes_file="${OR_ajustes_dir}/omv-regen.settings"
 OR_script_file="/usr/sbin/omv-regen"
 OR_log_file="/var/log/omv-regen.log"
+OR_regen_log="$OR_dir/regen.log"
 
 # Archivo generado para la regeneración - File generated for regeneration
 OR_RegenInfo_file="${OR_dir}/regen_info"
@@ -1238,13 +1239,12 @@ MenuRegenera() {
         txtm 0 91 "Complementos omitidos en la regeneración que no se instalarán." \
                   "Plugins skipped on regeneration that will not be installed."
         if [[ -n "${CFG[ComplementosExc]}" ]]; then
+
+        else
             local excluidos
             excluidos=$(for p in ${CFG[ComplementosExc]}; do echo -n "${p#openmediavault-} "; done )
             txtm 8 92 ">>> Complementos omitidos: $excluidos" \
                       ">>> Skipped plugins: $excluidos"
-        else
-            txtm 8 92 ">>> Ninguno." \
-                      ">>> None."
         fi
 
         txt 1 "${txt[2]}${txt[lin]}\n\
@@ -1305,8 +1305,10 @@ ${txt[lin]}\n${txt[3]}${txt[4]} "
                 if [[ -n "${CFG[ComplementosExc]}" ]]; then
                     Info 3 ">>> Los complementos marcados para omitir se descartan. Limpiando exclusiones ..." \
                            ">>> Plugins marked to be skipped are discarded. Cleaning exclusions ..."
-                    CFG[ComplementosExc]=""
-                    SalvarAjustes || return 1
+                    salvar_cfg ComplementosExc "" || return 1
+                else
+                    txtm 8 92 ">>> Ninguno." \
+                              ">>> None."
                 fi
                 VIA=0
                 ;;
@@ -1420,13 +1422,12 @@ EnviarCorreo() {
     txt cuerpo "\nomv-regen\n\n$2"
 
     LeerValorBD "/config/system/email/enable"
-    echoe log ">>> ValorBD: $ValorBD"
     case "$ValorBD" in
         1)      echo -e "${txt[cuerpo]}" | mail -E -s "$asunto" root 2>/dev/null \
                     || alerta "Fallo al enviar el correo. Comprueba la configuración de email en OMV." \
                               "Failed to send email. Check OMV email settings." ;;
-        0|"")   echoe ">>> Envío de correo deshabilitado o OMV no instalado. Omitiendo notificación." \
-                      ">>> Email disabled or OMV not installed. Skipping notification." ;;
+        0|"")   echoe ">>> Envío de correo deshabilitado o OMV no instalado. Omitiendo notificación. ValorBD: $ValorBD" \
+                      ">>> Email disabled or OMV not installed. Skipping notification. ValorBD: $ValorBD" ;;
         *)      error log "Estado inesperado de la configuración de la base de datos de OMV." \
                           "Unexpected state of OMV database configuration." ;;
     esac
@@ -3711,6 +3712,8 @@ EOF
 EjecutarRegenera() {
     local fase estado resto tar_regen_fecha
     Salt=0
+    OR_log_file="$OR_regen_log"
+    [ ! -f "$OR_log_file" ] && touch "$OR_log_file"
 
     Regenera_es_Valido || { Mensaje error "Los ajustes no son válidos, no se puede ejecutar la regeneración." \
                                           "The settings are not valid, cannot execute regeneration."; return 1; }
@@ -3788,7 +3791,6 @@ EjecutarRegenera() {
         fi
     fi
 
-    modo_desatendido || clear
     echoe "\n\n       <<< REGENERANDO SISTEMA OMV >>>\n\n" \
           "\n\n       <<< REGENERATING OMV SYSTEM >>>\n\n"
 
@@ -3915,7 +3917,6 @@ ReiniciarSiRequerido() {
 # Descomprimir y actualizar repositorios para la regeneración - Unzip and update repositories for regeneration
 DescomprimirBackup() {
     local cache_dir="/var/cache/apt/archives" paquete arquitectura
-    [[ -z "${CFG[RutaTarRegenera]}" ]] && { error "Ruta del backup indefinida." "Undefined backup path."; return 1; }
     [ -d "$Carpeta_Regen" ] || { error "No existe: $Carpeta_Regen" "Not exist: $Carpeta_Regen"; return 1; }
 
     echoe ">>> Descomprimiendo el archivo de backup para regenerar en: $Carpeta_Regen ..." \
@@ -4036,7 +4037,6 @@ PrepararClavesLUKS() {
     local archivo_persistente_claves="/root/omv_regen_luks.keys"
     local claves_faltantes=0 volumen ruta_clave linea
 
-    [[ -z "${CFG[RutaTarRegenera]}" ]] && { error "Ruta del backup indefinida." "Undefined backup path."; return 1; }
     [ -d "$Carpeta_Regen" ] || { error "No existe: $Carpeta_Regen" "Not exist: $Carpeta_Regen"; return 1; }
     [ -f "$archivo_crypttab" ] || { error "No se encontró /etc/crypttab en el backup." \
                                           "/etc/crypttab not found in the backup."; return 1; }
@@ -4201,10 +4201,6 @@ LimpiarRegeneracion() {
     rm -f "$OR_repo_dir"/Packages "$OR_repo_dir"/Packages.gz "$OR_repo_dir"/Release
     ActualizarRepo || { error "No se pudo actualizar el repositorio local." \
                               "Could not update local repository."; return 1; }
-
-    echoe ">>> Eliminando configuración del servicio de reinicio de omv-regen ..." \
-          ">>> Removing omv-regen restart service configuration ..."
-    ServicioReinicio eliminar
 
     echoe ">>> Restableciendo variables de configuración de estado de la regeneración a cero ..." \
           ">>> Resetting regeneration state configuration variables to zero ..."
@@ -4812,7 +4808,6 @@ RegeneraFase4() {
 
 RegeneraFase5() {
     local nodo
-    [[ -z "${CFG[RutaTarRegenera]}" ]] && { error "Ruta del backup indefinida." "Undefined backup path."; return 1; }
     [ -d "$Carpeta_Regen" ] || { error "No existe: $Carpeta_Regen" "Not exist: $Carpeta_Regen"; return 1; }
 
     echoe "\n>>>   >>>    FASE Nº5: REGENERAR USUARIOS, CARPETAS COMPARTIDAS Y RESTO DE GUI.\n" \
@@ -5072,6 +5067,10 @@ RegeneraFase7() {
     txt 2 "¡La regeneración del sistema ha finalizado con éxito!" \
           "System regeneration completed successfully!"
     EnviarCorreo "${txt[1]}" "${txt[2]}"
+    OR_log_file="/var/log/omv-regen.log"
+    cat "$OR_regen_log" >> "$OR_log_file"
+    rm -f "$OR_regen_log"
+    ServicioReinicio eliminar
     sync; sleep 5; reboot; sleep 5; exit
 }
 
@@ -5117,7 +5116,7 @@ if ! ArchivoBloqueo; then
             echoe nolog "\n\n>>> Regeneración en curso. Mostrando log en tiempo real (Ctrl+C para salir) ...\n\n" \
                         "\n\n>>> Regeneration in progress. Showing live log (Ctrl+C to exit) ...\n\n"
             sleep 2
-            stdbuf -oL tail -F "$OR_log_file" || true
+            stdbuf -oL tail -F "$OR_regen_log" || true
             Salir nolog "\n>>> Log finalizado. Saliendo ...\n" \
                         "\n>>> Log ended. Exiting ...\n"
         else

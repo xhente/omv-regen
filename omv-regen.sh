@@ -56,6 +56,7 @@ OR_cron_file="/etc/cron.d/omv-regen"
 OR_ajustes_file="${OR_ajustes_dir}/omv-regen.settings"
 OR_script_file="/usr/sbin/omv-regen"
 OR_log_file="/var/log/omv-regen.log"
+OR_regen_log="$OR_dir/regen.log"
 
 # Archivo generado para la regeneración - File generated for regeneration
 OR_RegenInfo_file="${OR_dir}/regen_info"
@@ -1837,13 +1838,12 @@ EnviarCorreo() {
     txt cuerpo "\nomv-regen\n\n$2"
 
     LeerValorBD "/config/system/email/enable"
-    echoe log ">>> ValorBD: $ValorBD"
     case "$ValorBD" in
         1)      echo -e "${txt[cuerpo]}" | mail -E -s "$asunto" root 2>/dev/null \
                     || alerta "Fallo al enviar el correo. Comprueba la configuración de email en OMV." \
                               "Failed to send email. Check OMV email settings." ;;
-        0|"")   echoe ">>> Envío de correo deshabilitado o OMV no instalado. Omitiendo notificación." \
-                      ">>> Email disabled or OMV not installed. Skipping notification." ;;
+        0|"")   echoe ">>> Envío de correo deshabilitado o OMV no instalado. Omitiendo notificación. ValorBD: $ValorBD" \
+                      ">>> Email disabled or OMV not installed. Skipping notification. ValorBD: $ValorBD" ;;
         *)      error log "Estado inesperado de la configuración de la base de datos de OMV." \
                           "Unexpected state of OMV database configuration." ;;
     esac
@@ -4164,6 +4164,8 @@ EOF
 EjecutarRegenera() {
     local fase estado resto tar_regen_fecha
     Salt=0
+    OR_log_file="$OR_regen_log"
+    [ ! -f "$OR_log_file" ] && touch "$OR_log_file"
 
     Regenera_es_Valido || { Mensaje error "Los ajustes no son válidos, no se puede ejecutar la regeneración." \
                                           "The settings are not valid, cannot execute regeneration."; return 1; }
@@ -4212,7 +4214,6 @@ EjecutarRegenera() {
         Carpeta_Regen="${OR_dir}/regen_${tar_regen_fecha}"
         mkdir -p "$Carpeta_Regen"
 
-        modo_desatendido || clear
         echoe ">>> Preparando el entorno de la regeneración ..." \
               ">>> Preparing the environment for regeneration ..."
         txt 1 "Fallo preparando el entorno de la regeneración. Limpiando y abortando ..." \
@@ -4654,10 +4655,6 @@ LimpiarRegeneracion() {
     rm -f "$OR_repo_dir"/Packages "$OR_repo_dir"/Packages.gz "$OR_repo_dir"/Release
     ActualizarRepo || { error "No se pudo actualizar el repositorio local." \
                               "Could not update local repository."; return 1; }
-
-    echoe ">>> Eliminando configuración del servicio de reinicio de omv-regen ..." \
-          ">>> Removing omv-regen restart service configuration ..."
-    ServicioReinicio eliminar
 
     echoe ">>> Restableciendo variables de configuración de estado de la regeneración a cero ..." \
           ">>> Resetting regeneration state configuration variables to zero ..."
@@ -5525,6 +5522,10 @@ RegeneraFase7() {
     txt 2 "¡La regeneración del sistema ha finalizado con éxito!" \
           "System regeneration completed successfully!"
     EnviarCorreo "${txt[1]}" "${txt[2]}"
+    OR_log_file="/var/log/omv-regen.log"
+    cat "$OR_regen_log" >> "$OR_log_file"
+    rm -f "$OR_regen_log"
+    ServicioReinicio eliminar
     sync; sleep 5; reboot; sleep 5; exit
 }
 
@@ -5570,7 +5571,7 @@ if ! ArchivoBloqueo; then
             echoe nolog "\n\n>>> Regeneración en curso. Mostrando log en tiempo real (Ctrl+C para salir) ...\n\n" \
                         "\n\n>>> Regeneration in progress. Showing live log (Ctrl+C to exit) ...\n\n"
             sleep 2
-            stdbuf -oL tail -F "$OR_log_file" || true
+            stdbuf -oL tail -F "$OR_regen_log" || true
             Salir nolog "\n>>> Log finalizado. Saliendo ...\n" \
                         "\n>>> Log ended. Exiting ...\n"
         else

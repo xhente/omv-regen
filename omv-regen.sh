@@ -5,13 +5,13 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.5
+# omv-regen 7.1.6
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="7.1.5"
+ORVersion="7.1.6"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -2181,17 +2181,25 @@ centrar() {
     echo "$texto_centrado"
 }
 
-# Devuelve 0 si todos los paquetes de OMV están en buen estado (ii o hi). Si no devuelve 1.
-# Returns 0 if all MVNO packages are in good condition (ii or hi). If it does not return 1.
+# Devuelve 0 si todos los paquetes de OMV están en buen estado (ii o hi) o rc si no son esenciales. Si no devuelve 1.
+# Returns 0 if all MVNO packages are in good condition (ii or hi) or rc if they are not essential. If it does not return 1.
 estado_correcto_omv() {
-    local estado paquete
-    while IFS=' ' read -r estado paquete; do
-        [[ "$estado" != "ii" && "$estado" != "hi" ]] && { \
-            error "El paquete $paquete está en mal estado: $estado" \
-                    "Package $paquete is in bad condition: $estado"
-            return 1; }
+    local paquete estado
+    while read -r estado paquete; do
+        case $estado in
+            ii|hi) ;;
+            rc)
+                es_esencial "$paquete" && {
+                    error "El paquete esencial $paquete no está instalado pero hay archivos de configuración, estado: $estado" \
+                          "The essential $paquete package is not installed but there are configuration files, state: $estado"
+                    return 1; }
+                ;;
+            *)  
+                error "El paquete $paquete está en mal estado: $estado" \
+                      "Package $paquete is in bad condition: $estado"
+                return 1 ;;
+        esac
     done < <(dpkg -l | awk '/openmediavault/ {print $1, $2}')
-    return 0
 }
 
 # Genera archivo que marca un reinicio pendiente '/var/run/reboot-required'
@@ -3268,7 +3276,7 @@ EjecutarBackup () {
         echo -e "# $(date '+%Y-%m-%d %H:%M:%S')\n"
 
         echo "[dpkg openmediavault]"
-        dpkg -l | grep openmediavault | awk '{print $2" "$3}'
+        dpkg -l | awk '/openmediavault/ && $1 ~ /^(hi|ii)/ {print $2, $3}'
 
         echo -e "\n[hostname]"
         hostname -I | awk '{print $1}'
@@ -5500,20 +5508,14 @@ RegeneraFase7() {
         marcar temporales
     fi
 
-    if no_marcado limpiar; then
-        sleep 2
-        LimpiarRegeneracion || { error ">>> No se ha podido limpiar la regeneración actual." \
-                                       ">>> The current regeneration could not be cleared."; return 1; }
-        marcar limpiar
-    fi
+    LimpiarRegeneracion || { error ">>> No se ha podido limpiar la regeneración actual." \
+                                   ">>> The current regeneration could not be cleared."; return 1; }
 
-    sleep 2
     echoe ">>> Actualizando todos los paquetes a la ultima versión disponible ..." \
           ">>> Updating all packages to the latest available version ..."
     ActualizarOMV || { error "Fallo actualizando OMV. ${txt[error]}" \
                              "Failure updating OMV. ${txt[error]}"; return 1; }
 
-    sleep 2
     echoe ">>> Fase Nº7 terminada.\n>>> ¡Regeneración finalizada con éxito!\n>>> Reiniciando el sistema ..." \
           ">>> Phase No.7 completed.\n>>> Regeneration completed successfully!\n>>> Rebooting the system ..."
 

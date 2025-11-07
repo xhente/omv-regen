@@ -35,8 +35,8 @@ Logo_omvregen="\
 
 #################################### VARIABLES ##############################################
 
-# Determinar si OMV está instalado y en qué versión y cual es la versión de Debian.
-# Determine if OMV is installed and in what version and what is the Debian version.
+# Determinar si OMV está instalado, su versión y la versión de Debian.
+# Determine if OMV is installed, its version, and the Debian codename.
 omv_instalado() { dpkg -s openmediavault &>/dev/null; }
 if omv_instalado; then
     # Variables de entorno y funciones auxiliares de OMV
@@ -47,7 +47,11 @@ if omv_instalado; then
 else
     OMV_VERSION__or=0
 fi
-DEBIAN_CODENAME__or=$(env -i bash -c '. /etc/os-release; echo $VERSION_CODENAME')
+DEBIAN_CODENAME__or=$(
+    codename_os=$(env -i bash -c '. /etc/os-release; echo $VERSION_CODENAME')
+    codename_dpkg=$(dpkg --status tzdata 2>/dev/null | awk -F'[:-]' '/Provides/{print $NF}' | tr -d ' ')
+    [[ -n "$codename_dpkg" && "$codename_dpkg" != "$codename_os" ]] && echo "$codename_dpkg" || echo "$codename_os"
+)
 
 # Ajustes de omv-regen
 # omv-regen settings

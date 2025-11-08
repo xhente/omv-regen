@@ -5717,6 +5717,11 @@ if [[ "$0" != "$OR_script_file" ]]; then
                                     ">>> ERROR: Could not install omv-regen."
 fi
 
+# Asegurar que el script se ejecuta con bash
+# Ensure the script runs with bash
+[ -n "$BASH_VERSION" ] || { Salir ">>> Este script requiere bash. Asegúrate de ejecutarlo en un entorno con bash.  Saliendo ..." \
+                                  ">>> This script requires bash. Make sure to run it in an environment with bash.  Exiting ..."; }
+
 # Crear archivo de log
 # Create log file
 if [ ! -f "$OR_log_file" ]; then

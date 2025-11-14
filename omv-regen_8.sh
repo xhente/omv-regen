@@ -743,7 +743,7 @@ MenuPrincipal() {
         fi
         case $salida_0 in
             1|255) VIA=8 ;;
-            2)     VIA=7 ;;
+            2    ) VIA=7 ;;
         esac
         case $VIA in
             1)  MenuBackup ;;
@@ -859,19 +859,19 @@ MenuBackup() {
         txt 64 "Activado ---------------------------------> " \
                "Enabled ----------------------------------> "
         case "${CFG[ActualizarOMV]}" in
-            No)     txt 61 "${txt[63]}"; txt 62 "Activar actualización de OMV    " \
+            No    ) txt 61 "${txt[63]}"; txt 62 "Activar actualización de OMV    " \
                                                 "Enable OMV update               " ;;
             Si|Yes) txt 61 "${txt[64]}"; txt 62 "Desactivar actualización de OMV " \
                                                 "Disable OMV update              " ;;
         esac
         case "${CFG[ModoSilencio]}" in
-            No)     txt 71 "${txt[63]}"; txt 72 "Activar Modo silencio           " \
+            No    ) txt 71 "${txt[63]}"; txt 72 "Activar Modo silencio           " \
                                                 "Enable Silent mode              " ;;
             Si|Yes) txt 71 "${txt[64]}"; txt 72 "Desactivar Modo silencio        " \
                                                 "Disable Silent mode             " ;;
         esac
         case "${CFG[OmitirRoot]}" in
-            No)     txt 81 "${txt[63]}"; txt 82 "Activar omisión carpeta /root   " \
+            No    ) txt 81 "${txt[63]}"; txt 82 "Activar omisión carpeta /root   " \
                                                 "Enable skipping /root folder    " ;;
             Si|Yes) txt 81 "${txt[64]}"; txt 82 "Desactivar omisión carpeta /root" \
                                                 "Disable skipping /root folder   " ;;
@@ -914,8 +914,8 @@ MenuBackup() {
         salida_menu=$?
         case $salida_menu in
             1|255) VIA=0 ;;
-            2)  Ayuda AyudaMenuBackup ;;
-            0)  case $respuesta in
+            2    ) Ayuda AyudaMenuBackup ;;
+            0    ) case $respuesta in
                     1)  VIA=9 ;;
                     3)  MenuRutaBackups ;;
                     4)  MenuRutasAdicionales ;;
@@ -959,10 +959,10 @@ MenuRutaBackups() {
         else
             salida_menu=1
             case "${CFG[RutaBackups]}" in
-                "") CFG[RutaBackups]="$ruta_inicial" ;;
+                ""             ) CFG[RutaBackups]="$ruta_inicial" ;;
                 "$ruta_inicial") ;;
-                "/ORBackup") ;;
-                *)
+                "/ORBackup"    ) ;;
+                *              )
                     if [ ! -d "${CFG[RutaBackups]}" ]; then
                         if Pregunta ">>> La carpeta ${CFG[RutaBackups]} no existe.\n\n>>> ¿Quieres crearla?" \
                                     ">>> The ${CFG[RutaBackups]} folder does not exist.\n\n>>> Do you want to create it?"; then
@@ -999,20 +999,20 @@ MenuRutasAdicionales() {
         local carpeta=$1 entrada=$2
         local res="ignorar"
         case $entrada in
-            "${txt[2]}")                    [ "$carpeta" = "extra" ] && res="terminar" ;;
-            "${CFG[RutaBackups]}")          Mensaje ">>> $entrada es el destino del backup, no se puede incluir en el backup." \
+            "${txt[2]}"                  )  [ "$carpeta" = "extra" ] && res="terminar" ;;
+            "${CFG[RutaBackups]}"        )  Mensaje ">>> $entrada es el destino del backup, no se puede incluir en el backup." \
                                                     ">>> $entrada is the backup destination, it cannot be included in the backup." ;;
-            /root)                          Mensaje ">>> Selecciona en el menú del backup si quieres incluir la carpeta root. Se ignora." \
+            /root                        )  Mensaje ">>> Selecciona en el menú del backup si quieres incluir la carpeta root. Se ignora." \
                                                     ">>> Select whether you want to include the root folder in the backup menu. It is ignored." ;;
             /etc/libvirt|/var/lib/libvirt)  Mensaje ">>> La carpeta $entrada se incluye por defecto en el backup. Se ignora." \
                                                     ">>> The $entrada folder is included by default in the backup. It is ignored." ;;
-            "")                             [ "$carpeta" = "extra" ] && res="terminar" || res="eliminar" ;;
-            /)                              Mensaje ">>> No se puede incluir rootfs en el backup." \
+            ""                           )  [ "$carpeta" = "extra" ] && res="terminar" || res="eliminar" ;;
+            /                            )  Mensaje ">>> No se puede incluir rootfs en el backup." \
                                                     ">>> You cannot include rootfs in the backup." ;;
-            /*)                             [ ! -d "$entrada" ] && Mensaje ">>> La carpeta $entrada no existe pero se añade a la lista." \
+            /*                           )  [ ! -d "$entrada" ] && Mensaje ">>> La carpeta $entrada no existe pero se añade a la lista." \
                                                                            ">>> The $entrada folder does not exist but is added to the list."
                                             res="ok" ;;
-            *)                              Mensaje ">>> La carpeta debe comenzar con '/'" \
+            *                            )  Mensaje ">>> La carpeta debe comenzar con '/'" \
                                                     ">>> The folder must start with '/'" ;;
         esac
         echo "$res"
@@ -1029,9 +1029,9 @@ MenuRutasAdicionales() {
             sale=$?
             respuesta=$(echo "$respuesta" | xargs)
             case $sale in
-                1)      accion="eliminar" ;;
+                1  )    accion="eliminar" ;;
                 255)    Info 2 cancelado; return ;;
-                0)      accion=$(procesar_respuesta "$carpeta" "$respuesta") ;;
+                0  )    accion=$(procesar_respuesta "$carpeta" "$respuesta") ;;
             esac
             [ "$accion" != "ignorar" ] && break
         done
@@ -1039,7 +1039,7 @@ MenuRutasAdicionales() {
             eliminar)   guardar=1
                         Mensaje ">>> La carpeta $carpeta no se incluirá en el backup." \
                                 ">>> The $carpeta folder will not be included in the backup." ;;
-            ok)         if [ "$carpeta" != "$respuesta" ]; then
+            ok      )   if [ "$carpeta" != "$respuesta" ]; then
                             Mensaje ">>> La carpeta $carpeta se ha sustituido por la carpeta $respuesta" \
                                     ">>> The $carpeta folder has been replaced by the $respuesta folder."
                             guardar=1
@@ -1060,9 +1060,9 @@ MenuRutasAdicionales() {
         sale=$?
         respuesta=$(echo "$respuesta" | xargs)
         case $sale in
-            1)      accion="terminar" ;;
+            1  )    accion="terminar" ;;
             255)    Info 2 cancelado; return ;;
-            0)      accion=$(procesar_respuesta "extra" "$respuesta") ;;
+            0  )    accion=$(procesar_respuesta "extra" "$respuesta") ;;
         esac
         [ "$accion" = "ok" ] && RUTAS+=("$respuesta") && guardar=1
     done
@@ -1087,9 +1087,9 @@ MenuRetenciones() {
         seman="${CFG[RetencionSemanas]}"
         meses="${CFG[RetencionMeses]}"
         case $retencion in
-            RetencionDias)    hasta=99; txt 41 "DIARIA"  "DAILY" ;;
+            RetencionDias   ) hasta=99; txt 41 "DIARIA"  "DAILY" ;;
             RetencionSemanas) hasta=52; txt 41 "SEMANAL" "WEEKLY" ;;
-            RetencionMeses)   hasta=24; txt 41 "MENSUAL" "MONTHLY" ;;
+            RetencionMeses  ) hasta=24; txt 41 "MENSUAL" "MONTHLY" ;;
         esac
         txtc 1 "\nOPCIONES DE BACKUP\n${linea}" \
                "\nBACKUP OPTIONS\n${linea}"
@@ -1307,13 +1307,13 @@ ${txt[lin]}\n${txt[3]}${txt[4]} "
         txt 84 "Activado ---------------------------------> " \
                "Enabled ----------------------------------> "
         case "${CFG[RegenRed]}" in
-            No)     txt 71 "${txt[83]}"; txt 72 "Activar Regeneración de Red     " \
+            No    ) txt 71 "${txt[83]}"; txt 72 "Activar Regeneración de Red     " \
                                                 "Enable Network Regeneration     " ;;
             Si|Yes) txt 71 "${txt[84]}"; txt 72 "Desactivar Regeneración de Red  " \
                                                 "Disable Network Regeneration    " ;;
         esac
         case "${CFG[RegenKernel]}" in
-            No)     txt 81 "${txt[83]}"; txt 82 "Activar Instalación de Kernel   " \
+            No    ) txt 81 "${txt[83]}"; txt 82 "Activar Instalación de Kernel   " \
                                                 "Enable Kernel Installation      " ;;
             Si|Yes) txt 81 "${txt[84]}"; txt 82 "Desactivar Instalación de Kernel" \
                                                 "Disable Kernel Installation     " ;;
@@ -1347,7 +1347,7 @@ ${txt[lin]}\n${txt[3]}${txt[4]} "
             --menu "${txt[1]}" "$alto" "$ancho" 3  1 "${txt[50]}" 2 "${txt[60]}" 3 "${txt[70]}" 4 "${txt[80]}" 5 "${txt[90]}")
         salida_menu=$?
         case $salida_menu in
-            2)  Ayuda AyudaMenuRegenera ;;
+            2    )  Ayuda AyudaMenuRegenera ;;
             1|255)  
                 if [[ -n "${CFG[ComplementosExc]}" ]]; then
                     Info 3 ">>> Los complementos marcados para omitir se descartan. Limpiando exclusiones ..." \
@@ -1359,7 +1359,7 @@ ${txt[lin]}\n${txt[3]}${txt[4]} "
                 fi
                 VIA=0
                 ;;
-            0)
+            0    )
                 case $respuesta in
                     1)  VIA=10 ;;
                     2)  if regen_en_progreso; then
@@ -1450,8 +1450,8 @@ Ayuda() {
                --yesno "${AYUDA[i]}\n " 0 0
         salida_menu=$?
         case $salida_menu in
-            0)      ((i++)) ;;
-            3)      ((i--)) ;;
+            0    )  ((i++)) ;;
+            3    )  ((i--)) ;;
             1|255)  break ;;
         esac
         ((i = (i + n_paginas) % n_paginas))
@@ -1472,12 +1472,12 @@ EnviarCorreo() {
 
     LeerValorBD "/config/system/email/enable"
     case "$ValorBD" in
-        1)      echo -e "${txt[cuerpo]}" | mail -E -s "$asunto" root 2>/dev/null \
+        1   )   echo -e "${txt[cuerpo]}" | mail -E -s "$asunto" root 2>/dev/null \
                     || alerta "Fallo al enviar el correo. Comprueba la configuración de email en OMV." \
                               "Failed to send email. Check OMV email settings." ;;
         0|"")   echoe ">>> Envío de correo deshabilitado o OMV no instalado. Omitiendo notificación. ValorBD: $ValorBD" \
                       ">>> Email disabled or OMV not installed. Skipping notification. ValorBD: $ValorBD" ;;
-        *)      error log "Estado inesperado de la configuración de la base de datos de OMV." \
+        *   )   error log "Estado inesperado de la configuración de la base de datos de OMV." \
                           "Unexpected state of OMV database configuration." ;;
     esac
 }
@@ -1597,7 +1597,7 @@ echoe() {
     }
 
     case "$tipo" in
-        sil)    mensaje=$(obtener_mensaje "$2" "$3")
+        sil  )  mensaje=$(obtener_mensaje "$2" "$3")
                 echo -e "$mensaje" | _orl sil
                 ;;
         nolog)  mensaje=$(obtener_mensaje "$2" "$3")
@@ -1607,11 +1607,11 @@ echoe() {
                 txt error "$mensaje"
                 echo -e "$mensaje" | _orl error
                 ;;
-        log)    mensaje=$(obtener_mensaje "$2" "$3")
+        log  )  mensaje=$(obtener_mensaje "$2" "$3")
                 txt error "$mensaje"
                 echo -e "$mensaje" | _orl log
                 ;;
-        *)      mensaje=$(obtener_mensaje "$1" "$2")
+        *    )  mensaje=$(obtener_mensaje "$1" "$2")
                 echo -e "$mensaje" | _orl
                 ;;
     esac
@@ -1748,13 +1748,13 @@ Info() {
 # Information waiting until pressed. In unattended mode, only echoe().
 Mensaje() {
     case "$1" in
-        error)  error  "$2" "$3"
+        error ) error  "$2" "$3"
                 txt mensaje ">>> ERROR: $2" ">>> ERROR: $3"
                 ;;
         alerta) alerta "$2" "$3"
                 txt mensaje ">>> ATENCION: $2" ">>> WARNING: $3"
                 ;;
-        *)      echoe "$@"
+        *     ) echoe "$@"
                 txt mensaje "$1" "$2"
                 [ -n "$3" ] && txt mensaje "$2" "$3"
                 ;;
@@ -1832,16 +1832,14 @@ estado_correcto_omv() {
     local paquete estado
     while read -r estado paquete; do
         case $estado in
-            ii|hi) ;;
-            rc)
-                es_esencial "$paquete" && {
-                    error "El paquete esencial $paquete no está instalado pero hay archivos de configuración, estado: $estado" \
-                          "The essential $paquete package is not installed but there are configuration files, state: $estado"
-                    return 1; } ;;
-            *)  
-                error "El paquete $paquete está en mal estado: $estado" \
-                      "Package $paquete is in bad condition: $estado"
-                return 1 ;;
+            ii|hi)  ;;
+            rc   )  es_esencial "$paquete" && {
+                        error "El paquete esencial $paquete no está instalado pero hay archivos de configuración, estado: $estado" \
+                              "The essential $paquete package is not installed but there are configuration files, state: $estado"
+                        return 1; } ;;
+            *    )  error "El paquete $paquete está en mal estado: $estado" \
+                          "Package $paquete is in bad condition: $estado"
+                        return 1 ;;
         esac
     done < <(dpkg -l | awk '/openmediavault/ {print $1, $2}')
 }
@@ -2364,10 +2362,10 @@ ProgramarBackup() {
                              ">>> OMV is not installed, skipping backup scheduling ..."; return 0; }
 
     case "$accion" in
-        "")         if existe_tarea_backup; then accion="eliminar"; else accion="crear"; fi ;;
-        crear)      : ;;
+        ""      )   if existe_tarea_backup; then accion="eliminar"; else accion="crear"; fi ;;
+        crear   )   : ;;
         eliminar)   ! existe_tarea_backup && return 0 ;;
-        *)          error "Acción no válida: $accion" "Invalid action: $accion"; return 1 ;;
+        *       )   error "Acción no válida: $accion" "Invalid action: $accion"; return 1 ;;
     esac
 
     if [ "$accion" = "crear" ]; then
@@ -3422,14 +3420,14 @@ estado_actual_de() {
         estado_actual="no_instalado"
     else
         case $estado_actual in
-            hi)             estado_actual="retenido" ;;
-            ii)             estado_actual="instalado" ;;
+            hi         )    estado_actual="retenido" ;;
+            ii         )    estado_actual="instalado" ;;
             rc|un|rn|pu)    estado_actual="no_instalado" ;;
-            iU|iF|U|C)      estado_actual="incompleto"
+            iU|iF|U|C  )    estado_actual="incompleto"
                                 error "Estado incompleto para el paquete '$nombre_paquete' ($estado_actual)." \
                                       "Incomplete state for package '$nombre_paquete' ($estado_actual)."
                                 return 1 ;;
-            *)              estado_actual="desconocido"
+            *          )    estado_actual="desconocido"
                                 error "Estado desconocido para el paquete '$nombre_paquete' ($estado_actual)." \
                                       "Unknown state for package '$nombre_paquete' ($estado_actual)."
                                 return 1 ;;
@@ -3943,7 +3941,7 @@ EjecutarRegenera() {
     while regen_en_progreso; do
         read -r fase estado resto <<< "${CFG[EstatusRegenera]}"
         case "$estado" in
-            inicio|start)       salvar_cfg EstatusRegenera "$fase ${txt[intento]}_1 $resto" || return 1 ;;
+            inicio|start     )  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_1 $resto" || return 1 ;;
             intento_1|retry_1)  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_2 $resto" || return 1 ;;
             intento_2|retry_2)  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_3 $resto" || return 1 ;;
             intento_3|retry_3)  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_4 $resto" || return 1 ;;
@@ -3951,9 +3949,9 @@ EjecutarRegenera() {
             intento_5|retry_5)  error "Fase Nº $fase ha fallado repetidamente en modo automático. Abortando regeneración ..." \
                                       "Phase Nº $fase has failed repeatedly in automatic mode. Aborting regeneration ..."
                                 return 1 ;;
-            *)  error "Estado de regeneración desconocido: $estado" \
-                      "Unknown regeneration status: $estado"
-                return 1 ;;
+            *                )  error "Estado de regeneración desconocido: $estado" \
+                                      "Unknown regeneration status: $estado"
+                                return 1 ;;
         esac
         case "$fase" in
             0) RegeneraFase0 || return 1 ;;
@@ -5207,14 +5205,14 @@ IniciarAjustes; AjustarIdioma
 [[ $# -gt 1 ]] && Salir nolog "\n>>> Argumento inválido: $* ${txt[salirayuda]}" \
                               "\n>>> Invalid argument: $* ${txt[salirayuda]}"
 case "$1" in
-    backup|-b|--backup)                 VIA=9; BackupProgramado=0 ;;
-    regenera|-r|--regenera)             VIA=10 ;;
+    backup|-b|--backup             )    VIA=9; BackupProgramado=0 ;;
+    regenera|-r|--regenera         )    VIA=10 ;;
     ayuda|-a|--ayuda|help|-h|--help)    Ayuda; clear; exit ;;
-    limpieza_semanal)                   VIA=11; LimpiezaProgramada=0 ;;
-    regenera_auto)                      VIA=10; ModoAuto=0 ;;
-    desinstalar|uninstall)              DesinstalarOmvregen ;;
-    "")                                 VIA=0 ;;
-    *)                                  Salir nolog "\n>>> Argumento inválido $1 ${txt[salirayuda]}" \
+    limpieza_semanal               )    VIA=11; LimpiezaProgramada=0 ;;
+    regenera_auto                  )    VIA=10; ModoAuto=0 ;;
+    desinstalar|uninstall          )    DesinstalarOmvregen ;;
+    ""                             )    VIA=0 ;;
+    *                              )    Salir nolog "\n>>> Argumento inválido $1 ${txt[salirayuda]}" \
                                                     "\n>>> Invalid argument $1 ${txt[salirayuda]}" ;;
 esac
 

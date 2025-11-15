@@ -5,13 +5,13 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 8.0
+# omv-regen 7.1.7
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="8.0"
+ORVersion="7.1.7"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -122,15 +122,12 @@ NO_OMITIR=("openmediavault" "openmediavault-keyring" "openmediavault-kernel" "op
 NO_OMITIR=( "${NO_OMITIR[@]}" "${SISTEMA_ARCHIVOS[@]}" )
 
 # URLs
-URL_OMVREGEN="https://raw.githubusercontent.com/xhente/omv-regen/master"
-URL_OMVREGEN_SCRIPT="$URL_OMVREGEN/omv-regen_8.sh"
-URL_OMVREGEN_README="$URL_OMVREGEN/README.md"
-URL_OMVREGEN_INSTALL="$URL_OMVREGEN/omv-regen-install.sh"
+URL_OMVREGEN_SCRIPT="https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen_6_7.sh"
 URL_OPENMEDIAVAULT_PAQUETES="https://packages.openmediavault.org/public/pool/main/o/"
 URL_OMVEXTRAS="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master"
 # shellcheck disable=SC2034
 URL_RASPBERRY_PREINSTALL_SCRIPT="https://raw.githubusercontent.com/OpenMediaVault-Plugin-Developers/installScript/master/preinstall"
-URL_OMV_INSTALL_SCRIPT="https://raw.githubusercontent.com/OpenMediaVault-Plugin-Developers/installScript/master/install"
+URL_OMV_INSTALL_SCRIPT="https://raw.githubusercontent.com/OpenMediaVault-Plugin-Developers/installScript/master/installOld7"
 
 # Códigos de color
 # Color codes
@@ -192,6 +189,8 @@ CONFIG[openmediavault-diskstats]="nulo"
 CONFIG[openmediavault-downloader]="/config/services/downloader"
 CONFIG[openmediavault-fail2ban]="/config/services/fail2ban"
 CONFIG[openmediavault-filebrowser]="/config/services/filebrowser"
+CONFIG[openmediavault-flashmemory]="nulo"
+CONFIG[openmediavault-forkeddaapd]="/config/services/daap" # Only OMV 6
 CONFIG[openmediavault-ftp]="/config/services/ftp"
 CONFIG[openmediavault-hddfanctrl]="/config/system/hddfanctrl"
 CONFIG[openmediavault-hosts]="/config/system/network/hosts"
@@ -278,8 +277,7 @@ IniciarAjustes() {
     # Instalar kernel proxmox en la regenerando si ya estaba originalmente
     # Install proxmox kernel on the regenerating one if it was already there originally
     pre_RegenKernel="Si"; CFG[RegenKernel]="$pre_RegenKernel"
-    # Regenerar interfaz de red
-    # Regenerate network interface
+    # Regenerar interfaz de red - Regenerate network interface
     pre_RegenRed="Si"; CFG[RegenRed]="$pre_RegenRed"
     # Control del estado de la regeneración en curso
     # Control of the status of the regeneration in progress
@@ -299,7 +297,7 @@ IniciarAjustes() {
     # Control para buscar actualizaciones de omv-regen solo una vez al día
     # Control to check for omv-regen updates only once a day
     pre_UltimaBusqueda="10"; CFG[UltimaBusqueda]="$pre_UltimaBusqueda"
-    # Almacena la configuración de idioma inglés-español
+    # Almacena la configuración de idioma inglés-español 
     # Stores English-Spanish language settings
     CFG[Idiomas]=""
 }
@@ -358,6 +356,478 @@ txt salirayuda "\n\n${Logo_omvregen}\n\n\n${Verde}>>>  >>>   omv-regen ${ORVersi
                 \n   omv-regen          → Opens the main graphical interface. \
                 \n   omv-regen backup   → Back up your OMV configuration. \
                 \n   omv-regen help     → Access dialog boxes with complete help.${Reset}\n\n"
+
+txt AyudaOmvregen \
+"\n \
+\n______ INTRODUCCIÓN \
+\n \
+\nDesde su nacimiento en abril de 2023, omv-regen ha sido una herramienta concebida para migrar configuraciones de OpenMediaVault entre sistemas. \
+\nSin embargo, su alcance estaba limitado por la disponibilidad en línea de las versiones de los paquetes. \
+\nHoy, con la llegada de la versión 7.1, esa limitación queda atrás. \
+\nEsta versión introduce la capacidad de almacenar y reutilizar los paquetes desde un repositorio local, \
+\nhaciendo posible una regeneración completa y fiel al sistema original, incluso meses después. \
+\n \
+\nomv-regen deja así de ser una simple utilidad de migración y se convierte en una auténtica solución de backup y restauración sin límites de tiempo. \
+\nLa inestimable ayuda de Aaron Murray y ChatGPT —a quienes expreso mi sincero agradecimiento— ha sido fundamental para alcanzar este hito. \
+\n \
+\nChente \
+\n(Octubre de 2025) \
+\n \
+\n______ QUÉ ES OMV-REGEN \
+\n \
+\n- omv-regen es una utilidad desarrollada en bash que se ejecuta desde línea de comandos (CLI) y dispone de interfaz gráfica mediante dialog. \
+\n- Permite hacer y programar backups de la configuración de OpenMediaVault (OMV) y usar estos backups para migrar o regenerar la configuración en otro sistema limpio de OMV o Debian. \
+\n \
+\n- NOTA: omv-regen no permite actualizar entre versiones principales de OMV (por ejemplo, de OMV6 a OMV7). Para eso, utiliza siempre el procedimiento oficial: 'omv-release-upgrade'. omv-regen solo puede regenerar configuraciones dentro de la misma versión principal de OMV. \
+\n \
+\n    Comandos principales: \
+\n \
+\n- 'omv-regen'          → Abre la interfaz gráfica principal.  \
+\n- 'omv-regen backup'   → Realiza un backup de la configuración de OMV. \
+\n- 'omv-regen ayuda'    → Accede a los cuadros de diálogo con la ayuda completa. \
+\n \
+\n______ VENTAJAS RESPECTO A UN BACKUP CONVENCIONAL \
+\n \
+\n- Capacidad de recuperar un sistema corrupto si los archivos esenciales están en buen estado y puedes generar un backup. \
+\n- El backup es muy ligero, solo ocupa algunos megas de capacidad, lo que permite conservar múltiples versiones con facilidad. \
+\n- Permite regenerar un sistema amd64 en uno ARM o viceversa, teniendo en cuenta las limitaciones de arquitectura de algunos complementos. \
+\n- Una regeneración proporciona un sistema limpio, puesto que parte de un sistema limpio. \
+\n- Permite migrar de hardware sin limitaciones manteniendo las configuraciones de OpenMediaVault. \
+\n \
+\n______ LIMITACIONES DE OMV-REGEN \
+\n \
+\n- Las configuraciones realizadas en CLI no se trasladarán al nuevo sistema, solo se respaldan las configuraciones de la GUI de OMV. \
+\n- No se trasladan las configuraciones internas de los complementos basados en podman, como Filebrowser o Photoprism — respáldalos por otros medios. \
+\n- omv-regen no es un sistema de backup de datos. Su objetivo es preservar la configuración del sistema, no el contenido de los discos de datos. \
+\n \
+\n______ CÓMO HACER BACKUPS CON OMV-REGEN \
+\n \
+\n- Conéctate por SSH a tu servidor o con un monitor y teclado, instala y ejecuta 'omv-regen' \
+\n- Configura la carpeta de almacenamiento de backups; por defecto es '/ORBackup' \
+\n- Por defecto, se programa un backup diario a las 03:00 h. Puedes modificarlo en la GUI de OMV, en Tareas Programadas. \
+\n- También puedes ejecutar un backup manual desde la GUI de omv-regen. \
+\n- Puedes añadir carpetas adicionales al backup, configúralo en la GUI de omv-regen. \
+\n- Utiliza las carpetas adicionales para conservar carpetas existentes fuera del entorno de OMV. \
+\n- Desactiva el modo silencio para notificaciones detalladas. \
+\n- Siempre recibirás una notificación si se produce un error. \
+\n- Cada backup está formado por varios archivos etiquetados con la fecha y hora de su creación y contiene: \
+\n   - Un archivo '.regen.tar'  con los elementos necesarios para la regeneración. \
+\n   - Un archivo '.sha56'      para verificar la integridad del backup. \
+\n   - Un archivo '.user#.tar'  por cada carpeta de usuario incluida en el backup. \
+\n \
+\n______ CÓMO REGENERAR UN SISTEMA \
+\n \
+\n- Conéctate por SSH o con un monitor y teclado, instala y ejecuta 'omv-regen' \
+\n- Haz un backup del sistema actual y cópialo fuera del servidor (por ejemplo, con WinSCP o a un pendrive). \
+\n- Para regenerar, necesitas una instalación limpia de OMV. Dos opciones: \
+\n   - Usar la ISO de OMV: instala OMV sin actualizar el sistema; omv-regen actualizará a la versión correcta del backup. \
+\n   - Instalar Debian mínimo (64 bits) y dejar que omv-regen instale OMV en la versión del backup. \
+\n- Se recomienda usar un disco nuevo para la instalación y conservar el original como copia de seguridad. \
+\n- Copia el backup a una carpeta del servidor. \
+\n- Configura la ruta del backup e inicia la regeneración. \
+\n   - Si quieres omitir la instalación de algún complemento selecciónalo en la GUI de omv-regen regenera antes de iniciar. \
+\n- El sistema se reiniciará automáticamente, puedes ejecutar 'omv-regen' en cualquier momento para ver el log en vivo. \
+\n- Al finalizar, recibirás un correo con el resultado y podrás comprobar en la GUI de OMV que todo se ha restaurado correctamente. \
+\n \
+\n______ INSTALACIÓN Y REGENERACIÓN DESDE LA ISO DE OPENMEDIAVAULT \
+\n \
+\n- Instala OpenMediaVault con la ISO correspondiente a la versión (6.0/7.0) que necesites. \
+\n- No actualices el sistema, deja que lo haga omv-regen para adecuar las versiones a las del sistema original. \
+\n- Instala omv-regen: \
+\n \
+\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
+\n \
+\n- Copia el backup al servidor, inicia 'omv-regen' y ejecuta la regeneración. \
+\n \
+\n______ INSTALACIÓN Y REGENERACIÓN DESDE DEBIAN \
+\n \
+\n- Si tu hardware es ARM o no puedes instalar desde la ISO, usa este procedimiento. \
+\n- Instala la versión de Debian Lite de 64 bits (sin entorno gráfico) que necesites: \
+\n   - Para OMV6 → Debian 11 (Bullseye) \
+\n   - Para OMV7 → Debian 12 (Bookworm) \
+\n- Durante la instalación, selecciona únicamente el paquete SSH para instalar. \
+\n- Una vez finalizada la instalación, inicia sesión con tu usuario y activa root: \
+\n \
+\n     'sudo -i' \
+\n     'passwd root'   # Establece una contraseña segura para root \
+\n \
+\n- Activa el acceso SSH para el usuario root: \
+\n \
+\n     'nano /etc/ssh/sshd_config' \
+\n \
+\n- Busca y modifica las siguientes líneas: \
+\n \
+\n     'PermitRootLogin yes' \
+\n     'PasswordAuthentication yes' \
+\n \
+\n- Guarda los cambios y reinicia el servicio: \
+\n \
+\n     'systemctl restart ssh' \
+\n \
+\n- Ahora puedes conectarte al servidor desde otro equipo con root, por ejemplo con PuTTY o WinSCP. \
+\n- Instala wget y omv-regen: \
+\n \
+\n     'apt-get update' \
+\n     'apt-get upgrade -y'  \
+\n     'apt-get install wget -y' \
+\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
+\n \
+\n- Copia el backup al servidor (WinSCP), inicia 'omv-regen' y ejecuta la regeneración. omv-regen instalará OMV y continuará la regeneración. \
+\n \
+\n______ ALGUNOS CONSEJOS Y NOVEDADES PRÁCTICAS \
+\n \
+\n- SISTEMA DE BACKUPS: \
+\n   - Los backups ahora se gestionan mediante un sistema de retenciones automáticas: semanal, mensual y anual. \
+\n   - Podrás mantener copias históricas sin llenar el disco; las más antiguas se eliminarán de forma segura según tus ajustes. \
+\n \
+\n- HOOK AUTOMÁTICO: \
+\n   - omv-regen instala un hook que garantiza que todos los paquetes necesarios se descarguen junto al backup. \
+\n   - Una primera actualización del sistema tras instalar omv-regen asegurará que todos los paquetes estén disponibles a partir de ese momento. \
+\n \
+\n- PROGRAMACIÓN AUTOMÁTICA: \
+\n   - omv-regen crea por defecto una tarea diaria de backup, que puedes modificar desde la GUI de OMV. \
+\n   - Además, se ejecuta una limpieza semanal automática del hook para mantener el sistema ordenado. \
+\n \
+\n- CARPETAS OPCIONALES: \
+\n   - Evita incluir carpetas de sistema en los backups opcionales. \
+\n   - Asegúrate de que no contengan archivos críticos que puedan afectar al nuevo sistema. \
+\n \
+\n- COMPLEMENTOS BASADOS EN CONTENEDORES: \
+\n   - omv-regen solo respalda las configuraciones visibles en la GUI de OMV. \
+\n   - Complementos basados en podman como Filebrowser o Photoprism deben respaldarse manualmente. \
+\n \
+\n- OPENMEDIAVAULT-APTTOOL: \
+\n   - Si utilizas el complemento apttool, los paquetes instalados mediante él se instalarán automáticamente durante la regeneración. \
+\n \
+\n- SYMLINKS Y CONFIGURACIONES MANUALES: \
+\n   - Los enlaces creados con omv-symlinks se regenerarán automáticamente. \
+\n   - Los creados manualmente desde CLI deberán volver a configurarse. \
+\n \
+\n- DOCKER: \
+\n   - Guarda los datos y volúmenes de Docker fuera del disco de sistema, \
+\n   - preferiblemente en un disco de datos, para evitar pérdidas durante la regeneración. \
+\n   - Después de la regeneración levanta los contenedores en la GUI de OMV. \
+\n \
+\n- DISCOS ENCRIPTADOS: \
+\n   - Si utilizas omv-luksencryption, asegúrate de tener configurado '/etc/crypttab' y las claves de descifrado accesibles. \
+\n   - omv-regen las transferirá al nuevo sistema y gestionará los reinicios necesarios. \
+\n \
+\n- UNIDAD DE SISTEMA: \
+\n   - Instala el nuevo sistema en una unidad diferente a la original. \
+\n   - Así podrás conservar el disco anterior como copia de seguridad ante cualquier imprevisto. \
+\n \
+\n______ FUNCIONAMIENTO INTERNO \
+\n \
+\n- Durante la instalación: \
+\n \
+\n      - Si el sistema es Debian y aún no tiene instalado OMV, se instalará dialog previamente. \
+\n      - Se configura un hook para capturar en vivo los paquetes instalados por el sistema. \
+\n      - Se configura en cron un trabajo de limpieza semanal del hook que actualiza el repositorio local, si no se ha hecho ya durante la semana. \
+\n      - Se configura el log de omv-regen. \
+\n      - Se crea la carpeta '/var/lib/omv-regen' con los archivos de configuración y el repositorio local. \
+\n      - Se configura un trabajo programado diario de backup, configurable desde la GUI de OMV. \
+\n      - Si el sistema tiene el idioma español, 'omv-regen' se ajusta el idioma a español. \
+\n \
+\n- Durante la ejecución de un backup: \
+\n \
+\n      - Aunque no es necesario, puedes activar la actualización automática de OMV. \
+\n      - Se actualiza el repositorio local con los paquetes necesarios capturados en el hook y se añaden al backup. \
+\n      - Se eliminan los backups obsoletos según las retenciones configuradas. \
+\n \
+\n- Durante la regeneración: \
+\n \
+\n      - Se permite omitir la instalación de complementos no esenciales. \
+\n      - Se configura un servicio para reanudar la regeneración automáticamente tras cada reinicio. \
+\n         - Puedes ejecutar 'omv-regen' en cualquier momento para ver el log en vivo. \
+\n      - Se desinstala apparmor si está presente. \
+\n      - Si OMV no está instalado, omv-regen instala OMV utilizando el script de instalación de OMV de Aaron Murray. \
+\n         - Esta instalación añade omv-extras al sistema, incluso si no estaba en el sistema original. \
+\n      - Se instalan las versiones del sistema original de OMV y complementos y se retienen hasta finalizar. \
+\n      - Se sustituyen partes de la base de datos siguiendo un orden lógico y ejecutando comandos de SaltStack para aplicar configuraciones. \
+\n      - Al finalizar, se liberan las retenciones y se actualiza el sistema a la última versión de cada paquete. \
+\n \
+\n- Características especiales: \
+\n \
+\n      - omv-regen impide la ejecución de dos instancias simultáneas, excepto durante la regeneración para poder ver el log en vivo. \
+\n \
+\n______ NOTAS Y RECOMENDACIONES \
+\n \
+\n- Requisitos mínimos: Sistema Debian u OMV de 64 bits y conexión a Internet estable. \
+\n   - Se recomienda ejecutar 'omv-regen' como root. \
+\n \
+\n- Logs y seguimiento: \
+\n   - Los registros de ejecución se guardan en '/var/log/omv-regen.log' \
+\n   - Si la regeneración se interrumpe, puedes reanudarla ejecutando de nuevo 'omv-regen' \
+\n \
+\n- Compatibilidad de versiones: \
+\n   - 'omv-regen regenera' requiere que la versión de OMV sea igual o inferior a la del sistema original. \
+\n      - No actualices OMV, deja que lo haga omv-regen, o deja que omv-regen instale OMV desde Debian. \
+\n      - Una vez completado el proceso, omv-regen actualizará el sistema con seguridad. \
+\n \
+\n- Copias de seguridad: \
+\n   - Guarda siempre una copia del backup fuera del servidor antes de iniciar la regeneración. \
+\n   - No borres el backup original hasta confirmar que el nuevo sistema funciona correctamente. \
+\n \
+\n- Seguridad: \
+\n   - omv-regen no realiza modificaciones en los discos de datos; solo en el sistema. \
+\n   - Verifica que todos los discos originales estén conectados antes de iniciar la regeneración. \
+\n   - Recuperación manual: Si una regeneración se detiene con algún problema de instalación. \
+\n      - Limpia la regeneración actual desde la GUI de omv-regen para desbloquear las versiones de paquetes. \
+\n      - A partir de ese momento el sistema queda en tus manos. \
+\n \
+\n- Consideraciones para sistemas con tarjeta SD (Raspberry Pi y similares): \
+\n   - Durante la regeneración del sistema, omv-regen realiza operaciones intensivas de lectura y escritura. \
+\n   - En dispositivos que utilizan almacenamiento flash (como tarjetas SD o eMMC), este proceso puede provocar un desgaste significativo y acortar la vida útil del medio. \
+\n   - Sistemas con 2GB de RAM pueden experimentar inestabilidad, especialmente al aplicar múltiples cambios de configuración o reiniciar servicios, ya que el uso de swap aumenta el riesgo de fallos y de desgaste adicional de la tarjeta SD. \
+\n   - Recomendaciones: \
+\n      - Realiza la regeneración sobre un SSD conectado por USB siempre que sea posible. \
+\n      - Si usas una SD, utiliza una de alta calidad y evita regeneraciones repetidas en la misma tarjeta. \
+\n      - Considera usar modelos con 4 GB de RAM o más para una mayor estabilidad. \
+\n \
+\n- Soporte: \
+\n   - Para dudas o incidencias, consulta el foro oficial de OpenMediaVault. \
+\n   - Recuerda incluir los últimos registros del log para obtener ayuda más rápida. \
+\n \
+\n- Nota final: \
+\n   - omv-regen ha sido diseñado para ofrecer una restauración fiable y automatizada. \
+\n   - No obstante, úsalo bajo tu responsabilidad y revisa siempre los mensajes antes de confirmar cada paso. \
+\n" \
+"\n \
+\n______ INTRODUCTION \
+\n \
+\nSince its creation in April 2023, omv-regen has been a tool designed to migrate OpenMediaVault configurations between systems. \
+\nHowever, its scope was limited by the online availability of package versions. \
+\nToday, with the arrival of version 7.1, that limitation is gone. \
+\nThis version introduces the ability to store and reuse packages from a local repository, \
+\nmaking it possible to fully and faithfully regenerate a system — even months later. \
+\n \
+\nThus, omv-regen is no longer just a migration utility but a true backup and restoration solution without time limits. \
+\nThe invaluable help of Aaron Murray and ChatGPT —to whom I extend my deepest gratitude— has been essential in achieving this milestone. \
+\n \
+\nChente \
+\n(October 2025) \
+\n \
+\n______ WHAT IS OMV-REGEN \
+\n \
+\n- omv-regen is a bash-based utility that runs from the command line (CLI) and provides a graphical interface through dialog. \
+\n- It allows you to create and schedule backups of your OpenMediaVault (OMV) configuration and use those backups to migrate or regenerate the configuration on a clean OMV or Debian system. \
+\n \
+\n- NOTE: omv-regen does not support upgrading between major OMV versions (e.g., from OMV 6 to OMV 7). For this, always use the official 'omv-release-upgrade' procedure. omv-regen can only regenerate configurations within the same major OMV version. \
+\n \
+\n    Main commands: \
+\n \
+\n- 'omv-regen'          → Opens the main graphical interface. \
+\n- 'omv-regen backup'   → Creates a backup of the OMV configuration. \
+\n- 'omv-regen ayuda'    → Opens the help dialogs with full documentation. \
+\n \
+\n______ ADVANTAGES OVER A CONVENTIONAL BACKUP \
+\n \
+\n- Can recover a corrupted system as long as essential files are intact and a backup can be created. \
+\n- The backup is lightweight, usually only a few megabytes, allowing you to keep multiple versions easily. \
+\n- Can regenerate a system from amd64 to ARM or vice versa, taking into account plugin architecture limitations. \
+\n- A regeneration produces a clean system, since it starts from a clean installation. \
+\n- Allows hardware migration without limitations while preserving all OpenMediaVault configurations. \
+\n \
+\n______ LIMITATIONS OF OMV-REGEN \
+\n \
+\n- Custom configurations made from the CLI will not be transferred; only settings made through the OMV GUI are included. \
+\n- Internal configurations of podman-based plugins (such as Filebrowser or Photoprism) are not included — back them up separately. \
+\n- omv-regen is not a data backup system. Its purpose is to preserve system configuration, not data content. \
+\n \
+\n______ HOW TO MAKE BACKUPS WITH OMV-REGEN \
+\n \
+\n- Connect via SSH to your server or use a monitor and keyboard, then install and run 'omv-regen'. \
+\n- Configure the backup storage folder; the default is '/ORBackup'. \
+\n- By default, a daily backup is scheduled at 03:00 AM. You can modify this in the OMV GUI under Scheduled Tasks. \
+\n- You can also manually execute a backup from the omv-regen GUI. \
+\n- You can add additional folders to the backup; configure them in the omv-regen GUI. \
+\n- Use additional folders to keep existing folders outside the OMV environment. \
+\n- Turn off silent mode for detailed notifications. \
+\n- You will always receive a notification if an error occurs. \
+\n- Each backup consists of several files labeled with the creation date and time and contains: \
+\n   - A '.regen.tar'  file with the elements needed for regeneration. \
+\n   - A '.sha56'      file to verify backup integrity. \
+\n   - A '.user#.tar'  file for each user folder included in the backup. \
+\n \
+\n______ HOW TO REGENERATE A SYSTEM \
+\n \
+\n- Connect via SSH or use a monitor and keyboard, install and run 'omv-regen'. \
+\n- Create a backup of the current system and copy it outside the server (e.g., using WinSCP or to a USB drive). \
+\n- To regenerate, you need a clean installation of OMV. Two options: \
+\n   - Use the OMV ISO: install OMV without updating the system; omv-regen will adjust to the correct backup version. \
+\n   - Install minimal Debian (64-bit) and let omv-regen install OMV in the version from the backup. \
+\n- It is recommended to use a new disk for installation and keep the original as a safety copy. \
+\n- Copy the backup to a folder on the server. \
+\n- Configure the backup path and start regeneration. \
+\n   - If you want to skip installing certain plugins, select them in the omv-regen regenera GUI before starting. \
+\n- The system will reboot automatically. You can run 'omv-regen' at any time to view the live log. \
+\n- When finished, you will receive an email with the results and can verify in the OMV GUI that everything has been restored correctly. \
+\n \
+\n______ INSTALLATION AND REGENERATION FROM THE OPENMEDIAVAULT ISO \
+\n \
+\n- Install OpenMediaVault with the ISO corresponding to the version (6.0/7.0) you need. \
+\n- Do not update the system; let omv-regen handle it to match the original versions. \
+\n- Install omv-regen: \
+\n \
+\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
+\n \
+\n- Copy the backup to the server, start 'omv-regen', and run regeneration. \
+\n \
+\n______ INSTALLATION AND REGENERATION FROM DEBIAN \
+\n \
+\n- If your hardware is ARM or you cannot install from the ISO, use this procedure. \
+\n- Install the minimal 64-bit Debian Lite version you need: \
+\n   - For OMV6 → Debian 11 (Bullseye) \
+\n   - For OMV7 → Debian 12 (Bookworm) \
+\n- During installation, select only the SSH package to install. \
+\n- Once installation is complete, log in with your user and enable root: \
+\n \
+\n     'sudo -i' \
+\n     'passwd root'   # Set a secure password for root \
+\n \
+\n- Enable SSH access for the root user: \
+\n \
+\n     'nano /etc/ssh/sshd_config' \
+\n \
+\n- Find and modify the following lines: \
+\n \
+\n     'PermitRootLogin yes' \
+\n     'PasswordAuthentication yes' \
+\n \
+\n- Save changes and restart the service: \
+\n \
+\n     'systemctl restart ssh' \
+\n \
+\n- You can now connect to the server from another machine as root, using PuTTY or WinSCP. \
+\n- Install wget and omv-regen: \
+\n \
+\n     'apt-get update' \
+\n     'apt-get upgrade -y' \
+\n     'apt-get install wget -y' \
+\n     'wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh | bash' \
+\n \
+\n- Copy the backup to the server (WinSCP), start 'omv-regen', and run regeneration. omv-regen will install OMV and continue regeneration. \
+\n \
+\n______ SOME PRACTICAL TIPS AND NEW FEATURES \
+\n \
+\n- BACKUP SYSTEM: \
+\n   - Backups are now managed through an automatic retention system: weekly, monthly, and yearly. \
+\n   - You can keep historical copies without filling your disk; older ones are safely deleted according to your settings. \
+\n \
+\n- AUTOMATIC HOOK: \
+\n   - omv-regen installs a hook that ensures all required packages are downloaded together with the backup. \
+\n   - An initial system update after installing omv-regen guarantees that all packages are available from that point on. \
+\n \
+\n- AUTOMATIC SCHEDULING: \
+\n   - omv-regen creates a default daily backup task, which can be modified from the OMV GUI. \
+\n   - A weekly automatic cleanup of the hook is also scheduled to keep the system tidy. \
+\n \
+\n- OPTIONAL FOLDERS: \
+\n   - Avoid including system folders in optional backups. \
+\n   - Ensure they do not contain critical files that might affect the new system. \
+\n \
+\n- CONTAINER-BASED PLUGINS: \
+\n   - omv-regen only backs up configurations visible in the OMV GUI. \
+\n   - Podman-based plugins such as Filebrowser or Photoprism should be backed up manually. \
+\n \
+\n- OPENMEDIAVAULT-APTTOOL: \
+\n   - If you use the apttool plugin, packages installed through it \
+\n   - will be automatically installed during regeneration. \
+\n \
+\n- SYMLINKS AND MANUAL CONFIGURATIONS: \
+\n   - Links created with omv-symlinks will be automatically regenerated. \
+\n   - Links created manually from the CLI will need to be reconfigured. \
+\n \
+\n- DOCKER: \
+\n   - Store Docker data and volumes outside the system drive, \
+\n   - preferably on a data disk, to prevent loss during regeneration. \
+\n   - After regeneration, bring the containers back up through the OMV GUI. \
+\n \
+\n- ENCRYPTED DRIVES: \
+\n   - If you use omv-luksencryption, make sure '/etc/crypttab' and decryption keys are accessible. \
+\n   - omv-regen will transfer them to the new system and handle necessary reboots. \
+\n \
+\n- SYSTEM DRIVE: \
+\n   - Install the new system on a different drive than the original. \
+\n   - This way, you can keep the old drive as a backup in case of issues. \
+\n \
+\n______ INTERNAL OPERATION \
+\n \
+\n- During installation: \
+\n \
+\n   - If the system is Debian and OMV is not yet installed, dialog will be installed first. \
+\n   - A hook is set up to capture installed packages in real-time. \
+\n   - A weekly cron job is configured to clean the hook that updates the local repository, if not already done that week. \
+\n   - The omv-regen log is configured. \
+\n   - The '/var/lib/omv-regen' folder is created with configuration files and the local repository. \
+\n   - A daily scheduled backup task is configured, editable from the OMV GUI. \
+\n   - If the system language is Spanish, omv-regen automatically adjusts to Spanish. \
+\n \
+\n- During backup execution: \
+\n \
+\n   - Although not required, you can enable automatic OMV updates. \
+\n   - The local repository is updated with the necessary packages captured in the hook and added to the backup. \
+\n   - Obsolete backups are deleted according to retention settings. \
+\n \
+\n- During regeneration: \
+\n \
+\n   - You can skip installing non-essential plugins. \
+\n   - A service is configured to automatically resume regeneration after each reboot. \
+\n      - You can run 'omv-regen' at any time to view the live log. \
+\n   - AppArmor will be uninstalled if present. \
+\n   - If OMV is not installed, it is installed using Aaron Murray’s OMV installation script. \
+\n      - This installation includes omv-extras even if it was not part of the original system. \
+\n   - The original versions of OMV and plugins are installed and held until completion. \
+\n   - Parts of the database are replaced in logical order, executing SaltStack commands to apply configurations. \
+\n   - At the end, holds are released and the system is safely updated to the latest package versions. \
+\n \
+\n- Special features: \
+\n \
+\n   - omv-regen prevents multiple instances from running simultaneously, except during regeneration to allow viewing the live log. \
+\n \
+\n______ NOTES AND RECOMMENDATIONS \
+\n \
+\n- Minimum requirements: Debian or OMV 64-bit system and stable Internet connection. \
+\n   - It is recommended to run 'omv-regen' as root. \
+\n \
+\n- Logs and monitoring: \
+\n   - Execution logs are saved in '/var/log/omv-regen.log'. \
+\n   - If regeneration is interrupted, you can resume it by running 'omv-regen' again. \
+\n \
+\n- Version compatibility: \
+\n   - omv-regen regenera requires the OMV version to be equal to or lower than the original system’s version. \
+\n   - Do not update OMV; let omv-regen do it, or let it install OMV from Debian. \
+\n   - Once the process is complete, omv-regen will safely update the system. \
+\n \
+\n- Backups: \
+\n   - Always store a copy of the backup outside the server before starting regeneration. \
+\n   - Do not delete the original backup until confirming the new system works properly. \
+\n \
+\n- Security: \
+\n   - omv-regen does not modify data disks; it only affects the system. \
+\n   - Verify that all original disks are connected before starting regeneration. \
+\n \
+\n- Manual recovery: If regeneration stops due to installation issues: \
+\n   - Clean the current regeneration from the omv-regen GUI to unlock package versions. \
+\n   - From that point, the system is in your hands. \
+\n \
+\n- Considerations for systems using SD cards (Raspberry Pi and similar devices): \
+\n   - During the system regeneration process, omv-regen performs intensive read and write operations. \
+\n   - On devices that use flash storage (such as SD or eMMC cards), this process can cause significant wear and shorten the lifespan of the storage medium. \
+\n   - Systems with 2GB of RAM may experience instability, especially when applying multiple configuration changes or restarting services, as using swap increases the risk of failure and additional wear on the SD card. \
+\n   - Recommendations: \
+\n      - Whenever possible, perform the regeneration on a USB-connected SSD. \
+\n      - If you use an SD card, choose a high-quality one and avoid running multiple regenerations on the same card. \
+\n      - Consider using models with 4GB of RAM or more for greater stability. \
+\n \
+\n- Support: \
+\n   - For questions or issues, visit the official OpenMediaVault forum. \
+\n   - Include the latest log entries to get faster help. \
+\n \
+\n- Final note: \
+\n   - omv-regen is designed to provide reliable and automated restoration. \
+\n   - However, use it responsibly and always review the messages before confirming each step. \
+\n"
 
 txt AyudaMenuBackup \
 "\n \
@@ -617,51 +1087,9 @@ txt AyudaMenuRegenera \
 \n                >>> New IP: __________. Reconnect after reboot. \
 \n"
 
-    [ -f "/var/lib/omv-regen/settings/readme" ] || ActualizarAyuda
-    . /var/lib/omv-regen/settings/readme
     AYUDA=("${txt[AyudaOmvregen]}" "${txt[AyudaMenuBackup]}" "${txt[AyudaMenuRegenera]}")
     FormatearSiNo
 }
-
-# Descargar y formatear texto de ayuda desde github para usar con el script.
-# Download and format help text from GitHub to use with the script.
-ActualizarAyuda() {
-    local tmp bloque_es bloque_en
-    tmp="$(mktemp)"
-
-    echoe log ">>> Descargando archivo de ayuda desde GitHub ..." \
-              ">>> Downloading help file from GitHub ..."
-    mkdir -p "/var/lib/omv-regen/settings"
-    wget -q -O "$tmp" "$URL_OMVREGEN_README" || { error "Fallo descargando el archivo de ayuda." \
-                                                        "Failed to download help file."; return 1; }
-    
-    echoe log ">>> Procesando archivo de ayuda ..." \
-              ">>> Processing help file ..."
-    bloque_es=$(awk '/^## INTRODUCCIÓN/,/[[:space:]]*No obstante, úsalo bajo tu/' "$tmp" | \
-                sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
-                sed -E "s/\`/'/g; s/'''//g" | \
-                sed -E 's/^/\\n /; s/"/\\"/g')
-    bloque_en=$(awk '/^## INTRODUCTION/,/[[:space:]]*However, use it responsibly/' "$tmp" | \
-                sed -E 's/^## */______ /; s/^### */    /; s/^\* */- /; s/^   \* */   - /; s/\*//g' | \
-                sed -E "s/\`/'/g; s/'''//g" | \
-                sed -E 's/^/\\n /; s/"/\\"/g')
-    # shellcheck disable=SC2028,SC1003
-    {
-        echo '#!/bin/bash'
-        echo 'txt AyudaOmvregen \'
-        echo '"\n'
-        echo "$bloque_es"
-        echo '\n" \'
-        echo '"\n'
-        echo "$bloque_en"
-        echo '\n"'
-    } > "/var/lib/omv-regen/settings/readme"
-    echoe log ">>> Archivo de ayuda actualizado correctamente." \
-              ">>> Help file updated successfully."
-    . /var/lib/omv-regen/settings/readme
-    rm -f "$tmp"
-}
-
 
 ########################################## MENUS GRAFICOS ##########################################
 ########################################## GRAPHIC MENUS ###########################################
@@ -730,7 +1158,7 @@ MenuPrincipal() {
         fi
         case $salida_0 in
             1|255) VIA=8 ;;
-            2    ) VIA=7 ;;
+            2) VIA=7 ;;
         esac
         case $VIA in
             1)  MenuBackup ;;
@@ -818,8 +1246,7 @@ MenuBackup() {
         if [ -n "$dirs" ]; then
             txtm 4 31 "$dirs"
         else txtm 8 31 ">>> No se han incluido carpetas opcionales." \
-                       ">>> No optional folders have been included."; ((alto_min++))
-        fi
+                       ">>> No optional folders have been included."; ((alto_min++)); fi
         
         if [ -n "$RepoIncompleto" ]; then
             txt 32 "${txt[lin]}"
@@ -846,19 +1273,19 @@ MenuBackup() {
         txt 64 "Activado ---------------------------------> " \
                "Enabled ----------------------------------> "
         case "${CFG[ActualizarOMV]}" in
-            No    ) txt 61 "${txt[63]}"; txt 62 "Activar actualización de OMV    " \
+            No)     txt 61 "${txt[63]}"; txt 62 "Activar actualización de OMV    " \
                                                 "Enable OMV update               " ;;
             Si|Yes) txt 61 "${txt[64]}"; txt 62 "Desactivar actualización de OMV " \
                                                 "Disable OMV update              " ;;
         esac
         case "${CFG[ModoSilencio]}" in
-            No    ) txt 71 "${txt[63]}"; txt 72 "Activar Modo silencio           " \
+            No)     txt 71 "${txt[63]}"; txt 72 "Activar Modo silencio           " \
                                                 "Enable Silent mode              " ;;
             Si|Yes) txt 71 "${txt[64]}"; txt 72 "Desactivar Modo silencio        " \
                                                 "Disable Silent mode             " ;;
         esac
         case "${CFG[OmitirRoot]}" in
-            No    ) txt 81 "${txt[63]}"; txt 82 "Activar omisión carpeta /root   " \
+            No)     txt 81 "${txt[63]}"; txt 82 "Activar omisión carpeta /root   " \
                                                 "Enable skipping /root folder    " ;;
             Si|Yes) txt 81 "${txt[64]}"; txt 82 "Desactivar omisión carpeta /root" \
                                                 "Disable skipping /root folder   " ;;
@@ -901,8 +1328,8 @@ MenuBackup() {
         salida_menu=$?
         case $salida_menu in
             1|255) VIA=0 ;;
-            2    ) Ayuda AyudaMenuBackup ;;
-            0    ) case $respuesta in
+            2)  Ayuda AyudaMenuBackup ;;
+            0)  case $respuesta in
                     1)  VIA=9 ;;
                     3)  MenuRutaBackups ;;
                     4)  MenuRutasAdicionales ;;
@@ -946,10 +1373,10 @@ MenuRutaBackups() {
         else
             salida_menu=1
             case "${CFG[RutaBackups]}" in
-                ""             ) CFG[RutaBackups]="$ruta_inicial" ;;
+                "") CFG[RutaBackups]="$ruta_inicial" ;;
                 "$ruta_inicial") ;;
-                "/ORBackup"    ) ;;
-                *              )
+                "/ORBackup") ;;
+                *)
                     if [ ! -d "${CFG[RutaBackups]}" ]; then
                         if Pregunta ">>> La carpeta ${CFG[RutaBackups]} no existe.\n\n>>> ¿Quieres crearla?" \
                                     ">>> The ${CFG[RutaBackups]} folder does not exist.\n\n>>> Do you want to create it?"; then
@@ -986,20 +1413,20 @@ MenuRutasAdicionales() {
         local carpeta=$1 entrada=$2
         local res="ignorar"
         case $entrada in
-            "${txt[2]}"                  )  [ "$carpeta" = "extra" ] && res="terminar" ;;
-            "${CFG[RutaBackups]}"        )  Mensaje ">>> $entrada es el destino del backup, no se puede incluir en el backup." \
+            "${txt[2]}")                    [ "$carpeta" = "extra" ] && res="terminar" ;;
+            "${CFG[RutaBackups]}")          Mensaje ">>> $entrada es el destino del backup, no se puede incluir en el backup." \
                                                     ">>> $entrada is the backup destination, it cannot be included in the backup." ;;
-            /root                        )  Mensaje ">>> Selecciona en el menú del backup si quieres incluir la carpeta root. Se ignora." \
+            /root)                          Mensaje ">>> Selecciona en el menú del backup si quieres incluir la carpeta root. Se ignora." \
                                                     ">>> Select whether you want to include the root folder in the backup menu. It is ignored." ;;
             /etc/libvirt|/var/lib/libvirt)  Mensaje ">>> La carpeta $entrada se incluye por defecto en el backup. Se ignora." \
                                                     ">>> The $entrada folder is included by default in the backup. It is ignored." ;;
-            ""                           )  [ "$carpeta" = "extra" ] && res="terminar" || res="eliminar" ;;
-            /                            )  Mensaje ">>> No se puede incluir rootfs en el backup." \
+            "")                             [ "$carpeta" = "extra" ] && res="terminar" || res="eliminar" ;;
+            /)                              Mensaje ">>> No se puede incluir rootfs en el backup." \
                                                     ">>> You cannot include rootfs in the backup." ;;
-            /*                           )  [ ! -d "$entrada" ] && Mensaje ">>> La carpeta $entrada no existe pero se añade a la lista." \
+            /*)                             [ ! -d "$entrada" ] && Mensaje ">>> La carpeta $entrada no existe pero se añade a la lista." \
                                                                            ">>> The $entrada folder does not exist but is added to the list."
                                             res="ok" ;;
-            *                            )  Mensaje ">>> La carpeta debe comenzar con '/'" \
+            *)                              Mensaje ">>> La carpeta debe comenzar con '/'" \
                                                     ">>> The folder must start with '/'" ;;
         esac
         echo "$res"
@@ -1016,9 +1443,9 @@ MenuRutasAdicionales() {
             sale=$?
             respuesta=$(echo "$respuesta" | xargs)
             case $sale in
-                1  )    accion="eliminar" ;;
+                1)      accion="eliminar" ;;
                 255)    Info 2 cancelado; return ;;
-                0  )    accion=$(procesar_respuesta "$carpeta" "$respuesta") ;;
+                0)      accion=$(procesar_respuesta "$carpeta" "$respuesta") ;;
             esac
             [ "$accion" != "ignorar" ] && break
         done
@@ -1026,7 +1453,7 @@ MenuRutasAdicionales() {
             eliminar)   guardar=1
                         Mensaje ">>> La carpeta $carpeta no se incluirá en el backup." \
                                 ">>> The $carpeta folder will not be included in the backup." ;;
-            ok      )   if [ "$carpeta" != "$respuesta" ]; then
+            ok)         if [ "$carpeta" != "$respuesta" ]; then
                             Mensaje ">>> La carpeta $carpeta se ha sustituido por la carpeta $respuesta" \
                                     ">>> The $carpeta folder has been replaced by the $respuesta folder."
                             guardar=1
@@ -1047,9 +1474,9 @@ MenuRutasAdicionales() {
         sale=$?
         respuesta=$(echo "$respuesta" | xargs)
         case $sale in
-            1  )    accion="terminar" ;;
+            1)      accion="terminar" ;;
             255)    Info 2 cancelado; return ;;
-            0  )    accion=$(procesar_respuesta "extra" "$respuesta") ;;
+            0)      accion=$(procesar_respuesta "extra" "$respuesta") ;;
         esac
         [ "$accion" = "ok" ] && RUTAS+=("$respuesta") && guardar=1
     done
@@ -1074,9 +1501,9 @@ MenuRetenciones() {
         seman="${CFG[RetencionSemanas]}"
         meses="${CFG[RetencionMeses]}"
         case $retencion in
-            RetencionDias   ) hasta=99; txt 41 "DIARIA"  "DAILY" ;;
+            RetencionDias)    hasta=99; txt 41 "DIARIA"  "DAILY" ;;
             RetencionSemanas) hasta=52; txt 41 "SEMANAL" "WEEKLY" ;;
-            RetencionMeses  ) hasta=24; txt 41 "MENSUAL" "MONTHLY" ;;
+            RetencionMeses)   hasta=24; txt 41 "MENSUAL" "MONTHLY" ;;
         esac
         txtc 1 "\nOPCIONES DE BACKUP\n${linea}" \
                "\nBACKUP OPTIONS\n${linea}"
@@ -1294,13 +1721,13 @@ ${txt[lin]}\n${txt[3]}${txt[4]} "
         txt 84 "Activado ---------------------------------> " \
                "Enabled ----------------------------------> "
         case "${CFG[RegenRed]}" in
-            No    ) txt 71 "${txt[83]}"; txt 72 "Activar Regeneración de Red     " \
+            No)     txt 71 "${txt[83]}"; txt 72 "Activar Regeneración de Red     " \
                                                 "Enable Network Regeneration     " ;;
             Si|Yes) txt 71 "${txt[84]}"; txt 72 "Desactivar Regeneración de Red  " \
                                                 "Disable Network Regeneration    " ;;
         esac
         case "${CFG[RegenKernel]}" in
-            No    ) txt 81 "${txt[83]}"; txt 82 "Activar Instalación de Kernel   " \
+            No)     txt 81 "${txt[83]}"; txt 82 "Activar Instalación de Kernel   " \
                                                 "Enable Kernel Installation      " ;;
             Si|Yes) txt 81 "${txt[84]}"; txt 82 "Desactivar Instalación de Kernel" \
                                                 "Disable Kernel Installation     " ;;
@@ -1334,19 +1761,17 @@ ${txt[lin]}\n${txt[3]}${txt[4]} "
             --menu "${txt[1]}" "$alto" "$ancho" 3  1 "${txt[50]}" 2 "${txt[60]}" 3 "${txt[70]}" 4 "${txt[80]}" 5 "${txt[90]}")
         salida_menu=$?
         case $salida_menu in
-            2    )  Ayuda AyudaMenuRegenera ;;
+            2)  Ayuda AyudaMenuRegenera ;;
             1|255)  
                 if [[ -n "${CFG[ComplementosExc]}" ]]; then
                     Info 3 ">>> Los complementos marcados para omitir se descartan. Limpiando exclusiones ..." \
                            ">>> Plugins marked to be skipped are discarded. Cleaning exclusions ..."
-                    salvar_cfg ComplementosExc "" || return 1
-                else
-                    txtm 8 92 ">>> Ninguno." \
-                              ">>> None."
+                    CFG[ComplementosExc]=""
+                    SalvarAjustes || return 1
                 fi
                 VIA=0
                 ;;
-            0    )
+            0)
                 case $respuesta in
                     1)  VIA=10 ;;
                     2)  if regen_en_progreso; then
@@ -1437,8 +1862,8 @@ Ayuda() {
                --yesno "${AYUDA[i]}\n " 0 0
         salida_menu=$?
         case $salida_menu in
-            0    )  ((i++)) ;;
-            3    )  ((i--)) ;;
+            0)      ((i++)) ;;
+            3)      ((i--)) ;;
             1|255)  break ;;
         esac
         ((i = (i + n_paginas) % n_paginas))
@@ -1459,12 +1884,12 @@ EnviarCorreo() {
 
     LeerValorBD "/config/system/email/enable"
     case "$ValorBD" in
-        1   )   echo -e "${txt[cuerpo]}" | mail -E -s "$asunto" root 2>/dev/null \
+        1)      echo -e "${txt[cuerpo]}" | mail -E -s "$asunto" root 2>/dev/null \
                     || alerta "Fallo al enviar el correo. Comprueba la configuración de email en OMV." \
                               "Failed to send email. Check OMV email settings." ;;
         0|"")   echoe ">>> Envío de correo deshabilitado o OMV no instalado. Omitiendo notificación. ValorBD: $ValorBD" \
                       ">>> Email disabled or OMV not installed. Skipping notification. ValorBD: $ValorBD" ;;
-        *   )   error log "Estado inesperado de la configuración de la base de datos de OMV." \
+        *)      error log "Estado inesperado de la configuración de la base de datos de OMV." \
                           "Unexpected state of OMV database configuration." ;;
     esac
 }
@@ -1584,7 +2009,7 @@ echoe() {
     }
 
     case "$tipo" in
-        sil  )  mensaje=$(obtener_mensaje "$2" "$3")
+        sil)    mensaje=$(obtener_mensaje "$2" "$3")
                 echo -e "$mensaje" | _orl sil
                 ;;
         nolog)  mensaje=$(obtener_mensaje "$2" "$3")
@@ -1594,11 +2019,11 @@ echoe() {
                 txt error "$mensaje"
                 echo -e "$mensaje" | _orl error
                 ;;
-        log  )  mensaje=$(obtener_mensaje "$2" "$3")
+        log)    mensaje=$(obtener_mensaje "$2" "$3")
                 txt error "$mensaje"
                 echo -e "$mensaje" | _orl log
                 ;;
-        *    )  mensaje=$(obtener_mensaje "$1" "$2")
+        *)      mensaje=$(obtener_mensaje "$1" "$2")
                 echo -e "$mensaje" | _orl
                 ;;
     esac
@@ -1735,13 +2160,13 @@ Info() {
 # Information waiting until pressed. In unattended mode, only echoe().
 Mensaje() {
     case "$1" in
-        error ) error  "$2" "$3"
+        error)  error  "$2" "$3"
                 txt mensaje ">>> ERROR: $2" ">>> ERROR: $3"
                 ;;
         alerta) alerta "$2" "$3"
                 txt mensaje ">>> ATENCION: $2" ">>> WARNING: $3"
                 ;;
-        *     ) echoe "$@"
+        *)      echoe "$@"
                 txt mensaje "$1" "$2"
                 [ -n "$3" ] && txt mensaje "$2" "$3"
                 ;;
@@ -1819,14 +2244,17 @@ estado_correcto_omv() {
     local paquete estado
     while read -r estado paquete; do
         case $estado in
-            ii|hi)  ;;
-            rc   )  es_esencial "$paquete" && {
-                        error "El paquete esencial $paquete no está instalado pero hay archivos de configuración, estado: $estado" \
-                              "The essential $paquete package is not installed but there are configuration files, state: $estado"
-                        return 1; } ;;
-            *    )  error "El paquete $paquete está en mal estado: $estado" \
-                          "Package $paquete is in bad condition: $estado"
-                        return 1 ;;
+            ii|hi) ;;
+            rc)
+                es_esencial "$paquete" && {
+                    error "El paquete esencial $paquete no está instalado pero hay archivos de configuración, estado: $estado" \
+                          "The essential $paquete package is not installed but there are configuration files, state: $estado"
+                    return 1; }
+                ;;
+            *)  
+                error "El paquete $paquete está en mal estado: $estado" \
+                      "Package $paquete is in bad condition: $estado"
+                return 1 ;;
         esac
     done < <(dpkg -l | awk '/openmediavault/ {print $1, $2}')
 }
@@ -1943,7 +2371,7 @@ OmvregenReset() {
 LeerAjustes() {
     local clave cont=0 linea claves_ora version_ajustes
     local archivo_ajustes="$OR_ajustes_file"
-    local version_compatible_min="8.0.0"
+    local version_compatible_min="7.1.0"
     
     unset CARPETAS_ADICIONALES
     version_ajustes=$(awk -F "omv-regen version " 'NR==1{print $2}' "$OR_ajustes_file")
@@ -1962,6 +2390,43 @@ LeerAjustes() {
                     "The settings file version does not match."
         # PARA MIGRACIONES POSTERIORES
     fi
+}
+
+# Migrar ajustes desde versiones 7.0.x o anterior
+# Migrate settings from versions 7.0.x or earlier
+MigrarAjustes_7_0() {
+    local ajuste
+    local ajustes_antiguo="/etc/regen/omv-regen.settings"
+
+    IniciarAjustes; AjustarIdioma
+
+    Info 3 ">>> Migrando ajustes anteriores hasta $ORVersion ... \
+           \n>>> Los ajustes antiguos se guardarán en el log para referencia: $OR_log_file "\
+           ">>> Migrating previous settings to $ORVersion ... \
+           \n>>> The old settings will be saved in the log for reference: $OR_log_file "
+    txt 1 "INICIO DE AJUSTES ANTIGUOS" "START OLD SETTINGS"
+    txt 2 "FIN DE AJUSTES ANTIGUOS" "END OF OLD SETTINGS"
+    { echo ">>> ${txt[1]} <<<"
+    cat "$ajustes_antiguo"
+    echo ">>> ${txt[2]} <<<"; } >> "$OR_log_file"
+
+    ajuste="$(grep "^Actualizar : " "$ajustes_antiguo")" || error "No se encontró 'Actualizar' en los ajustes antiguos: $ajustes_antiguo " \
+                                                                  "'Actualizar' not found in old settings: $ajustes_antiguo"
+    CFG[ActualizarOMV]="${ajuste#Actualizar : }"
+    [ "${CFG[ActualizarOMV]}" = "" ] && CFG[ActualizarOMV]="$pre_ActualizarOMV"
+    ajuste="$(grep "^RutaBackup : " "$ajustes_antiguo")" || error "No se encontró 'RutaBackup' en los ajustes antiguos: $ajustes_antiguo " \
+                                                                  "'RutaBackup' not found in old settings: $ajustes_antiguo"
+    CFG[RutaBackups]="${ajuste#RutaBackup : }"
+    [ "${CFG[RutaBackups]}" = "" ] && CFG[RutaBackups]="$pre_RutaBackups"
+
+    rm -r /etc/regen
+    [ ! -d "${OR_dir}/settings" ] && mkdir -p "${OR_dir}/settings"
+    OmvregenReset
+    ProgramarBackup crear
+    SalvarAjustes || return 1
+
+    Info 3 ">>> Ajustes migrados desde 7.0.x o anterior. Consulta la ayuda para conocer las nuevas configuraciones." \
+           ">>> Settings migrated from 7.0.x or earlier. Please consult the help to learn about new configurations."
 }
 
 # Crear o actualizar tarea en cron para limpieza semanal del hook. >/dev/null solo envia correo en caso de error
@@ -2054,28 +2519,28 @@ hook_es_ok() {
                              ">>> OMV is not installed, skipping hook check ..."; return 0; }
 
     if [ ! -f "$OR_hook_file" ] || [ ! -s "$OR_hook_file" ]; then
-        echoe log ">>> El archivo del hook no existe o está vacío: $OR_hook_file" \
-                  ">>> The hook file does not exist or is empty: $OR_hook_file"
+        error "El archivo del hook no existe o está vacío: $OR_hook_file" \
+              "The hook file does not exist or is empty: $OR_hook_file"
         return 1
     fi
     if [ "$(stat -c %a "$OR_hook_file")" != "755" ] || [ "$(stat -c %U:%G "$OR_hook_file")" != "root:root" ]; then
-        echoe log ">>> Permisos o propiedad incorrecta en el archivo: $OR_hook_file" \
-                  ">>> Incorrect permissions or ownership on the file: $OR_hook_file"
+        error "Permisos o propiedad incorrecta en el archivo: $OR_hook_file" \
+              "Incorrect permissions or ownership on the file: $OR_hook_file"
         return 1
     fi
     if ! grep -q "# Log the hook execution" "$OR_hook_file"; then
-        echoe log ">>> Contenido del hook incompleto o incorrecto en: $OR_hook_file" \
-                  ">>>Hook file content is incomplete or incorrect in: $OR_hook_file"
+        error "Contenido del hook incompleto o incorrecto en: $OR_hook_file" \
+              "Hook file content is incomplete or incorrect in: $OR_hook_file"
         return 1
     fi
     if [ ! -d "$OR_hook_dir" ]; then
-        echoe log ">>> El directorio del hook no existe: $OR_hook_dir" \
-                  ">>> The hook directory does not exist: $OR_hook_dir"
+        error "El directorio del hook no existe: $OR_hook_dir" \
+              "The hook directory does not exist: $OR_hook_dir"
         return 1
     fi
     if [ "$(stat -c %a "$OR_hook_dir")" != "755" ] || [ "$(stat -c %U:%G "$OR_hook_dir")" != "root:root" ]; then
-        echoe log ">>> Permisos o propiedad incorrecta en el directorio: $OR_hook_dir" \
-                  ">>> Incorrect permissions or ownership on the directory: $OR_hook_dir"
+        error "Permisos o propiedad incorrecta en el directorio: $OR_hook_dir" \
+              "Incorrect permissions or ownership on the directory: $OR_hook_dir"
         return 1
     fi
 }
@@ -2240,7 +2705,6 @@ BuscarOR() {
     cat "$or_file" >"$OR_script_file"
     [ -f "$version_nueva" ] && rm -f "$version_nueva"
     salvar_cfg UltimaBusqueda "$(date +%y%m%d)" || return 1
-    ActualizarAyuda || return 1
     modo_desatendido && { sleep 3; Salir ">>> omv-regen se ha actualizado. Saliendo ..." \
                                          ">>> omv-regen has been updated. Exiting ..."; }
     Info 3 ">>> omv-regen se ha actualizado. Reiniciando omv-regen ..." \
@@ -2312,10 +2776,10 @@ ProgramarBackup() {
                              ">>> OMV is not installed, skipping backup scheduling ..."; return 0; }
 
     case "$accion" in
-        ""      )   if existe_tarea_backup; then accion="eliminar"; else accion="crear"; fi ;;
-        crear   )   : ;;
+        "")         if existe_tarea_backup; then accion="eliminar"; else accion="crear"; fi ;;
+        crear)      : ;;
         eliminar)   ! existe_tarea_backup && return 0 ;;
-        *       )   error "Acción no válida: $accion" "Invalid action: $accion"; return 1 ;;
+        *)          error "Acción no válida: $accion" "Invalid action: $accion"; return 1 ;;
     esac
 
     if [ "$accion" = "crear" ]; then
@@ -2602,8 +3066,7 @@ BuscarPaquetesFaltantes() {
                         rm "$archivo"
                     }
                 else
-                    # Intento especial para omvextrasorg
-                    # Special attempt for omvextrasorg
+                    # Intento especial para omvextrasorg - Special attempt for omvextrasorg
                     if [[ "$nombre_paquete_faltante" == "openmediavault-omvextrasorg" ]]; then
                         echoe sil ">>> Intentando ruta alternativa para omvextrasorg ..." \
                                   ">>> Trying alternative path for omvextrasorg ..."
@@ -2924,7 +3387,7 @@ EjecutarBackup () {
     if [ "${CFG[OmitirRoot]}" = "No" ]; then
         echoe sil ">>> Copiando carpeta /root a $dir_regen ..." \
                   ">>> Copying /root folder to $dir_regen ..."
-        rsync -a /root/ "${dir_regen}/root" --exclude '*.deb' --exclude '.cache/pip' | _orl sil || return 1
+        rsync -a /root/ "${dir_regen}/root" --exclude '**/*.deb' | _orl sil || return 1
     else
         echoe sil ">>> AVISO: La carpeta /root no está incluida en el backup. Omitir /root puede provocar resultados inesperados al regenerar." \
                   ">>> WARNING: The /root folder is not included in the backup. Omitting /root may cause unexpected results when regenerating."
@@ -3370,14 +3833,14 @@ estado_actual_de() {
         estado_actual="no_instalado"
     else
         case $estado_actual in
-            hi         )    estado_actual="retenido" ;;
-            ii         )    estado_actual="instalado" ;;
+            hi)             estado_actual="retenido" ;;
+            ii)             estado_actual="instalado" ;;
             rc|un|rn|pu)    estado_actual="no_instalado" ;;
-            iU|iF|U|C  )    estado_actual="incompleto"
+            iU|iF|U|C)      estado_actual="incompleto"
                                 error "Estado incompleto para el paquete '$nombre_paquete' ($estado_actual)." \
                                       "Incomplete state for package '$nombre_paquete' ($estado_actual)."
                                 return 1 ;;
-            *          )    estado_actual="desconocido"
+            *)              estado_actual="desconocido"
                                 error "Estado desconocido para el paquete '$nombre_paquete' ($estado_actual)." \
                                       "Unknown state for package '$nombre_paquete' ($estado_actual)."
                                 return 1 ;;
@@ -3820,7 +4283,6 @@ EjecutarRegenera() {
         Carpeta_Regen="${OR_dir}/regen_${tar_regen_fecha}"
         mkdir -p "$Carpeta_Regen"
 
-        modo_desatendido || clear
         echoe ">>> Preparando el entorno de la regeneración ..." \
               ">>> Preparing the environment for regeneration ..."
         txt 1 "Fallo preparando el entorno de la regeneración. Limpiando y abortando ..." \
@@ -3849,6 +4311,7 @@ EjecutarRegenera() {
         fi
     fi
 
+    modo_desatendido || clear
     echoe "\n\n       <<< REGENERANDO SISTEMA OMV >>>\n\n" \
           "\n\n       <<< REGENERATING OMV SYSTEM >>>\n\n"
 
@@ -3891,7 +4354,7 @@ EjecutarRegenera() {
     while regen_en_progreso; do
         read -r fase estado resto <<< "${CFG[EstatusRegenera]}"
         case "$estado" in
-            inicio|start     )  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_1 $resto" || return 1 ;;
+            inicio|start)       salvar_cfg EstatusRegenera "$fase ${txt[intento]}_1 $resto" || return 1 ;;
             intento_1|retry_1)  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_2 $resto" || return 1 ;;
             intento_2|retry_2)  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_3 $resto" || return 1 ;;
             intento_3|retry_3)  salvar_cfg EstatusRegenera "$fase ${txt[intento]}_4 $resto" || return 1 ;;
@@ -3899,9 +4362,9 @@ EjecutarRegenera() {
             intento_5|retry_5)  error "Fase Nº $fase ha fallado repetidamente en modo automático. Abortando regeneración ..." \
                                       "Phase Nº $fase has failed repeatedly in automatic mode. Aborting regeneration ..."
                                 return 1 ;;
-            *                )  error "Estado de regeneración desconocido: $estado" \
-                                      "Unknown regeneration status: $estado"
-                                return 1 ;;
+            *)  error "Estado de regeneración desconocido: $estado" \
+                      "Unknown regeneration status: $estado"
+                return 1 ;;
         esac
         case "$fase" in
             0) RegeneraFase0 || return 1 ;;
@@ -3978,6 +4441,7 @@ ReiniciarSiRequerido() {
 # Unzip and update repositories for regeneration
 DescomprimirBackup() {
     local cache_dir="/var/cache/apt/archives" paquete arquitectura
+    [[ -z "${CFG[RutaTarRegenera]}" ]] && { error "Ruta del backup indefinida." "Undefined backup path."; return 1; }
     [ -d "$Carpeta_Regen" ] || { error "No existe: $Carpeta_Regen" "Not exist: $Carpeta_Regen"; return 1; }
 
     echoe ">>> Descomprimiendo el archivo de backup para regenerar en: $Carpeta_Regen ..." \
@@ -4100,6 +4564,7 @@ PrepararClavesLUKS() {
     local archivo_persistente_claves="/root/omv_regen_luks.keys"
     local claves_faltantes=0 volumen ruta_clave linea
 
+    [[ -z "${CFG[RutaTarRegenera]}" ]] && { error "Ruta del backup indefinida." "Undefined backup path."; return 1; }
     [ -d "$Carpeta_Regen" ] || { error "No existe: $Carpeta_Regen" "Not exist: $Carpeta_Regen"; return 1; }
     [ -f "$archivo_crypttab" ] || { error "No se encontró /etc/crypttab en el backup." \
                                           "/etc/crypttab not found in the backup."; return 1; }
@@ -4280,7 +4745,7 @@ LimpiarRegeneracion() {
 
 RegeneraFase0() {
     local n=0 temp_dir="${OR_tmp_dir}/instalar_omv"
-    local archivo_omvextras nombre_objetivo directorio_trabajo archivo_inmutable
+    local archivo_omvextras nombre_objetivo version_omv directorio_trabajo archivo_inmutable
     mkdir -p "$temp_dir"
     directorio_trabajo="$(pwd)"
 
@@ -4365,7 +4830,9 @@ RegeneraFase0() {
         [[ -z "$archivo_omvextras" ]] && { error "No se encontró un archivo omv-extras en el directorio: $OR_repo_dir" \
                                                  "No omv-extras file found in directory: $OR_repo_dir"; return 1; }
 
-        nombre_objetivo="openmediavault-omvextrasorg_latest_all8.deb"
+        [[ "$DEBIAN_CODENAME__or" == "bullseye" ]] && version_omv=6
+        [[ "$DEBIAN_CODENAME__or" == "bookworm" ]] && version_omv=7
+        nombre_objetivo="openmediavault-omvextrasorg_latest_all${version_omv}.deb"
 
         echoe ">>> Preparando archivo de omv-extras en el directorio: $directorio_trabajo" \
               ">>> Preparing omv-extras file in directory: $directorio_trabajo"
@@ -4875,6 +5342,7 @@ RegeneraFase4() {
 
 RegeneraFase5() {
     local nodo
+    [[ -z "${CFG[RutaTarRegenera]}" ]] && { error "Ruta del backup indefinida." "Undefined backup path."; return 1; }
     [ -d "$Carpeta_Regen" ] || { error "No existe: $Carpeta_Regen" "Not exist: $Carpeta_Regen"; return 1; }
 
     echoe "\n>>>   >>>    FASE Nº5: REGENERAR USUARIOS, CARPETAS COMPARTIDAS Y RESTO DE GUI.\n" \
@@ -5153,14 +5621,14 @@ IniciarAjustes; AjustarIdioma
 [[ $# -gt 1 ]] && Salir nolog "\n>>> Argumento inválido: $* ${txt[salirayuda]}" \
                               "\n>>> Invalid argument: $* ${txt[salirayuda]}"
 case "$1" in
-    backup|-b|--backup             )    VIA=9; BackupProgramado=0 ;;
-    regenera|-r|--regenera         )    VIA=10 ;;
+    backup|-b|--backup)                 VIA=9; BackupProgramado=0 ;;
+    regenera|-r|--regenera)             VIA=10 ;;
     ayuda|-a|--ayuda|help|-h|--help)    Ayuda; clear; exit ;;
-    limpieza_semanal               )    VIA=11; LimpiezaProgramada=0 ;;
-    regenera_auto                  )    VIA=10; ModoAuto=0 ;;
-    desinstalar|uninstall          )    DesinstalarOmvregen ;;
-    ""                             )    VIA=0 ;;
-    *                              )    Salir nolog "\n>>> Argumento inválido $1 ${txt[salirayuda]}" \
+    limpieza_semanal)                   VIA=11; LimpiezaProgramada=0 ;;
+    regenera_auto)                      VIA=10; ModoAuto=0 ;;
+    desinstalar|uninstall)              DesinstalarOmvregen ;;
+    "")                                 VIA=0 ;;
+    *)                                  Salir nolog "\n>>> Argumento inválido $1 ${txt[salirayuda]}" \
                                                     "\n>>> Invalid argument $1 ${txt[salirayuda]}" ;;
 esac
 
@@ -5198,9 +5666,9 @@ fi
 # Configure Global Trap
 trap TrapSalir EXIT INT TERM
 
-# Versiones soportadas 8.x
-# Supported versions 8.x
-[[ "$DEBIAN_CODENAME__or" =~ ^(trixie)$ ]] || {
+# Versiones soportadas 6.x. o 7.x.
+# Supported versions 6.x. or 7.x.
+[[ "$DEBIAN_CODENAME__or" =~ ^(bullseye|bookworm)$ ]] || {
     echoe nolog ">>> Versión no soportada: ${DEBIAN_CODENAME__or}.   Intentando descargar version compatible ..." \
                 ">>> Unsupported version: ${DEBIAN_CODENAME__or}.   Trying to download compatible version ..."
     wget -O - "$URL_OMVREGEN_INSTALL" | bash || Salir nolog ">>> ERROR: No se pudo instalar omv-regen." \
@@ -5222,11 +5690,12 @@ trap TrapSalir EXIT INT TERM
 
 # Crear archivo de log
 # Create log file
-[ -f "$OR_log_file" ] || {
+if [ ! -f "$OR_log_file" ]; then
     echoe nolog ">>> El archivo de log no existe. Creando $OR_log_file." \
                 ">>> The log file does not exist. Creating $OR_log_file."
     touch "$OR_log_file" || Salir nolog ">>> ERROR: No se pudo crear el archivo de log." \
-                                        ">>> ERROR: Could not create log file."; }
+                                        ">>> ERROR: Could not create log file."
+fi
 
 # Crear carpeta temporal
 # Create temporary folder
@@ -5239,6 +5708,9 @@ mkdir -p "$OR_tmp_dir" || Salir error "Fallo inicializando carpeta temporal. Sal
 if [ -f "$OR_ajustes_file" ]; then
     LeerAjustes || Salir error "No se pudo leer el archivo de ajustes. Saliendo ..." \
                                "Could not read settings file. Exiting ..."
+elif [ -f "/etc/regen/omv-regen.settings" ]; then
+    MigrarAjustes_7_0 || Salir error "No se pudo migrar ajustes desde versiones anteriores. Saliendo ..." \
+                                     "Could not migrate settings from previous versions. Exiting ..."
 else
     Info 3 ">>> No hay archivo de ajustes, generando ajustes predeterminados ..." \
            ">>> No settings file, generating default settings ..."

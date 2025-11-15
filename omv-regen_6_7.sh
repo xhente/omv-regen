@@ -5,13 +5,13 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.7
+# omv-regen 7.1.8
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="7.1.7"
+ORVersion="7.1.8"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -2705,12 +2705,10 @@ BuscarOR() {
     cat "$or_file" >"$OR_script_file"
     [ -f "$version_nueva" ] && rm -f "$version_nueva"
     salvar_cfg UltimaBusqueda "$(date +%y%m%d)" || return 1
-    modo_desatendido && { sleep 3; Salir ">>> omv-regen se ha actualizado. Saliendo ..." \
-                                         ">>> omv-regen has been updated. Exiting ..."; }
-    Info 3 ">>> omv-regen se ha actualizado. Reiniciando omv-regen ..." \
-           ">>> omv-regen has been updated. Restarting omv-regen ..."
-    clear; sleep 2
-    exec bash "$OR_script_file"
+    sleep 2
+    modo_desatendido || clear
+    Salir ">>> omv-regen se ha actualizado. Saliendo ..." \
+          ">>> omv-regen has been updated. Exiting ..."
 }
 
 ######################################### FUNCIONES DE BACKUP #########################################

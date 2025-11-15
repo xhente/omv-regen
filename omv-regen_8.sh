@@ -2241,12 +2241,10 @@ BuscarOR() {
     [ -f "$version_nueva" ] && rm -f "$version_nueva"
     salvar_cfg UltimaBusqueda "$(date +%y%m%d)" || return 1
     ActualizarAyuda || return 1
-    modo_desatendido && { sleep 3; Salir ">>> omv-regen se ha actualizado. Saliendo ..." \
-                                         ">>> omv-regen has been updated. Exiting ..."; }
-    Info 3 ">>> omv-regen se ha actualizado. Reiniciando omv-regen ..." \
-           ">>> omv-regen has been updated. Restarting omv-regen ..."
-    clear; sleep 2
-    exec bash "$OR_script_file"
+    sleep 2
+    modo_desatendido || clear
+    Salir ">>> omv-regen se ha actualizado. Saliendo ..." \
+          ">>> omv-regen has been updated. Exiting ..."
 }
 
 ######################################### FUNCIONES DE BACKUP #########################################

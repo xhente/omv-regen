@@ -48,6 +48,7 @@ Chente
 
 * *omv-regen* es una **utilidad desarrollada en bash** que se ejecuta desde línea de comandos (CLI) y dispone de interfaz gráfica mediante *dialog*.
 * Permite hacer y programar backups de la configuración de OpenMediaVault (OMV) y usar estos backups para **migrar o regenerar** la configuración en otro sistema limpio de OMV o Debian.
+* Compatibilidad: omv-regen es compatible con OMV 6.x, OMV 7.x y OMV 8.x.
 
 * NOTA: omv-regen **no permite actualizar entre versiones principales de OMV** (por ejemplo, de OMV 6 a OMV 7). Para eso, utiliza siempre el procedimiento oficial: `omv-release-upgrade`. omv-regen solo puede regenerar configuraciones dentro de la **misma versión principal** de OMV.
 
@@ -116,6 +117,7 @@ Comandos principales:
 * Instala la versión de **Debian Lite de 64 bits** (sin entorno gráfico) que necesites:
    * Para OMV6 → Debian 11 (Bullseye)
    * Para OMV7 → Debian 12 (Bookworm)
+   * Para OMV8 → Debian 13 (Trixie)
 * Durante la instalación, selecciona únicamente el paquete SSH para instalar.
 * Una vez finalizada la instalación, inicia sesión con tu usuario y activa *root*:
   ```
@@ -317,6 +319,7 @@ Chente
 
 * *omv-regen* is a **bash-based utility** that runs from the command line (CLI) and provides a graphical interface through *dialog*.
 * It allows you to create and schedule backups of your OpenMediaVault (OMV) configuration and use those backups to **migrate or regenerate** the configuration on a clean OMV or Debian system.
+* Compatibility: omv-regen is compatible with OMV 6.x, OMV 7.x and OMV 8.x.
 
 * NOTE: omv-regen does **not support upgrading between major OMV versions** (e.g., from OMV 6 to OMV 7). For this, always use the official `omv-release-upgrade` procedure. omv-regen can only regenerate configurations within **the same major OMV version**.
 
@@ -385,6 +388,7 @@ Main commands:
 * Install the **minimal 64-bit Debian Lite** version you need:
    * For OMV6 → Debian 11 (Bullseye)
    * For OMV7 → Debian 12 (Bookworm)
+   * For OMV8 → Debian 13 (Trixie)
 * During installation, select only the SSH package to install.
 * Once installation is complete, log in with your user and enable *root*:
   ```

@@ -1943,7 +1943,7 @@ OmvregenReset() {
 LeerAjustes() {
     local clave cont=0 linea claves_ora version_ajustes
     local archivo_ajustes="$OR_ajustes_file"
-    local version_compatible_min="8.0.0"
+    local version_compatible_min="8.0"
     
     unset CARPETAS_ADICIONALES
     version_ajustes=$(awk -F "omv-regen version " 'NR==1{print $2}' "$OR_ajustes_file")

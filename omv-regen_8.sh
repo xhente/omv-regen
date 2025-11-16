@@ -5205,14 +5205,6 @@ trap TrapSalir EXIT INT TERM
                                                             ">>> ERROR: Could not install omv-regen."
     exit 0; }
 
-# Instalar omv-regen si no está instalado
-# Install omv-regen if not installed
-[[ "$0" == "$OR_script_file" ]] || {
-    echoe nolog ">>> omv-regen no está instalado. Descargando e instalando..." \
-                ">>> omv-regen is not installed. Downloading and installing..."
-    wget -O - "$URL_OMVREGEN_INSTALL" | bash || Salir nolog ">>> ERROR: No se pudo instalar omv-regen." \
-                                                            ">>> ERROR: Could not install omv-regen."; }
-
 # Asegurar que el script se ejecuta con bash
 # Ensure the script runs with bash
 [ -n "$BASH_VERSION" ] || { Salir ">>> Este script requiere bash. Asegúrate de ejecutarlo en un entorno con bash.  Saliendo ..." \

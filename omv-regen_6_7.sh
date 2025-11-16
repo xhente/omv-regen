@@ -5675,7 +5675,7 @@ trap TrapSalir EXIT INT TERM
 
 # Instalar omv-regen si no está instalado
 # Install omv-regen if not installed
-[[ "$(readlink -f "$0")" == "$OR_script_file" ]] || {
+[[ "$0" == "$OR_script_file" ]] || {
     echoe nolog ">>> omv-regen no está instalado. Descargando e instalando..." \
                 ">>> omv-regen is not installed. Downloading and installing..."
     wget -O - "$URL_OMVREGEN_INSTALL" | bash || Salir nolog ">>> ERROR: No se pudo instalar omv-regen." \

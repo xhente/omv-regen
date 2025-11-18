@@ -1,6 +1,9 @@
 
 📘 **ENGLISH VERSION BELOW** → [Go to English section](#-omv-regen-1)
 
+# 🌀 omv-regen
+
+**Utilidad de Backup y Restauración de la configuración de OpenMediaVault**
 
 ```
    ┌───────────────┐
@@ -9,10 +12,6 @@
    │               │     └────────────┘     └──────────────┘
    └───────────────┘
 ```
-
-# 🌀 omv-regen
-
-**Utilidad de Backup y Restauración de la configuración de OpenMediaVault**
 
 ## 📥 INSTALACIÓN
 
@@ -26,9 +25,7 @@ wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh
 * **PASO 2.** Haz una instalación nueva de OMV o Debian y conecta las unidades de datos originales.
 * **PASO 3.** Utiliza `omv-regen` para regenerar las configuraciones del sistema original al nuevo sistema desde el backup.
 
-
 <img width="818" height="450" alt="omv-regen_7-1_es" src="https://github.com/user-attachments/assets/41580cc0-c466-4eda-9f16-69cdd4639f54" />
-
 
 ## INTRODUCCIÓN
 
@@ -275,6 +272,10 @@ Espero que omv-regen te haya resultado útil, si quieres puedes invitarme a un c
 _____________________________________________________________________________________________________________________
 
 
+# 🌀 omv-regen
+
+**Backup and Restoration Utility for OpenMediaVault Configuration**
+
 ```
    ┌───────────────┐
    │               │     ┌────────────┐     ┌──────────────┐
@@ -282,10 +283,6 @@ ________________________________________________________________________________
    │               │     └────────────┘     └──────────────┘
    └───────────────┘
 ```
-
-# 🌀 omv-regen
-
-**Backup and Restoration Utility for OpenMediaVault Configuration**
 
 ## 📥 INSTALLATION
 
@@ -299,9 +296,7 @@ wget -O - https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh
 * **STEP 2.** Perform a fresh installation of OMV or Debian and connect the original data drives.
 * **STEP 3.** Use `omv-regen` to regenerate the configuration of the original system on the new one from the backup.
 
-
 <img width="818" height="450" alt="omv-regen_7-1_en" src="https://github.com/user-attachments/assets/3b867457-4731-4d98-adfc-a8b6f28c3879" />
-
 
 ## INTRODUCTION
 

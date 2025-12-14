@@ -49,8 +49,6 @@ Chente
 
 * NOTA: omv-regen **no permite actualizar entre versiones principales de OMV** (por ejemplo, de OMV 6 a OMV 7). Para eso, utiliza siempre el procedimiento oficial: `omv-release-upgrade`. omv-regen solo puede regenerar configuraciones dentro de la **misma versión principal** de OMV.
 
-* NOTA: En OMV 8.x, que aún está en estado beta, la regeneración no ha sido probada; los backups funcionarán correctamente.
-
 Comandos principales:
 
 * `omv-regen`          → Abre la interfaz gráfica principal. 
@@ -319,8 +317,6 @@ Chente
 * Compatibility: omv-regen is compatible with OMV 6.x, OMV 7.x and OMV 8.x.
 
 * NOTE: omv-regen does **not support upgrading between major OMV versions** (e.g., from OMV 6 to OMV 7). For this, always use the official `omv-release-upgrade` procedure. omv-regen can only regenerate configurations within **the same major OMV version**.
-
-* NOTE: In OMV 8.x, which is still in beta, regeneration has not been tested; backups will work correctly.
 
 Main commands:
 

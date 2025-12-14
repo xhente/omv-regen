@@ -5,13 +5,13 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.8
+# omv-regen 7.1.9
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="7.1.8"
+ORVersion="7.1.9"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -128,6 +128,7 @@ URL_OMVEXTRAS="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/
 # shellcheck disable=SC2034
 URL_RASPBERRY_PREINSTALL_SCRIPT="https://raw.githubusercontent.com/OpenMediaVault-Plugin-Developers/installScript/master/preinstall"
 URL_OMV_INSTALL_SCRIPT="https://raw.githubusercontent.com/OpenMediaVault-Plugin-Developers/installScript/master/installOld7"
+URL_OMVREGEN_INSTALL="https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen-install.sh"
 
 # Códigos de color
 # Color codes

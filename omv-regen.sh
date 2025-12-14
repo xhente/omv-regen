@@ -10,7 +10,7 @@
 # OpenMediaVault configuration backup and restore utility
 
 ##################################################
-# omv-regen_install.sh
+# omv-regen.sh
 ##################################################
 # Instalador dinámico para seleccionar la versión correcta de omv-regen
 # Detecta Debian/OMV y descarga la versión según corresponda

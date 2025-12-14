@@ -128,7 +128,7 @@ URL_OMVEXTRAS="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/
 # shellcheck disable=SC2034
 URL_RASPBERRY_PREINSTALL_SCRIPT="https://raw.githubusercontent.com/OpenMediaVault-Plugin-Developers/installScript/master/preinstall"
 URL_OMV_INSTALL_SCRIPT="https://raw.githubusercontent.com/OpenMediaVault-Plugin-Developers/installScript/master/installOld7"
-URL_OMVREGEN_INSTALL="https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen-install.sh"
+URL_OMVREGEN_INSTALL="https://raw.githubusercontent.com/xhente/omv-regen/master/omv-regen.sh"
 
 # Códigos de color
 # Color codes

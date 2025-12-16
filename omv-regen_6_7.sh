@@ -5,13 +5,13 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.9
+# omv-regen 7.1.10
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="7.1.9"
+ORVersion="7.1.10"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -2955,6 +2955,14 @@ ActualizarRepo() {
                     rm -f "$paquete_nuevo" || return 1
                 else
                     if [ -f "$paquete_repo" ]; then
+                        version_instalada="$(dpkg-query -W -f='${Version}' "$nombre_paquete_nuevo" 2>/dev/null)"
+                        paquete_repo_correcto="$(find "$OR_repo_dir" -type f -name "${nombre_paquete_nuevo}_${version_instalada}_*.deb" -print -quit)"
+                        if [ -n "$paquete_repo_correcto" ]; then
+                            echoe sil ">>> El repositorio ya contiene la versión instalada de $nombre_paquete_nuevo ($version_instalada). Descartando paquete del hook ..." \
+                                      ">>> Repository already contains installed version of $nombre_paquete_nuevo ($version_instalada). Discarding hook package ..."
+                            rm -f "$paquete_nuevo" || return 1
+                            continue
+                        fi
                         nombre_paquete_repo=$( awk -F "_" '{print $1}' <<< "$(basename "$paquete_repo")" )
                         echoe sil ">>> Eliminando versiones antiguas del paquete: ${nombre_paquete_repo}_* ..." \
                                   ">>> Deleting older versions of package: ${nombre_paquete_repo}_* ..."

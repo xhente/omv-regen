@@ -78,7 +78,7 @@ Comandos principales:
 * Puedes añadir carpetas adicionales al backup, configúralo en la GUI de *omv-regen*.
 * Utiliza las carpetas adicionales para conservar carpetas existentes fuera del entorno de OMV.
 * Desactiva el *modo silencio* para notificaciones detalladas.
-* Siempre recibirás una notificación si se produce un error.
+* Siempre recibirás una notificación si se produce un error, incluso si inhabilitas las notificaciones de la tarea.
 * Cada backup está formado por varios archivos etiquetados con la fecha y hora de su creación y contiene:
    * Un archivo `.regen.tar`  con los elementos necesarios para la regeneración.
    * Un archivo `.sha56`      para verificar la integridad del backup.
@@ -347,7 +347,7 @@ Main commands:
 * You can add additional folders to the backup; configure them in the *omv-regen* GUI.
 * Use additional folders to keep existing folders outside the OMV environment.
 * Turn off *silent mode* for detailed notifications.
-* You will always receive a notification if an error occurs.
+* You will always receive a notification if an error occurs, even if you disable task notifications.
 * Each backup consists of several files labeled with the creation date and time and contains:
    * A `.regen.tar`  file with the elements needed for regeneration.
    * A `.sha56`      file to verify backup integrity.

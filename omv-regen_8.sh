@@ -2433,7 +2433,7 @@ ValidarCrontabBD() {
 # Actualiza el repositorio. Elimina paquetes no instalados, fusiona con paquetes capturados en el hook y busca paquetes faltantes
 # Update the repository. Remove uninstalled packages, merge with hook-captured packages, and check for missing packages
 ActualizarRepo() {
-    local paquete_repo nombre_paquete_repo paquete_nuevo nombre_paquete_nuevo
+    local paquete_repo nombre_paquete_repo paquete_nuevo nombre_paquete_nuevo version_instalada paquete_repo_correcto
 
     # No modificar este texto, es el que busca la función 'LimpiezaSemanal' para ejecutarse
     # Do not modify this text, it is what the 'LimpiezaSemanal' function looks for to be executed
@@ -2478,7 +2478,7 @@ ActualizarRepo() {
         for paquete_nuevo in "${OR_hook_dir}"/*.deb; do
             [ -e "$paquete_nuevo" ] || continue
             nombre_paquete_nuevo="$(awk -F "_" '{print $1}' <<< "$(basename "$paquete_nuevo")")"
-            if [[ ! "$nombre_paquete_nuevo" =~ ^openmediavault ]] || ! dpkg-query --show -f='${Package}\n' "$nombre_paquete_nuevo" 2>/dev/null; then
+            if [[ ! "$nombre_paquete_nuevo" =~ ^openmediavault ]] || ! dpkg-query --show -f='${Package}\n' "$nombre_paquete_nuevo" >/dev/null 2>&1; then
                 echoe sil ">>> Eliminando del hook paquete no perteneciente a repositorios de OMV o no instalado: $(basename "$paquete_nuevo")" \
                           ">>> Removing from the hook a package that does not belong to OMV repositories or is not installed: $(basename "$paquete_nuevo")"
                 rm -f "$paquete_nuevo" || return 1

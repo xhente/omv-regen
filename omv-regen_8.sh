@@ -88,6 +88,7 @@ declare -a ARCHIVOS_BACKUP=("$Config_xml_file" "$Passwd_file" "$Shadow_file" "$G
 # Temporary files
 Conf_tmp_file="/etc/openmediavault/config.rg"
 OR_tmp_dir="${OR_dir}/tmp"
+OR_backup_tmp_dir=""
 
 # Variables para la regeneración, ver LeerRegenInfoFile()
 # Variables for regeneration, see LeerRegenInfoFile()
@@ -1678,6 +1679,7 @@ Salir() {
 # Cleanup of temporary files
 TrapSalir() {   
     [ -d "$OR_tmp_dir" ] && rm -rf "$OR_tmp_dir"
+    [ -d "$OR_backup_tmp_dir" ] && rm -rf "$OR_backup_tmp_dir"
     [ -f "$Conf_tmp_file" ] && rm -f "$Conf_tmp_file"
     [ -f "$OR_lock_file" ] && rm -f "$OR_lock_file"
 }
@@ -2776,6 +2778,7 @@ EjecutarBackup () {
                                          "The backup could not be completed, the backup destination folder is invalid."; return 1; }
 
     mkdir -p "$dir_regen"
+    OR_backup_tmp_dir="$dir_regen"
     echoe sil "$Logo_omvregen"
     echoe "\n>>>\n>>>>>>       <<< Backup de fecha $hoy >>>\n>>>\n \
            \n>>> Servidor: $servidor \n" \

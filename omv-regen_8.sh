@@ -2186,7 +2186,6 @@ BuscarOR() {
     local busqueda_anterior="${CFG[UltimaBusqueda]}"
     local version_nueva="${OR_ajustes_dir}/new_version"
     [ -f "$or_file" ] && rm -f "$or_file"
-    trap 'rm -f "$or_file"' EXIT
 
     NotificarVersion() {
         if [ ! -f "$version_nueva" ] || ! grep -Fxq "$version_disp" "$version_nueva"; then

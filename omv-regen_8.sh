@@ -5,13 +5,13 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 8.0.1
+# omv-regen 8.0.2
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="8.0.1"
+ORVersion="8.0.2"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \

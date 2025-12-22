@@ -322,7 +322,7 @@ Main commands:
 
 * `omv-regen`          → Opens the main graphical interface.
 * `omv-regen backup`   → Creates a backup of the OMV configuration.
-* `omv-regen ayuda`    → Opens the help dialogs with full documentation.
+* `omv-regen help`    → Opens the help dialogs with full documentation.
 
 ## ADVANTAGES OVER A CONVENTIONAL BACKUP
 

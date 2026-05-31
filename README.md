@@ -1,5 +1,6 @@
 
-📘 **ENGLISH VERSION BELOW** → [Go to English section](#-omv-regen-1)
+> ⚠️ **Auto-translation users:** Your browser may be translating this page automatically.
+> The **English version** is available below or click here → [English](#-omv-regen-1)
 
 # 🌀 omv-regen
 

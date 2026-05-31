@@ -4508,12 +4508,19 @@ RegeneraFase1() {
     if no_marcado carpetas_usuario; then
         echoe ">>> Restaurando carpetas de usuario ..." \
               ">>> Restoring user folders ..."
-        while IFS= read -r carpeta; do
-            tar -tzf "$carpeta" > /dev/null || { error "El archivo $carpeta está corrupto o incompleto." \
-                                                       "The file $carpeta is corrupt or incomplete."; return 1; }
-            tar -xf "$carpeta" -C /  || { error "Fallo extrayendo $carpeta " \
-                                                "Error extracting $carpeta "; return 1; }
-        done <<< "$(find "$(dirname "${CFG[RutaTarRegenera]}")" -maxdepth 1 -type f -name "ORBackup_${fecha_tar_en_curso}_*user*.tar.gz")"
+        local archivos_usuario
+        archivos_usuario="$(find "$(dirname "${CFG[RutaTarRegenera]}")" -maxdepth 1 -type f -name "ORBackup_${fecha_tar_en_curso}_*user*.tar.gz")"
+        if [ -z "$archivos_usuario" ]; then
+            echoe ">>> No hay carpetas de usuario para restaurar." \
+                  ">>> No user folders to restore."
+        else
+            while IFS= read -r carpeta; do
+                tar -tzf "$carpeta" > /dev/null || { error "El archivo $carpeta está corrupto o incompleto." \
+                                                           "The file $carpeta is corrupt or incomplete."; return 1; }
+                tar -xf "$carpeta" -C /  || { error "Fallo extrayendo $carpeta " \
+                                                    "Error extracting $carpeta "; return 1; }
+            done <<< "$archivos_usuario"
+        fi
         marcar carpetas_usuario
     fi
 

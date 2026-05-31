@@ -1400,6 +1400,7 @@ es_esencial() {
 # Determine whether a package is obsolete (no longer exists in the repository)
 es_obsoleto() {
     local paquete=$1
+    es_esencial "$paquete" && return 1
     for p in "${PAQUETES_OBSOLETOS[@]}"; do
         [ "$paquete" = "$p" ] && return 0
     done

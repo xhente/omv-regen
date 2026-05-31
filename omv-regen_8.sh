@@ -99,6 +99,11 @@ declare -a OriginalZFS
 FechaInfo=""
 Carpeta_Regen=""
 
+# Paquetes que han sido eliminados y deben ignorarse durante la regeneración
+# Packages that have been removed and should be ignored during regeneration
+declare -a PAQUETES_OBSOLETOS
+PAQUETES_OBSOLETOS=("openmediavault-diskclone")
+
 # Testigo de control para aplicar Salt
 # Control witness to apply Salt
 Salt=0
@@ -1387,6 +1392,16 @@ es_esencial() {
 
     for c in "${NO_OMITIR[@]}"; do
         [ "$complemento" = "$c" ] && return 0
+    done
+    return 1
+}
+
+# Determina si un paquete es obsoleto (ya no existe en el repositorio)
+# Determine whether a package is obsolete (no longer exists in the repository)
+es_obsoleto() {
+    local paquete=$1
+    for p in "${PAQUETES_OBSOLETOS[@]}"; do
+        [ "$paquete" = "$p" ] && return 0
     done
     return 1
 }
@@ -3213,6 +3228,7 @@ ValidarContenidoBackup() {
                     for nombre in "${!VERSION_ORIGINAL[@]}"; do
                         nombre_version="${nombre}_${VERSION_ORIGINAL[$nombre]}"
                         if ! grep -qE "(^|/)$nombre_version(_[a-z0-9]+)?\.deb$" <<< "$archivos_en_backup"; then
+                            es_obsoleto "$nombre" && continue
                             PaquetesFaltantesBackup="$PaquetesFaltantesBackup $nombre_version "
                             error log "Paquete faltante en el backup: $nombre_version" \
                                       "Missing package in backup: $nombre_version"
@@ -4161,6 +4177,12 @@ PrepararClavesLUKS() {
 InstalaRegeneraSalt() {
     local paquete=$1
     [ -z "$paquete" ] && { error "Argumento vacío." "Empty argument."; return 1; }
+
+    if es_obsoleto "$paquete"; then       # ← añadir este bloque
+        echoe ">>> $paquete es un paquete obsoleto, se omite." \
+              ">>> $paquete is an obsolete package, skipping."
+        return 0
+    fi
 
     if [ "$(estado_original_de "$paquete")" = "no_instalado" ]; then
         echoe ">>> $paquete no estaba instalado en el sistema original; será omitido." \

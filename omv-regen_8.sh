@@ -3948,11 +3948,21 @@ DesinstalarApparmor() {
 # Ejecutar reinicio con aviso de ejecutar de nuevo omv-regen tras el reinicio
 # Run reboot with prompt to run omv-regen again after reboot
 ReiniciarSiRequerido() {
-    local reinicio=0 sin_internet=0 motivo
-    txt texto "$1"
+    local reinicio=0 sin_internet=0 motivo i
+    txt texto "$1" "$2"
 
-    [[ -f "/var/run/reboot-required" ]]    && reinicio=1
-    ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 || sin_internet=1
+    [[ -f "/var/run/reboot-required" ]] && reinicio=1
+
+    for ((i=1; i<=5; i++)); do
+        if ping -c 1 -W 3 8.8.8.8 >/dev/null 2>&1; then
+            sin_internet=0
+            break
+        fi
+        echoe ">>> Esperando conexión a internet, intento $i/5 ..." \
+              ">>> Waiting for internet connection, attempt $i/5 ..."
+        sin_internet=1
+        sleep 5
+    done
 
     (( reinicio == 0 && sin_internet == 0 )) && { echoe "\n>>> No hay reinicio pendiente." \
                                                         "\n>>> No reboot pending."; return 0; }

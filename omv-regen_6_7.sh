@@ -3565,7 +3565,7 @@ Regenera_es_Valido() {
 
     # Comprobar usuarios en el sistema actual
     # Check users in the current system
-    if ! regen_en_progreso && (( $(awk -F: '$3>=1000 && $3<65534 {c++} END{print c}' /etc/passwd) > 1 )); then
+    if ! regen_en_progreso && (( $(awk -F: '$3>=1000 && $3<65534 {c++} END{print c+0}' /etc/passwd) > 1 )); then
         ErrorValRegen="$ErrorValRegen usuarios_locales "
         error log "Este sistema tiene varios usuarios locales. No es un sistema limpio." \
                   "This system has multiple local users. Not a clean system."

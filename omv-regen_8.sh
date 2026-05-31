@@ -3101,7 +3101,7 @@ Regenera_es_Valido() {
 
     # Comprobar usuarios en el sistema actual
     # Check users in the current system
-    if ! regen_en_progreso && (( $(awk -F: '$3>=1000 && $3<65534 {c++} END{print c}' /etc/passwd) > 1 )); then
+    if ! regen_en_progreso && (( $(awk -F: '$3>=1000 && $3<65534 {c++} END{print c+0}' /etc/passwd) > 1 )); then
         ErrorValRegen="$ErrorValRegen usuarios_locales "
         error log "Este sistema tiene varios usuarios locales. No es un sistema limpio." \
                   "This system has multiple local users. Not a clean system."
@@ -3949,7 +3949,7 @@ DesinstalarApparmor() {
 # Run reboot with prompt to run omv-regen again after reboot
 ReiniciarSiRequerido() {
     local reinicio=0 sin_internet=0 motivo
-    txt texto "$1" "$2"
+    txt texto "$1"
 
     [[ -f "/var/run/reboot-required" ]]    && reinicio=1
     ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 || sin_internet=1

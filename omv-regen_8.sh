@@ -5291,6 +5291,8 @@ else
     [ ! -d "${OR_dir}/settings" ] && mkdir -p "${OR_dir}/settings"
     touch "$OR_ajustes_file"
     ProgramarBackup crear
+    backup_desatendido && Salir ">>> Ajustes inicializados. Ejecuta de nuevo omv-regen backup para realizar el backup." \
+                                ">>> Settings initialized. Run omv-regen backup again to perform the backup."
 fi
 AjustarIdioma
 SalvarAjustes || Salir error "No se pudo guardar el archivo de ajustes. Saliendo ..." \

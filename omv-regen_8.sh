@@ -1878,7 +1878,7 @@ EjecutarReinicioPendiente() {
         txt 2 "SEGUNDOS" "SECONDS"
         for ((i = 10; i >= 1; i--)); do echo -ne "\r${txt[1]} $i ${txt[2]} "; sleep 1; done
         echoe "\n>>> Reiniciando ..." "\n>>> Rebooting ..."
-        sync; sleep 0,5; reboot
+        sync; sleep 0.5; reboot
         sleep 3; exit
     fi
 }

@@ -5,13 +5,13 @@
 # License version 3. This program is licensed "as is" without any
 # warranty of any kind, whether express or implied.
 
-# omv-regen 7.1.12
+# omv-regen 7.1.13
 # Utilidad de copia de seguridad y restauración de la configuración de OpenMediaVault
 # OpenMediaVault configuration backup and restore utility
 
 # shellcheck disable=SC2059,SC1091,SC2016
 
-ORVersion="7.1.12"
+ORVersion="7.1.13"
 
 Logo_omvregen="\
 \n┌───────────────┐                                         \
@@ -3565,7 +3565,7 @@ Regenera_es_Valido() {
 
     # Comprobar usuarios en el sistema actual
     # Check users in the current system
-    if ! regen_en_progreso && (( $(awk -F: '$3>=1000 && $3<65534 {c++} END{print c}' /etc/passwd) > 1 )); then
+    if ! regen_en_progreso && (( $(awk -F: '$3>=1000 && $3<65534 {c++} END{print c+0}' /etc/passwd) > 1 )); then
         ErrorValRegen="$ErrorValRegen usuarios_locales "
         error log "Este sistema tiene varios usuarios locales. No es un sistema limpio." \
                   "This system has multiple local users. Not a clean system."
@@ -4412,11 +4412,21 @@ DesinstalarApparmor() {
 # Ejecutar reinicio con aviso de ejecutar de nuevo omv-regen tras el reinicio
 # Run reboot with prompt to run omv-regen again after reboot
 ReiniciarSiRequerido() {
-    local reinicio=0 sin_internet=0 motivo
+    local reinicio=0 sin_internet=0 motivo i
     txt texto "$1" "$2"
 
-    [[ -f "/var/run/reboot-required" ]]    && reinicio=1
-    ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 || sin_internet=1
+    [[ -f "/var/run/reboot-required" ]] && reinicio=1
+
+    for ((i=1; i<=5; i++)); do
+        if ping -c 1 -W 3 8.8.8.8 >/dev/null 2>&1; then
+            sin_internet=0
+            break
+        fi
+        echoe ">>> Esperando conexión a internet, intento $i/5 ..." \
+              ">>> Waiting for internet connection, attempt $i/5 ..."
+        sin_internet=1
+        sleep 5
+    done
 
     (( reinicio == 0 && sin_internet == 0 )) && { echoe "\n>>> No hay reinicio pendiente." \
                                                         "\n>>> No reboot pending."; return 0; }
@@ -4943,12 +4953,19 @@ RegeneraFase1() {
     if no_marcado carpetas_usuario; then
         echoe ">>> Restaurando carpetas de usuario ..." \
               ">>> Restoring user folders ..."
-        while IFS= read -r carpeta; do
-            tar -tzf "$carpeta" > /dev/null || { error "El archivo $carpeta está corrupto o incompleto." \
-                                                       "The file $carpeta is corrupt or incomplete."; return 1; }
-            tar -xf "$carpeta" -C /  || { error "Fallo extrayendo $carpeta " \
-                                                "Error extracting $carpeta "; return 1; }
-        done <<< "$(find "$(dirname "${CFG[RutaTarRegenera]}")" -maxdepth 1 -type f -name "ORBackup_${fecha_tar_en_curso}_*user*.tar.gz")"
+        local archivos_usuario
+        archivos_usuario="$(find "$(dirname "${CFG[RutaTarRegenera]}")" -maxdepth 1 -type f -name "ORBackup_${fecha_tar_en_curso}_*user*.tar.gz")"
+        if [ -z "$archivos_usuario" ]; then
+            echoe ">>> No hay carpetas de usuario para restaurar." \
+                  ">>> No user folders to restore."
+        else
+            while IFS= read -r carpeta; do
+                tar -tzf "$carpeta" > /dev/null || { error "El archivo $carpeta está corrupto o incompleto." \
+                                                           "The file $carpeta is corrupt or incomplete."; return 1; }
+                tar -xf "$carpeta" -C /  || { error "Fallo extrayendo $carpeta " \
+                                                    "Error extracting $carpeta "; return 1; }
+            done <<< "$archivos_usuario"
+        fi
         marcar carpetas_usuario
     fi
 

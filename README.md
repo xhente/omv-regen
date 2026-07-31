@@ -1,5 +1,6 @@
 
-📘 **ENGLISH VERSION BELOW** → [Go to English section](#-omv-regen-1)
+> ⚠️ **Auto-translation users:** Your browser may be translating this page automatically.
+> The **English version** is available below or click here → [English](#-omv-regen-1)
 
 # 🌀 omv-regen
 
@@ -74,7 +75,7 @@ Comandos principales:
 * Conéctate por SSH a tu servidor o con un monitor y teclado, instala y ejecuta `omv-regen`
 * Configura la carpeta de almacenamiento de backups; por defecto es `/ORBackup`
 * Por defecto, se programa un backup diario a las 03:00 h. Puedes modificarlo en la GUI de OMV, en Tareas Programadas.
-* También puedes ejecutar un backup manual desde la GUI de *omv-regen*.
+* También puedes ejecutar un backup manual desde la GUI de *omv-regen* o desde línea de comando con `omv-regen backup`
 * Puedes añadir carpetas adicionales al backup, configúralo en la GUI de *omv-regen*.
 * Utiliza las carpetas adicionales para conservar carpetas existentes fuera del entorno de OMV.
 * Desactiva el *modo silencio* para notificaciones detalladas.
@@ -344,7 +345,7 @@ Main commands:
 * Connect via SSH to your server or use a monitor and keyboard, then install and run `omv-regen`.
 * Configure the backup storage folder; the default is `/ORBackup`.
 * By default, a daily backup is scheduled at 03:00 AM. You can modify this in the OMV GUI under *Scheduled Tasks*.
-* You can also manually execute a backup from the *omv-regen* GUI.
+* You can also manually execute a backup from the *omv-regen* GUI or from the command line with `omv-regen backup`
 * You can add additional folders to the backup; configure them in the *omv-regen* GUI.
 * Use additional folders to keep existing folders outside the OMV environment.
 * Turn off *silent mode* for detailed notifications.

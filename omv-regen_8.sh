@@ -797,8 +797,8 @@ MenuBackup() {
         else
             txt 50 "_____________________________⚫ LOS AJUSTES ACTUALES NO SON VÁLIDOS ⚫________________________________" \
                    "_______________________________⚫ CURRENT SETTINGS ARE NOT VALID ⚫___________________________________"
-            txtc 22 "⚫ LA CARPETA DE DESTINO DE LOS BACKUPS NO EXISTE O NO SE PUEDE ESCRIBIR ⚫" \
-                    "⚫ THE BACKUP DESTINATION FOLDER DOES NOT EXIST OR CANNOT BE WRITTEN ⚫"; ((alto_min++))
+            txtc 22 "⚫ LA CARPETA DE DESTINO DE LOS BACKUPS NO EXISTE O NO ES VALIDA ⚫" \
+                    "⚫ THE BACKUP DESTINATION FOLDER DOES NOT EXIST OR IS INVALID ⚫"; ((alto_min++))
         fi
         
         txtm 0 20 "CARPETA DE BACKUPS" \
@@ -2267,9 +2267,17 @@ BuscarOR() {
 ######################################### FUNCIONES DE BACKUP #########################################
 ########################################## BACKUP FUNCTIONS ###########################################
 
-# Validar la ruta de los backups
-# Validate backups path
-dir_backups_es_ok() { [[ "${CFG[RutaBackups]}" == "/ORBackup" ]] || [[ -d "${CFG[RutaBackups]}" && -w "${CFG[RutaBackups]}" ]]; }
+# Validar la ruta de los backups y su sistema de archivos
+# Validate backups path and its filesystem type
+dir_backups_es_ok() {
+    [[ "${CFG[RutaBackups]}" == "/ORBackup" ]] && return 0
+    [[ -d "${CFG[RutaBackups]}" && -w "${CFG[RutaBackups]}" ]] || return 1
+    local fs; fs=$(df --output=fstype "${CFG[RutaBackups]}" 2>/dev/null | tail -n 1)
+    [[ -n "$fs" ]] && echo "exfat vfat ntfs fuseblk" | grep -qw "$fs" || return 0
+    error "'${CFG[RutaBackups]}' usa un sistema de archivos no nativo ($fs). omv-regen requiere un formato nativo (ext4, btrfs, etc.) para mantener permisos." \
+          "'${CFG[RutaBackups]}' uses a non-native file system ($fs). omv-regen requires a native format (ext4, btrfs, etc.) to preserve permissions."
+    return 1
+}
 
 # Actualizar repositorio si no se ha hecho ningún backup la ultima semana
 # Update repository if no backup has been made in the last week
